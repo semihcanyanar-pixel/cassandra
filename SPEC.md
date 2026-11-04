@@ -97,6 +97,11 @@ users/{uid}/notes/{id}            title, body|items[], color, updatedAt
 users/{uid}/events/{id}           kişisel takvim kaydı (alanlar aşağıdaki event ile aynı)
 users/{uid}/insights/{weekId}     yapay zekâ haftalık özet önbelleği
 
+Aşama 2 şema notları (uygulanan):
+- activities.color = tema paletinden renk SIRASI (0–5), hex değil; renkler temayla birlikte değişir (`--act-0..5`).
+- tasks: repeat "none"|"daily"|"days", days [0–6, Pzt=0], date (tek seferlik için gün, tekrarlı için başlangıç), done (tek seferlik), doneDates [] (tekrarlı). Açık kalan tek seferlik görev ertesi gün "geçmiş tarihli" olarak görünmeye devam eder.
+- goals: period her zaman "long" (uzun vadeli), unit "saat"|"gün"|"adet", progress (elle), startDate, linkedActivityId (saat/gün biriminde otomatik ilerleme).
+
 households/{hid}                  members [uidA, uidB], profiles {uid: {name, initial}}, dependents [{id:"aslan", name:"Aslan", initial:"A"}]   (elle oluşturulur)
 households/{hid}/shoppingItems/{id}  text, category (market|ev|aslan), done, addedBy, createdAt
 households/{hid}/familyTodos/{id}    text, done, assignee|null, addedBy, createdAt

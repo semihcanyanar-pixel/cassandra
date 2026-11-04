@@ -5,4 +5,8 @@ export const IconNotes = () => <svg {...P}><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.
 export const IconShared = () => <svg {...P}><circle cx="9" cy="9" r="3.2" /><circle cx="17" cy="10" r="2.5" /><path d="M3 19c.5-3 3-4.5 6-4.5s5.5 1.5 6 4.5M15.5 14.8c2.4-.3 4.7.8 5.5 3.7" /></svg>;
 export const IconLock = () => <svg {...P}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
 export const IconBack = () => <svg {...P} stroke-width="2.6"><path d="M15 5l-7 7 7 7" /></svg>;
-export const IconCheck = () => <svg {...P} width="14" height="14" stroke-width="3.6"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+export const IconClose = () => <svg {...P} stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18" /></svg>;
+export const IconPlus = () => <svg {...P} width="20" height="20" stroke-width="2.6"><path d="M12 5v14M5 12h14" /></svg>;
+export const IconNext = () => <svg {...P} stroke-width="2.6"><path d="M9 5l7 7-7 7" /></svg>;
+export const IconTrash = () => <svg {...P} width="20" height="20"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>;
+export const IconCheck =() => <svg {...P} width="14" height="14" stroke-width="3.6"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
