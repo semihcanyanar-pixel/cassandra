@@ -1,0 +1,33 @@
+/* Stage 6: segmented control, swipeable picker, splash polish */
+.seg { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); padding: 4px; gap: 0;
+  background: var(--chip-off-bg); border: var(--chip-off-border); border-radius: var(--r-ctl); }
+.seg-ind { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n));
+  transform: translateX(calc(var(--i) * 100%)); transition: transform .28s cubic-bezier(.3, .8, .3, 1);
+  background: var(--chip-on-bg); border: var(--chip-on-border); border-radius: calc(var(--r-ctl) - 4px); }
+.seg-b { position: relative; z-index: 1; min-height: 44px; padding: 0 4px; background: transparent; border: 0; color: var(--chip-off-fg);
+  font: inherit; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; transition: color .2s; white-space: nowrap; }
+.seg-b.on { color: var(--chip-on-fg); }
+.seg-badge { font-size: 11px; font-weight: 800; min-width: 18px; height: 18px; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 9px; background: currentColor; }
+.seg-badge { color: inherit; position: relative; }
+.seg-b .seg-badge { background: var(--muted); color: var(--card); }
+.seg-b.on .seg-badge { background: var(--chip-on-fg); color: var(--chip-on-bg); }
+
+.picker { display: flex; flex-direction: column; gap: 6px; --pw: 112px; }
+.picker.sm { --pw: 100px; }
+.picker-track { display: flex; align-items: center; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); }
+.picker-track::-webkit-scrollbar { display: none; }
+.picker-track::before, .picker-track::after { content: ''; flex: 0 0 calc(50% - var(--pw) / 2); }
+.pk { flex: 0 0 auto; min-width: var(--pw); max-width: 180px; min-height: 48px; padding: 0 14px; scroll-snap-align: center; scroll-snap-stop: always;
+  background: transparent; border: 0; color: var(--text); font: inherit; font-size: 17px; font-weight: 700; opacity: .38; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity .2s, transform .2s; }
+.pk.on { opacity: 1; font-size: 20px; }
+.picker.sm .pk.on { font-size: 18px; }
+.picker-dots { display: flex; justify-content: center; gap: 6px; }
+.picker-dots i { width: 6px; height: 6px; border-radius: var(--dot-r, 50%); background: var(--track); transition: width .2s, background .2s; }
+.picker-dots i.on { width: 18px; background: var(--ring); }
+
+.swap { animation: swap-in .22s ease-out; }
+@keyframes swap-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .swap, .seg-ind, .pk { animation: none; transition: none; } }

@@ -20,9 +20,18 @@
       else document.documentElement.dataset.theme = 'mozaik';
     } catch (e) { document.documentElement.dataset.theme = 'mozaik'; }
   </script>
+  <style>
+    html[data-theme='yorunge'] body { background: #0B0F1A; }
+    html[data-theme='teknik'] body { background: #FAFAFA; }
+    html[data-theme='mozaik'] body { background: #E8ECF3; }
+    .splash { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
+    .splash img { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.18); animation: splash-pulse 1.6s ease-in-out infinite; }
+    @keyframes splash-pulse { 0%, 100% { transform: scale(.94); opacity: .85; } 50% { transform: scale(1); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .splash img { animation: none; } }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app"><div class="splash" role="status" aria-label="Yükleniyor"><img src="./icon-192.png" alt="" width="96" height="96"></div></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

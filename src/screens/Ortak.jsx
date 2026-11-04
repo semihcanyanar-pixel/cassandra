@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { Chips } from '../components/ui.jsx';
+import { Seg } from '../components/Seg.jsx';
 import { Ilaclar } from './Ilaclar.jsx';
 import { IconPlus, IconTrash } from '../icons.jsx';
 import { SHOP_CATEGORIES, categoryLabel } from '../lib/notes.js';
@@ -54,6 +54,7 @@ export function Ortak({ session, house, nav, onSettings }) {
   const shopList = house.shopping.filter((i) => filter === 'all' || i.category === filter);
   const open = shopList.filter((i) => !i.done), done = shopList.filter((i) => i.done);
   const todoOpen = house.todos.filter((t) => !t.done), todoDone = house.todos.filter((t) => t.done);
+  const openShop = countOpen('all');
 
   const cycleAssignee = (t) => {
     const order = [null, me.uid, partner].filter((v, i, a) => a.indexOf(v) === i);
@@ -69,18 +70,11 @@ export function Ortak({ session, house, nav, onSettings }) {
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
-      <Chips options={[{ value: 'ev', label: 'Ev İhtiyaçları' }, { value: 'todo', label: 'Ailenin Yapılacakları' }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
+      <Seg items={[{ value: 'ev', label: 'İhtiyaçlar', badge: openShop || null }, { value: 'todo', label: 'Yapılacaklar', badge: todoOpen.length || null }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
 
       {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'ev' ? (
         <>
-          <div class="scroll-chips" role="radiogroup" aria-label="Kategori">
-            {[{ value: 'all', label: 'Hepsi' }, ...SHOP_CATEGORIES].map((c) => (
-              <button key={c.value} type="button" role="radio" aria-checked={filter === c.value}
-                class={filter === c.value ? 'chip on' : 'chip'} onClick={() => setFilter(c.value)}>
-                {c.label} <span class="count">{countOpen(c.value)}</span>
-              </button>
-            ))}
-          </div>
+          <Seg items={[{ value: 'all', label: 'Hepsi' }, ...SHOP_CATEGORIES].map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
           <div class="card list-card">
             {shopList.length === 0 && <div class="sub" style="padding:18px 0;text-align:center">Liste boş. Aşağıdan ekle.</div>}
             {[...open, ...done].map((i) => (

@@ -32,6 +32,7 @@ export function buildDailyInput(data, t = today(), hour = new Date().getHours())
 export function InsightCard({ uid, data }) {
   const [mode, setMode] = useState('day');
   const [state, setState] = useState('idle'); // idle | loading | error | limit
+  const [why, setWhy] = useState('');
   if (!workerConfigured) return null;
 
   const t = today();
@@ -49,7 +50,10 @@ export function InsightCard({ uid, data }) {
         : await callWorker('/ai/weekly', { activities: weekly });
       saveInsight(uid, id, mode === 'day' ? { text: r.text, quote: r.quote || '' } : { text: r.text, tips: r.tips || [] });
       setState('idle');
-    } catch (e) { setState(e.status === 429 ? 'limit' : 'error'); }
+    } catch (e) {
+      setWhy(e.status ? `kod ${e.status}${e.upstream ? `/${e.upstream}` : ''}${e.detail ? `: ${e.detail}` : ''}` : 'bağlantı kurulamadı');
+      setState(e.status === 429 ? 'limit' : 'error');
+    }
   }
   const pick = (m) => { setMode(m); setState('idle'); };
 
@@ -74,7 +78,7 @@ export function InsightCard({ uid, data }) {
           <>
             <div class="sub">{mode === 'day' ? 'Bugünün süreleri değerlendirilir ve kısa bir motivasyon notu eklenir.' : 'Son 4 haftanın toplam süreleri özetlenir.'} Yalnızca aktivite adları ve süreler gönderilir.</div>
             <button class="btn" style="margin-top:12px" disabled={state === 'loading'} onClick={generate}>{state === 'loading' ? 'Hazırlanıyor…' : 'Yorum oluştur'}</button>
-            {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Yorum oluşturulamadı, biraz sonra tekrar dene.</div>}
+            {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Yorum oluşturulamadı, biraz sonra tekrar dene. <span class="sub">({why})</span></div>}
             {state === 'limit' && <div class="error" role="alert" style="margin-top:8px">Bugünkü istek sınırına ulaşıldı.</div>}
           </>
         )}

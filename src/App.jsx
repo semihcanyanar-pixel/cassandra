@@ -18,13 +18,14 @@ import { LogForm } from './screens/LogForm.jsx';
 import { Report } from './screens/Report.jsx';
 import { TaskForm } from './screens/TaskForm.jsx';
 import { Goals, GoalForm } from './screens/Goals.jsx';
+import { Splash } from './components/Splash.jsx';
 import { Nav } from './components/Nav.jsx';
 import { Notice } from './components/Notice.jsx';
 
 export function App() {
   const s = useSession();
 
-  if (s.status === 'loading') return <div class="app"><div class="center muted">Yükleniyor…</div></div>;
+  if (s.status === 'loading') return <Splash />;
   if (s.status === 'unconfigured') {
     return <Notice title="Kurulum eksik" text="Firebase ayarları bulunamadı. .env.local dosyasını .env.example'a göre doldur." />;
   }
@@ -53,7 +54,7 @@ function Main({ session }) {
   const route = stack[stack.length - 1];
   const uid = me.uid;
 
-  if (!data.ready || !house.ready) return <div class="app"><div class="center muted">Yükleniyor…</div></div>;
+  if (!data.ready || !house.ready) return <Splash />;
 
   let body;
   if (route) {

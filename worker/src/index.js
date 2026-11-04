@@ -41,7 +41,13 @@ async function gemini(env, prompt) {
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.7 } }),
   });
-  if (!r.ok) return { fail: r.status };
+  if (!r.ok) {
+    const body = await r.text().catch(() => '');
+    console.log('gemini error', r.status, body.slice(0, 400));
+    let msg = '';
+    try { msg = JSON.parse(body).error?.message || ''; } catch { /* not json */ }
+    return { fail: r.status, detail: msg.slice(0, 200) };
+  }
   try {
     const data = await r.json();
     return { json: JSON.parse(data.candidates[0].content.parts[0].text) };
@@ -64,7 +70,7 @@ async function handleWeekly(env, req, uid) {
     + 'Türkçe, sıcak ve kısa (en çok 3 cümle) bir yorum yaz ve en çok iki somut öneri ver. Tıbbi ya da finansal tavsiye verme. Veride olmayan şeyi uydurma.\n'
     + `Yalnızca şu JSON biçiminde yanıt ver: {"yorum": string, "oneriler": [string]}\n\n${JSON.stringify(acts)}`;
   const g = await gemini(env, prompt);
-  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail }, 502);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
   const p = g.json;
   return reply(env, req, { text: str(p.yorum, 600), tips: (Array.isArray(p.oneriler) ? p.oneriler : []).slice(0, 2).map((t) => str(t, 240)) });
 }
@@ -91,7 +97,7 @@ async function handleDaily(env, req, uid) {
     + '(2) "motivasyon": kişinin motivasyonunu sürdürmesine yardım eden kısa bir söz, bilgi ya da ipucu (alışkanlık oluşturma, süreklilik, dinlenme gibi), en çok 2 cümle. Gerçek bir kişiye atfedilmiş alıntı verme, kaynak uydurma. Tıbbi ya da finansal tavsiye verme. '
     + 'Yalnızca şu JSON biçiminde yanıt ver: {"degerlendirme": string, "motivasyon": string}\n\n' + JSON.stringify({ gun_serisi: streak, aktiviteler: acts });
   const g = await gemini(env, prompt);
-  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail }, 502);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
   return reply(env, req, { text: str(g.json.degerlendirme, 500), quote: str(g.json.motivasyon, 400) });
 }
 

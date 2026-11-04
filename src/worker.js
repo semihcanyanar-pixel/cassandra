@@ -12,7 +12,12 @@ export async function callWorker(path, body) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
-  if (!r.ok) { const e = new Error(`worker-${r.status}`); e.status = r.status; throw e; }
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    const e = new Error(`worker-${r.status}`);
+    e.status = r.status; e.detail = j.detail || j.error || ''; e.upstream = j.status;
+    throw e;
+  }
   return r.json();
 }
 

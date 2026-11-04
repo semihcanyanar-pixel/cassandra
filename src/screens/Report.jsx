@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
-import { Page, Card, Chips } from '../components/ui.jsx';
+import { Page, Card } from '../components/ui.jsx';
+import { Picker } from '../components/Picker.jsx';
 import { Chart } from '../components/Chart.jsx';
 import { IconBack, IconNext, IconTrash } from '../icons.jsx';
 import { MODES, buildSeries, fmtDur, streak, activeDays } from '../lib/stats.js';
@@ -33,13 +34,8 @@ export function Report({ uid, data, activityId, nav }) {
 
   return (
     <Page title="Rapor" onClose={nav.back}>
-      <div class="scroll-chips" role="radiogroup" aria-label="Aktivite seç">
-        {picks.map((p) => (
-          <button key={p.value} type="button" role="radio" aria-checked={sel === p.value}
-            class={sel === p.value ? 'chip on' : 'chip'} onClick={() => { setSel(p.value); }}>{p.label}</button>
-        ))}
-      </div>
-      <Chips options={Object.entries(MODES).map(([value, label]) => ({ value, label }))} value={mode}
+      <Picker items={picks} value={sel} onChange={setSel} label="Aktivite seç" />
+      <Picker size="sm" items={Object.entries(MODES).map(([value, label]) => ({ value, label }))} value={mode}
         onChange={(m) => { setMode(m); setOffset(0); }} label="Dönem" />
 
       <Card>
@@ -48,7 +44,7 @@ export function Report({ uid, data, activityId, nav }) {
           <div class="title-sm" aria-live="polite">{dayMonth(series.first)} – {dayMonth(series.last)}</div>
           <button class="iconbtn" aria-label="Sonraki dönem" disabled={offset === 0} onClick={() => page(1)}><IconNext /></button>
         </div>
-        <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style="touch-action:pan-y">
+        <div key={`${sel}-${mode}-${offset}`} class="swap" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style="touch-action:pan-y">
           <Chart series={series} colorOf={colorOf} single={Boolean(filterId)} />
         </div>
       </Card>
