@@ -17,12 +17,15 @@ const reply = (env, req, body, status = 200) => new Response(JSON.stringify(body
   status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...cors(env, req) },
 });
 
+// Only SUCCESSFUL generations count towards the daily limit (failed/busy attempts are free).
+const limitKey = (uid, kind) => `rl:${kind}:${uid}:${new Date().toISOString().slice(0, 10)}`;
 async function rateLimit(env, uid, kind) {
-  const key = `rl:${kind}:${uid}:${new Date().toISOString().slice(0, 10)}`;
-  const n = Number(await env.KV.get(key)) || 0;
-  if (n >= LIMITS[kind]) return false;
-  await env.KV.put(key, String(n + 1), { expirationTtl: 172800 });
-  return true;
+  const n = Number(await env.KV.get(limitKey(uid, kind))) || 0;
+  return n < LIMITS[kind];
+}
+async function recordUse(env, uid, kind) {
+  const n = Number(await env.KV.get(limitKey(uid, kind))) || 0;
+  await env.KV.put(limitKey(uid, kind), String(n + 1), { expirationTtl: 172800 });
 }
 
 const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
@@ -91,6 +94,7 @@ async function handleWeekly(env, req, uid) {
   const g = await gemini(env, prompt);
   if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
   const p = g.json;
+  await recordUse(env, uid, 'ai');
   return reply(env, req, { text: str(p.yorum, 600), tips: (Array.isArray(p.oneriler) ? p.oneriler : []).slice(0, 2).map((t) => str(t, 240)) });
 }
 
@@ -117,6 +121,7 @@ async function handleDaily(env, req, uid) {
     + 'Yalnızca şu JSON biçiminde yanıt ver: {"degerlendirme": string, "motivasyon": string}\n\n' + JSON.stringify({ gun_serisi: streak, aktiviteler: acts });
   const g = await gemini(env, prompt);
   if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
+  await recordUse(env, uid, 'ai');
   return reply(env, req, { text: str(g.json.degerlendirme, 500), quote: str(g.json.motivasyon, 400) });
 }
 
