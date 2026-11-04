@@ -126,6 +126,15 @@ function demoHouse() {
       { id: 'fe1', title: 'Hastane randevusu', date: dayOffset(2), time: '10:30', repeat: 'none', remind: '1d', createdBy: 'me' },
       { id: 'fe2', title: 'Doğum günü: Annem', date: dayOffset(10), time: null, repeat: 'yearly', remind: '1d', createdBy: 'other' },
     ],
+    medications: [
+      { id: 'md1', forId: 'aslan', name: 'D vitamini', dose: '5 damla', timesPerDay: 1, times: ['09:00'], meal: 'tok', startDate: dayOffset(-3), endDate: dayOffset(20), note: '', archived: false },
+      { id: 'md2', forId: 'me', name: 'Antibiyotik', dose: '1 tablet', timesPerDay: 3, times: ['08:00', '14:00', '20:00'], meal: 'tok', startDate: dayOffset(-2), endDate: dayOffset(4), note: '', archived: false },
+      { id: 'md3', forId: 'other', name: 'Ağrı kesici', dose: '1 tablet', timesPerDay: 2, times: ['09:00', '21:00'], meal: 'fark_etmez', startDate: dayOffset(-12), endDate: dayOffset(-5), note: '', archived: false },
+    ],
+    medLogs: [
+      { id: `md1_${dayOffset(0)}_09:00`, medicationId: 'md1', forId: 'aslan', date: dayOffset(0), time: '09:00', status: 'alindi', doneBy: 'other', doneAt: null },
+      { id: `md2_${dayOffset(0)}_08:00`, medicationId: 'md2', forId: 'me', date: dayOffset(0), time: '08:00', status: 'alindi', doneBy: 'me', doneAt: null },
+    ],
     notes: [
       { id: 'n1', category: 'ev', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
       { id: 'n2', category: 'aslan', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
@@ -139,8 +148,12 @@ export function useHouseData(hid) {
   const todos = useHouseCollection(hid, 'familyTodos');
   const notes = useHouseCollection(hid, 'notes');
   const events = useHouseCollection(hid, 'events');
+  const medications = useHouseCollection(hid, 'medications');
+  const medLogs = useHouseCollection(hid, 'medLogs');
   return {
-    ready: Boolean(shopping && todos && notes && events),
+    ready: Boolean(shopping && todos && notes && events && medications && medLogs),
+    medications: (medications || []).slice().sort((a, b) => created(a) - created(b)),
+    medLogs: medLogs || [],
     shopping: (shopping || []).slice().sort((a, b) => created(a) - created(b)),
     todos: (todos || []).slice().sort((a, b) => created(a) - created(b)),
     notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
@@ -176,4 +189,15 @@ export function saveEvent({ uid, hid }, scope, id, data) {
   return fire(() => addDoc(personal ? col(uid, 'events') : hcol(hid, 'events'),
     personal ? { ...data, createdAt: serverTimestamp() } : { ...data, createdBy: uid, createdAt: serverTimestamp() }));
 }
+// Medications (shared health data, households/{hid}/medications + medLogs).
+export const saveMedication = (hid, uid, id, data) => fire(() => id
+  ? updateDoc(href(hid, 'medications', id), data)
+  : addDoc(hcol(hid, 'medications'), { ...data, archived: false, createdBy: uid, createdAt: serverTimestamp() }));
+export const deleteMedication = (hid, id) => fire(() => deleteDoc(href(hid, 'medications', id)));
+// Dose marks use a deterministic doc id ({medId}_{date}_{time}) so two phones marking the same dose write the SAME doc (never two).
+export const markDose = (hid, uid, dose, status) => fire(() => setDoc(href(hid, 'medLogs', dose.id), {
+  medicationId: dose.med.id, forId: dose.med.forId, date: dose.date, time: dose.time, status, doneBy: uid, doneAt: serverTimestamp(),
+}));
+export const unmarkDose = (hid, doseId) => fire(() => deleteDoc(href(hid, 'medLogs', doseId)));
+
 export const deleteEvent = ({ uid, hid }, scope, id) => fire(() => deleteDoc(scope === 'kisisel' ? ref(uid, 'events', id) : href(hid, 'events', id)));

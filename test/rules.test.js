@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, afterAll, beforeEach, describe, it } from 'vitest';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, addDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
 const HID = 'hh1';
 let env;
@@ -95,5 +95,33 @@ describe('7. Notlar: kişisel notlar gizli, ortak notlar hane içinde', () => {
     await assertSucceeds(addDoc(collection(as('A'), 'households', HID, 'notes'), { category: 'ev', title: 't' }));
     await assertSucceeds(getDocs(collection(as('B'), 'households', HID, 'notes')));
     await assertFails(getDocs(collection(as('C'), 'households', HID, 'notes')));
+  });
+});
+
+describe('8. İlaç verisi (sağlık) yalnızca iki hane üyesine açık', () => {
+  const dose = { medicationId: 'm1', forId: 'aslan', date: '2026-11-05', time: '08:00', status: 'alindi', doneBy: 'A' };
+  for (const uid of ['A', 'B']) {
+    it(`${uid} ilaç dönemi okur/yazar, doz işaretler ve geri alır`, async () => {
+      await assertSucceeds(getDoc(doc(as(uid), 'households', HID, 'medications', 'm1')));
+      await assertSucceeds(setDoc(doc(as(uid), 'households', HID, 'medications', 'm2'), { name: 'x', forId: 'aslan' }));
+      await assertSucceeds(setDoc(doc(as(uid), 'households', HID, 'medLogs', 'm1_2026-11-05_08:00'), { ...dose, doneBy: uid }));
+      await assertSucceeds(getDocs(collection(as(uid), 'households', HID, 'medLogs')));
+      await assertSucceeds(deleteDoc(doc(as(uid), 'households', HID, 'medLogs', 'l1')));
+    });
+  }
+  it('hane dışı hesap ilaç ve doz verisini okuyamaz', async () => {
+    await assertFails(getDoc(doc(as('C'), 'households', HID, 'medications', 'm1')));
+    await assertFails(getDocs(collection(as('C'), 'households', HID, 'medications')));
+    await assertFails(getDoc(doc(as('C'), 'households', HID, 'medLogs', 'l1')));
+    await assertFails(getDocs(collection(as('C'), 'households', HID, 'medLogs')));
+  });
+  it('hane dışı hesap ilaç/doz yazamaz ya da silemez', async () => {
+    await assertFails(setDoc(doc(as('C'), 'households', HID, 'medications', 'zz'), { name: 'x' }));
+    await assertFails(setDoc(doc(as('C'), 'households', HID, 'medLogs', 'zz'), dose));
+    await assertFails(deleteDoc(doc(as('C'), 'households', HID, 'medLogs', 'l1')));
+  });
+  it('giriş yapmamış kimse okuyamaz', async () => {
+    await assertFails(getDoc(doc(anon(), 'households', HID, 'medications', 'm1')));
+    await assertFails(getDoc(doc(anon(), 'households', HID, 'medLogs', 'l1')));
   });
 });

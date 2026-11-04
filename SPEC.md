@@ -63,6 +63,8 @@ Dönemsel ilaç kullanımı (kür), üç kişi için: Semihcan, eşi ve Aslan. �
 - **Bilinen sınır**: Takvim alarmı "alındı" bilgisini bilmez. Biri Aslan'ın dozunu verdiyse diğerinin telefonu yine de çalabilir; uygulama açılınca doz "verildi" görünür. Bunu ekranda tek satırla belirt. Web push ile aşılabilir (alındıyı bilip bildirimi güncellemek), ama iOS'ta yalnızca ana ekrana eklenmiş PWA'da çalışır ve garanti değildir; ilk sürümde yok, ihtiyaç hissedilirse son aşamada değerlendir.
 - Önemli ilaçlar için uygulamanın tek güvence olmadığını ekranda bir satırla belirt ("Önemli ilaçlar için telefon alarmını da kurabilirsin").
 
+- **KARAR (Aşama 5):** `meal` değerleri `ac|tok|fark_etmez` (ASCII). Doz işareti `setDoc` ile `{medicationId}_{date}_{time}` kimliğine yazılır; iki telefon aynı dozu işaretlerse tek belge olur. Geri al = belgeyi silmek. Dönem arşivi: bitiş tarihi geçince istemcide türetilir, elle `archived:true` ile erken bitirilebilir. Geçmiş dönemler Ortak > İlaçlar altında kişi bazında listelenir. Hatırlatma teslimi Aşama 7'dedir.
+
 ### Takvim
 - Aylık ızgara + seçili günün kayıtları + yaklaşanlar listesi.
 - Kayıt ekle: başlık, tarih, saat (isteğe bağlı), **kapsam: Aile / Kişisel**, tekrar (yok / haftalık / aylık / yıllık, doğum günleri için yıllık), hatırlatma (1 gün önce, 2 saat önce, vb.).

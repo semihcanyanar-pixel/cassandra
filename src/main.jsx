@@ -3,6 +3,7 @@ import './theme.css';
 import './stage2.css';
 import './stage3.css';
 import './stage4.css';
+import './stage5.css';
 import { App } from './App.jsx';
 
 render(<App />, document.getElementById('app'));

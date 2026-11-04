@@ -1,4 +1,8 @@
+import { useState } from 'preact/hooks';
 import { Card, Progress } from '../components/ui.jsx';
+import { ortakStart } from './Ortak.jsx';
+import { DoseRow } from '../components/Dose.jsx';
+import { medPeople, personById, dosesForDay, nextDose, hhmm } from '../lib/meds.js';
 import { IconPlus } from '../icons.jsx';
 import { useTheme } from '../theme.js';
 import { fmtDur, minutesByDay, streak, tasksForDay, taskDone } from '../lib/stats.js';
@@ -10,7 +14,7 @@ import { dayMonth, addDays } from '../lib/dates.js';
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 
-export function Bugun({ me, uid, data, house, nav, goTab, onSettings }) {
+export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings }) {
   const theme = useTheme();
   const t = today();
   const active = data.activities.filter((a) => !a.archived);
@@ -25,6 +29,14 @@ export function Bugun({ me, uid, data, house, nav, goTab, onSettings }) {
   const todays = tasksForDay(data.tasks, t);
   const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
   const openTodos = house.todos.filter((x) => !x.done).length;
+  const [who, setWho] = useState('all');
+  const people = medPeople(session.household, me.uid);
+  const doses = dosesForDay(house.medications, house.medLogs, t);
+  const doseOwner = (d) => personById(people, d.med.forId, me.uid).id;
+  const filterPeople = people.filter((p) => doses.some((d) => doseOwner(d) === p.id));
+  const shown = who === 'all' ? doses : doses.filter((d) => doseOwner(d) === who);
+  const now = hhmm();
+  const next = nextDose(shown, now);
 
   return (
     <main class="screen">
@@ -79,6 +91,19 @@ export function Bugun({ me, uid, data, house, nav, goTab, onSettings }) {
           );
         })}
       </Card>
+
+      {doses.length > 0 && (
+        <Card label="İLAÇLAR" class="list-card-pad med-card" right={<button class="chip small" onClick={() => { ortakStart.sub = 'ilac'; goTab('ortak'); }}>Yönet</button>}>
+          {filterPeople.length > 1 && (
+            <div class="scroll-chips filter" role="radiogroup" aria-label="Kişi filtresi">
+              {[{ id: 'all', name: 'Hepsi' }, ...filterPeople].map((p) => (
+                <button key={p.id} type="button" role="radio" aria-checked={who === p.id} class={who === p.id ? 'chip small on' : 'chip small'} onClick={() => setWho(p.id)}>{p.name}</button>
+              ))}
+            </div>
+          )}
+          {shown.map((d) => <DoseRow key={d.id} dose={d} people={people} uid={me.uid} hid={session.hid} next={next?.id === d.id} now={now} />)}
+        </Card>
+      )}
 
       <Card label="YAKLAŞAN" class="list-card-pad">
         {upcoming.length === 0 && <div class="sub" style="padding:8px 0">Yaklaşan kayıt yok.</div>}

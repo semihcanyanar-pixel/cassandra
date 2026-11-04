@@ -10,6 +10,7 @@ import { Kisisel } from './screens/Kisisel.jsx';
 import { Ortak } from './screens/Ortak.jsx';
 import { Takvim } from './screens/Takvim.jsx';
 import { EventForm } from './screens/EventForm.jsx';
+import { MedForm } from './screens/MedForm.jsx';
 import { Notlar } from './screens/Notlar.jsx';
 import { NoteForm } from './screens/NoteForm.jsx';
 import { ActivityForm } from './screens/ActivityForm.jsx';
@@ -64,6 +65,7 @@ function Main({ session }) {
       case 'task': body = <TaskForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       case 'note': body = <NoteForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} category={route.category} nav={nav} />; break;
       case 'event': body = <EventForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} scope={route.scope} date={route.date} nav={nav} />; break;
+      case 'med': body = <MedForm key={route.id || 'new'} session={session} house={house} id={route.id} nav={nav} />; break;
       case 'goals': body = <Goals data={data} nav={nav} />; break;
       case 'goal': body = <GoalForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       default: body = null;
@@ -74,7 +76,7 @@ function Main({ session }) {
   const onSettings = () => nav.go({ n: 'settings' });
   return (
     <div class="app">
-      {tab === 'bugun' && <Bugun me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />}
+      {tab === 'bugun' && <Bugun session={session} me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />}
       {tab === 'kisisel' && <Kisisel me={me} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'ortak' && <Ortak session={session} house={house} nav={nav} onSettings={onSettings} />}
       {tab === 'notlar' && <Notlar me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}

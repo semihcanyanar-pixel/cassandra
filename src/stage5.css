@@ -1,0 +1,19 @@
+/* Stage 5: İlaç takibi */
+.chips.six { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.dose { padding: 10px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.dose:first-of-type { border-top: 0; }
+.dose-main { display: flex; align-items: center; gap: 10px; }
+.dose-time { font-size: 18px; font-weight: 800; min-width: 52px; }
+.dose-actions { display: flex; gap: 8px; }
+.dose-actions .btn { flex: 1; min-height: 48px; }
+.dose-actions .chip { min-height: 48px; padding: 0 20px; }
+.dose-state { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dose-state .chip { white-space: nowrap; flex: none; }
+.dose-state .given { flex: 1; min-width: 0; }
+.given { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; font-size: 14px; font-weight: 800;
+  background: var(--btn-bg); color: var(--btn-fg); border: var(--btn-border); border-radius: var(--r-sm); }
+.given.skip { background: var(--badge-bg); color: var(--badge-fg); border: 0; }
+.dose.next { box-shadow: -4px 0 0 var(--ring); padding-left: 10px; }
+.dose.taken .dose-main, .dose.skipped .dose-main { opacity: .7; }
+.up-row.period { align-items: center; padding: 8px 0; min-height: 56px; }
+.med-card .filter { margin-bottom: 8px; }

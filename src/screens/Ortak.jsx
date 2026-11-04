@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { Chips } from '../components/ui.jsx';
+import { Ilaclar } from './Ilaclar.jsx';
 import { IconPlus, IconTrash } from '../icons.jsx';
 import { SHOP_CATEGORIES, categoryLabel } from '../lib/notes.js';
 import {
@@ -21,6 +22,9 @@ export function personOf(session, id) {
   return { uid: id, name: 'Eşi', initial: 'E' };
 }
 
+// Lets other screens open Ortak on a given sub-tab (read once on mount).
+export const ortakStart = { sub: 'ev' };
+
 export function Avatar({ person, small }) {
   if (!person) return null;
   return <span class={small ? 'avatar mini' : 'avatar'} role="img" aria-label={person.name} title={person.name}>{person.initial}</span>;
@@ -29,7 +33,7 @@ export function Avatar({ person, small }) {
 export function Ortak({ session, house, nav, onSettings }) {
   const { me } = session;
   const hid = session.hid;
-  const [sub, setSub] = useState('ev');
+  const [sub, setSub] = useState(() => { const s = ortakStart.sub; ortakStart.sub = 'ev'; return s; });
   const [filter, setFilter] = useState('all');
   const [addCat, setAddCat] = useState('market');
   const [text, setText] = useState('');
@@ -58,15 +62,15 @@ export function Ortak({ session, house, nav, onSettings }) {
   };
 
   return (
-    <main class="screen has-addbar">
+    <main class={sub === 'ilac' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
         <h1 style="font-size:40px">Ortak</h1>
         <button class="avatar" aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
-      <Chips options={[{ value: 'ev', label: 'Ev İhtiyaçları' }, { value: 'todo', label: 'Ailenin Yapılacakları' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
+      <Chips options={[{ value: 'ev', label: 'Ev İhtiyaçları' }, { value: 'todo', label: 'Ailenin Yapılacakları' }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
 
-      {sub === 'ev' ? (
+      {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'ev' ? (
         <>
           <div class="scroll-chips" role="radiogroup" aria-label="Kategori">
             {[{ value: 'all', label: 'Hepsi' }, ...SHOP_CATEGORIES].map((c) => (
@@ -120,7 +124,7 @@ export function Ortak({ session, house, nav, onSettings }) {
         </div>
       )}
 
-      <form class="addbar" onSubmit={submit}>
+      {sub !== 'ilac' && <form class="addbar" onSubmit={submit}>
         {sub === 'ev' && filter === 'all' && (
           <div class="chips" role="radiogroup" aria-label="Yeni öğenin kategorisi">
             {SHOP_CATEGORIES.map((c) => (
@@ -134,7 +138,7 @@ export function Ortak({ session, house, nav, onSettings }) {
             value={text} maxLength={80} onInput={(e) => setText(e.target.value)} />
           <button class="btn" type="submit" aria-label="Ekle"><IconPlus /></button>
         </div>
-      </form>
+      </form>}
     </main>
   );
 }
