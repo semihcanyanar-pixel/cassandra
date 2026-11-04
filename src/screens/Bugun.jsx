@@ -4,10 +4,13 @@ import { useTheme } from '../theme.js';
 import { fmtDur, minutesByDay, streak, tasksForDay, taskDone } from '../lib/stats.js';
 import { today } from '../lib/dates.js';
 import { toggleTask } from '../data.js';
+import { occurrences, tagScopes } from '../lib/events.js';
+import { IconLock } from '../icons.jsx';
+import { dayMonth, addDays } from '../lib/dates.js';
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 
-export function Bugun({ me, uid, data, nav, onSettings }) {
+export function Bugun({ me, uid, data, house, nav, goTab, onSettings }) {
   const theme = useTheme();
   const t = today();
   const active = data.activities.filter((a) => !a.archived);
@@ -20,6 +23,8 @@ export function Bugun({ me, uid, data, nav, onSettings }) {
   const pct = targetSum ? Math.round((reached / targetSum) * 100) : null;
   const run = streak(data.logs, null, t);
   const todays = tasksForDay(data.tasks, t);
+  const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
+  const openTodos = house.todos.filter((x) => !x.done).length;
 
   return (
     <main class="screen">
@@ -75,7 +80,21 @@ export function Bugun({ me, uid, data, nav, onSettings }) {
         })}
       </Card>
 
-      <div class="sub" style="padding:0 4px">Yaklaşan kayıtlar ve ailenin yapılacakları sonraki aşamalarda burada görünecek.</div>
+      <Card label="YAKLAŞAN" class="list-card-pad">
+        {upcoming.length === 0 && <div class="sub" style="padding:8px 0">Yaklaşan kayıt yok.</div>}
+        {upcoming.map((e) => (
+          <button key={e.scope + e.id + e.date} class="up-row" onClick={() => goTab('takvim')}>
+            <span class="up-date">{e.date === t ? 'Bugün' : dayMonth(e.date)}</span>
+            <span class="grow">{e.title}</span>
+            {e.scope === 'kisisel' ? <span class="badge small"><IconLock small />Kişisel</span> : e.time && <span class="sub">{e.time}</span>}
+          </button>
+        ))}
+        <button class="up-row" onClick={() => goTab('ortak')}>
+          <span class="up-date">Bugün</span>
+          <span class="grow">Ailenin yapılacakları</span>
+          <span class="sub">{openTodos} açık</span>
+        </button>
+      </Card>
     </main>
   );
 }

@@ -97,6 +97,9 @@ users/{uid}/notes/{id}            title, body|items[], color, updatedAt
 users/{uid}/events/{id}           kişisel takvim kaydı (alanlar aşağıdaki event ile aynı)
 users/{uid}/insights/{weekId}     yapay zekâ haftalık özet önbelleği
 
+Aşama 4 şema notları (uygulanan):
+- events.repeat "none"|"weekly"|"monthly"|"yearly" (aylık/yıllık kısa aylarda ayın son gününe oturur, 29 Şubat → 28 Şubat); remind "none"|"at"|"30m"|"2h"|"1d" (saat gerektirenler yalnızca saatli kayıtta). Aile kayıtları households/{hid}/events, kişisel kayıtlar users/{uid}/events; hedef yalnızca seçilen kapsamdan belirlenir. Hatırlatmalar iPhone Takvim akışı (Aşama 7) gelene kadar bildirim üretmez; iPhone eşleme düğmesi pasif.
+
 Aşama 3 şema notları (uygulanan):
 - households/{hid}/notes.category yalnızca "ev"|"aslan" (Market kararı gereği); not rengi `color` (0–3, tema paleti sırası); `items` [{t, done}] ya da `body`. Kişisel notlar `users/{uid}/notes` altında, kategori alanı yok; hedef koleksiyon yalnızca seçilen kategoriden belirlenir (`src/lib/notes.js`, testli).
 - shoppingItems/familyTodos: `assignee` uid ya da null; uygulama içinde atanan kişi avatarına dokunarak döner (atanmamış → ben → eşi).

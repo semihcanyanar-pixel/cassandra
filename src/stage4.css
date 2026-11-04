@@ -1,0 +1,25 @@
+/* Stage 4: Takvim */
+.iconbtn.cta { background: var(--btn-bg); color: var(--btn-fg); border: var(--btn-border); }
+.cal-head { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.cell { position: relative; min-height: 46px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-size: 15px; font-weight: 600; background: var(--card); color: var(--text); border: var(--card-border); border-radius: var(--r-sm); }
+:root[data-theme='teknik'] .cell { border-width: 1px; border-color: var(--line); }
+.cell.out { opacity: .45; background: transparent; }
+.cell.today { font-weight: 800; box-shadow: inset 0 0 0 2px var(--ring); }
+.cell.sel { background: var(--btn-bg); color: var(--btn-fg); box-shadow: none; }
+:root[data-theme='teknik'] .cell.sel { border-color: #0A0A0A; }
+.marks { display: flex; gap: 3px; height: 6px; }
+.mk { display: inline-block; width: 6px; height: 6px; border-radius: var(--dot-r, 50%); }
+.mk.fam { background: var(--ring); }
+.mk.per { background: var(--badge-bg); outline: 1px solid var(--muted); }
+.cell.sel .mk.fam { background: var(--btn-fg); }
+.legend { display: flex; gap: 16px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.ev-row { width: 100%; min-height: 56px; padding: 6px 0; display: flex; align-items: center; gap: 12px; text-align: left; background: transparent; border: 0; color: inherit; font: inherit; }
+.ev-ico { width: 36px; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); }
+.ev-ico.fam { background: var(--btn-bg); color: var(--btn-fg); }
+.ev-ico.per { background: var(--badge-bg); color: var(--badge-fg); }
+.badge.small { height: 24px; padding: 0 8px; font-size: 11px; }
+.up-row { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; text-align: left; background: transparent; border: 0; border-top: 1px solid var(--line); color: inherit; font: inherit; font-size: 15px; font-weight: 700; }
+.up-date { width: 52px; font-size: 13px; }

@@ -23,6 +23,7 @@ const created = (x) => x.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
 
 // Dev-only visual check: http://localhost:5173/?demo=1 shows sample data and never writes to Firestore.
 const DEMO = import.meta.env.DEV && typeof location !== 'undefined' && location.search.includes('demo=1');
+const dayOffset = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
 function demoData() {
   const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
   const logs = [];
@@ -40,6 +41,7 @@ function demoData() {
       { id: 't1', title: 'Vitamin al', repeat: 'daily', date: d(10), doneDates: [d(0)] },
       { id: 't2', title: 'Faturayı öde', repeat: 'none', date: d(0), done: false },
     ],
+    events: [{ id: 'pe1', title: 'Berber', date: dayOffset(18), time: null, repeat: 'none', remind: 'none' }],
     notes: [{ id: 'pn1', title: 'Doğum günü fikirleri', body: 'Kitap, eşarp, çiçek', color: 1, updatedAt: null }],
     goals: [{ id: 'g1', title: 'Yıl sonuna kadar İngilizce', period: 'long', target: 100, unit: 'saat', linkedActivityId: 'a', startDate: d(60), dueDate: null, progress: 0 }],
   };
@@ -52,7 +54,8 @@ export function useUserData(uid) {
   const tasks = useUserCollection(uid, 'tasks');
   const goals = useUserCollection(uid, 'goals');
   const notes = useUserCollection(uid, 'notes');
-  const ready = activities && logs && tasks && goals && notes;
+  const events = useUserCollection(uid, 'events');
+  const ready = activities && logs && tasks && goals && notes && events;
   return {
     ready: Boolean(ready),
     activities: (activities || []).slice().sort((a, b) => created(a) - created(b)),
@@ -60,6 +63,7 @@ export function useUserData(uid) {
     tasks: (tasks || []).slice().sort((a, b) => created(a) - created(b)),
     goals: (goals || []).slice().sort((a, b) => created(a) - created(b)),
     notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
+    events: events || [],
   };
 }
 
@@ -118,6 +122,10 @@ function demoHouse() {
       { id: 'f1', text: 'Aşı randevusu al', done: false, assignee: 'me', addedBy: 'other', createdAt: null },
       { id: 'f2', text: 'Faturaları öde', done: false, assignee: null, addedBy: 'me', createdAt: null },
     ],
+    events: [
+      { id: 'fe1', title: 'Hastane randevusu', date: dayOffset(2), time: '10:30', repeat: 'none', remind: '1d', createdBy: 'me' },
+      { id: 'fe2', title: 'Doğum günü: Annem', date: dayOffset(10), time: null, repeat: 'yearly', remind: '1d', createdBy: 'other' },
+    ],
     notes: [
       { id: 'n1', category: 'ev', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
       { id: 'n2', category: 'aslan', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
@@ -130,11 +138,13 @@ export function useHouseData(hid) {
   const shopping = useHouseCollection(hid, 'shoppingItems');
   const todos = useHouseCollection(hid, 'familyTodos');
   const notes = useHouseCollection(hid, 'notes');
+  const events = useHouseCollection(hid, 'events');
   return {
-    ready: Boolean(shopping && todos && notes),
+    ready: Boolean(shopping && todos && notes && events),
     shopping: (shopping || []).slice().sort((a, b) => created(a) - created(b)),
     todos: (todos || []).slice().sort((a, b) => created(a) - created(b)),
     notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
+    events: events || [],
   };
 }
 
@@ -158,3 +168,12 @@ export function saveNote({ uid, hid }, category, id, data) {
   return fire(() => addDoc(base, personal ? payload : { ...payload, category, addedBy: uid }));
 }
 export const deleteNote = ({ uid, hid }, category, id) => fire(() => deleteDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id)));
+
+// Events: scope 'aile' -> households/{hid}/events, 'kisisel' -> users/{uid}/events (chosen only by the explicit scope).
+export function saveEvent({ uid, hid }, scope, id, data) {
+  const personal = scope === 'kisisel';
+  if (id) return fire(() => updateDoc(personal ? ref(uid, 'events', id) : href(hid, 'events', id), data));
+  return fire(() => addDoc(personal ? col(uid, 'events') : hcol(hid, 'events'),
+    personal ? { ...data, createdAt: serverTimestamp() } : { ...data, createdBy: uid, createdAt: serverTimestamp() }));
+}
+export const deleteEvent = ({ uid, hid }, scope, id) => fire(() => deleteDoc(scope === 'kisisel' ? ref(uid, 'events', id) : href(hid, 'events', id)));

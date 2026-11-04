@@ -5,10 +5,11 @@ import { useSession } from './session.js';
 import { useUserData, useHouseData } from './data.js';
 import { Login } from './screens/Login.jsx';
 import { Settings } from './screens/Settings.jsx';
-import { TabScreen } from './screens/TabScreen.jsx';
 import { Bugun } from './screens/Bugun.jsx';
 import { Kisisel } from './screens/Kisisel.jsx';
 import { Ortak } from './screens/Ortak.jsx';
+import { Takvim } from './screens/Takvim.jsx';
+import { EventForm } from './screens/EventForm.jsx';
 import { Notlar } from './screens/Notlar.jsx';
 import { NoteForm } from './screens/NoteForm.jsx';
 import { ActivityForm } from './screens/ActivityForm.jsx';
@@ -62,6 +63,7 @@ function Main({ session }) {
       case 'report': body = <Report uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;
       case 'task': body = <TaskForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       case 'note': body = <NoteForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} category={route.category} nav={nav} />; break;
+      case 'event': body = <EventForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} scope={route.scope} date={route.date} nav={nav} />; break;
       case 'goals': body = <Goals data={data} nav={nav} />; break;
       case 'goal': body = <GoalForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       default: body = null;
@@ -72,11 +74,11 @@ function Main({ session }) {
   const onSettings = () => nav.go({ n: 'settings' });
   return (
     <div class="app">
-      {tab === 'bugun' && <Bugun me={me} uid={uid} data={data} nav={nav} onSettings={onSettings} />}
+      {tab === 'bugun' && <Bugun me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />}
       {tab === 'kisisel' && <Kisisel me={me} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'ortak' && <Ortak session={session} house={house} nav={nav} onSettings={onSettings} />}
       {tab === 'notlar' && <Notlar me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
-      {tab === 'takvim' && <TabScreen tab={tab} me={me} onSettings={onSettings} />}
+      {tab === 'takvim' && <Takvim me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
       <Nav tab={tab} onChange={setTab} />
     </div>
   );
