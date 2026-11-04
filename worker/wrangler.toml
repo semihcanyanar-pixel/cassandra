@@ -6,7 +6,7 @@ workers_dev = true
 [vars]
 FIREBASE_PROJECT_ID = "cassandra-app-edaa5"
 ALLOWED_ORIGINS = "https://semihcanyanar-pixel.github.io,http://localhost:5173"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 # KV id is filled in after `wrangler kv namespace create KV`.
 [[kv_namespaces]]
