@@ -12,14 +12,15 @@ export function personOf(session, id) {
   const me = session.me;
   if (!id) return null;
   if (id === me.uid || id === 'me') return me;
+  const slotOf = (u) => Math.min(1, Math.max(0, (session.household.members || []).indexOf(u)));
   const p = session.household.profiles?.[id];
-  if (p) return { uid: id, name: p.name, initial: p.initial || p.name?.charAt(0) };
+  if (p) return { uid: id, name: p.name, initial: p.initial || p.name?.charAt(0), slot: slotOf(id) };
   if (id === 'other') {
     const other = (session.household.members || []).find((u) => u !== me.uid);
     const q = session.household.profiles?.[other];
-    return q ? { uid: other, name: q.name, initial: q.initial } : { uid: 'other', name: 'Eşi', initial: 'E' };
+    return q ? { uid: other, name: q.name, initial: q.initial, slot: slotOf(other) } : { uid: 'other', name: 'Eşi', initial: 'E', slot: 1 };
   }
-  return { uid: id, name: 'Eşi', initial: 'E' };
+  return { uid: id, name: 'Eşi', initial: 'E', slot: 1 };
 }
 
 // Lets other screens open Ortak on a given sub-tab (read once on mount).
@@ -27,7 +28,7 @@ export const ortakStart = { sub: 'ev' };
 
 export function Avatar({ person, small }) {
   if (!person) return null;
-  return <span class={small ? 'avatar mini' : 'avatar'} role="img" aria-label={person.name} title={person.name}>{person.initial}</span>;
+  return <span class={`${small ? 'avatar mini' : 'avatar'} p${person.slot ?? 0}`} role="img" aria-label={person.name} title={person.name}>{person.initial}</span>;
 }
 
 export function Ortak({ session, house, nav, onSettings }) {
@@ -65,7 +66,7 @@ export function Ortak({ session, house, nav, onSettings }) {
     <main class={sub === 'ilac' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
         <h1 style="font-size:40px">Ortak</h1>
-        <button class="avatar" aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
       <Chips options={[{ value: 'ev', label: 'Ev İhtiyaçları' }, { value: 'todo', label: 'Ailenin Yapılacakları' }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
@@ -112,7 +113,7 @@ export function Ortak({ session, house, nav, onSettings }) {
                   onClick={() => setFamilyTodoDone(hid, t.id, !t.done)}>{t.done && <Tick />}</button>
                 <div class="grow">
                   <div class={t.done ? 'title-sm struck' : 'title-sm'}>{t.text}</div>
-                  <div class="sub">{who ? `Atanan: ${who.name}` : 'Atanmamış'}</div>
+                  <div class="sub">{who ? who.name : 'Atanmamış'}</div>
                 </div>
                 <button class="iconbtn plain" aria-label={`${t.text} atanan kişiyi değiştir`} onClick={() => cycleAssignee(t)}>
                   {who ? <Avatar person={who} small /> : <span class="avatar mini empty" aria-hidden="true">+</span>}

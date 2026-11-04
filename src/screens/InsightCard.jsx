@@ -1,8 +1,11 @@
 import { useState } from 'preact/hooks';
-import { Card } from '../components/ui.jsx';
+import { Card, Chips } from '../components/ui.jsx';
 import { callWorker, workerConfigured } from '../worker.js';
 import { saveInsight } from '../data.js';
 import { today, weekStart, addDays } from '../lib/dates.js';
+import { streak as calcStreak } from '../lib/stats.js';
+
+const sum = (logs) => logs.reduce((s, l) => s + l.minutes, 0);
 
 // Last 4 weeks (oldest first, current week last) of minutes per active activity, plus the weekly target if known.
 export function buildInsightInput(data, t = today()) {
@@ -11,49 +14,71 @@ export function buildInsightInput(data, t = today()) {
   return data.activities.filter((a) => !a.archived).map((a) => ({
     name: a.name,
     weeklyTargetMin: a.dailyMinutes && a.weeklyDays ? a.dailyMinutes * a.weeklyDays : null,
-    weeks: starts.map((s) => data.logs.filter((l) => l.activityId === a.id && l.date >= s && l.date <= addDays(s, 6)).reduce((sum, l) => sum + l.minutes, 0)),
+    weeks: starts.map((s) => sum(data.logs.filter((l) => l.activityId === a.id && l.date >= s && l.date <= addDays(s, 6)))),
   })).filter((a) => a.weeks.some((m) => m > 0));
 }
 
-// Kişisel > haftalık yapay zekâ yorumu. Generated on demand, cached once per week (SPEC §8).
+// Today's minutes + last 7 days per active activity, overall streak and the hour of day.
+export function buildDailyInput(data, t = today(), hour = new Date().getHours()) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(t, i - 6));
+  const activities = data.activities.filter((a) => !a.archived).map((a) => {
+    const last7 = days.map((d) => sum(data.logs.filter((l) => l.activityId === a.id && l.date === d)));
+    return { name: a.name, todayMin: last7[6], dailyTargetMin: a.dailyMinutes || null, last7 };
+  }).filter((a) => a.last7.some((m) => m > 0));
+  return { activities, hour, streak: calcStreak(data.logs, null, t) };
+}
+
+// Kişisel > yapay zekâ yorumu: Günlük (bugünün değerlendirmesi + motivasyon) ve Haftalık. Generated on demand, cached per day / per week.
 export function InsightCard({ uid, data }) {
-  const weekId = weekStart(today());
-  const cached = data.insights.find((i) => i.id === weekId);
+  const [mode, setMode] = useState('day');
   const [state, setState] = useState('idle'); // idle | loading | error | limit
   if (!workerConfigured) return null;
-  const input = buildInsightInput(data);
+
+  const t = today();
+  const id = mode === 'day' ? `d-${t}` : `w-${weekStart(t)}`;
+  const cached = data.insights.find((i) => i.id === id);
+  const daily = buildDailyInput(data, t);
+  const weekly = buildInsightInput(data, t);
+  const hasData = mode === 'day' ? daily.activities.length > 0 : weekly.length > 0;
 
   async function generate() {
     setState('loading');
     try {
-      const r = await callWorker('/ai/weekly', { activities: input });
-      saveInsight(uid, weekId, { text: r.text, tips: r.tips || [] });
+      const r = mode === 'day'
+        ? await callWorker('/ai/daily', daily)
+        : await callWorker('/ai/weekly', { activities: weekly });
+      saveInsight(uid, id, mode === 'day' ? { text: r.text, quote: r.quote || '' } : { text: r.text, tips: r.tips || [] });
       setState('idle');
     } catch (e) { setState(e.status === 429 ? 'limit' : 'error'); }
   }
+  const pick = (m) => { setMode(m); setState('idle'); };
 
   return (
-    <Card label="HAFTALIK YORUM">
-      {cached ? (
-        <>
-          <div class="title-sm" style="font-weight:600;line-height:1.5">{cached.text}</div>
-          {(cached.tips || []).length > 0 && (
-            <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-              {cached.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
-            </ul>
-          )}
-          <div class="sub" style="margin-top:10px">Yapay zekâ tarafından üretildi; bu hafta için bir kez.</div>
-        </>
-      ) : input.length === 0 ? (
-        <div class="sub">Yorum için önce birkaç süre kaydı ekle.</div>
-      ) : (
-        <>
-          <div class="sub">Son 4 haftanın toplam süreleri özetlenir. Yalnızca aktivite adları ve süreler gönderilir.</div>
-          <button class="btn" style="margin-top:12px" disabled={state === 'loading'} onClick={generate}>{state === 'loading' ? 'Hazırlanıyor…' : 'Yorum oluştur'}</button>
-          {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Yorum oluşturulamadı, biraz sonra tekrar dene.</div>}
-          {state === 'limit' && <div class="error" role="alert" style="margin-top:8px">Bugünkü istek sınırına ulaşıldı.</div>}
-        </>
-      )}
+    <Card label="YORUM">
+      <Chips options={[{ value: 'day', label: 'Günlük' }, { value: 'week', label: 'Haftalık' }]} value={mode} onChange={pick} label="Yorum türü" />
+      <div style="margin-top:12px">
+        {cached ? (
+          <>
+            <div class="title-sm" style="font-weight:600;line-height:1.5">{cached.text}</div>
+            {cached.quote && <div class="sub" style="margin-top:10px;font-size:14px;line-height:1.5;font-style:italic">{cached.quote}</div>}
+            {(cached.tips || []).length > 0 && (
+              <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+                {cached.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
+              </ul>
+            )}
+            <div class="sub" style="margin-top:10px">Yapay zekâ tarafından üretildi; {mode === 'day' ? 'bugün' : 'bu hafta'} için bir kez.</div>
+          </>
+        ) : !hasData ? (
+          <div class="sub">{mode === 'day' ? 'Yorum için son günlerde birkaç süre kaydı ekle.' : 'Yorum için son haftalarda birkaç süre kaydı ekle.'}</div>
+        ) : (
+          <>
+            <div class="sub">{mode === 'day' ? 'Bugünün süreleri değerlendirilir ve kısa bir motivasyon notu eklenir.' : 'Son 4 haftanın toplam süreleri özetlenir.'} Yalnızca aktivite adları ve süreler gönderilir.</div>
+            <button class="btn" style="margin-top:12px" disabled={state === 'loading'} onClick={generate}>{state === 'loading' ? 'Hazırlanıyor…' : 'Yorum oluştur'}</button>
+            {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Yorum oluşturulamadı, biraz sonra tekrar dene.</div>}
+            {state === 'limit' && <div class="error" role="alert" style="margin-top:8px">Bugünkü istek sınırına ulaşıldı.</div>}
+          </>
+        )}
+      </div>
     </Card>
   );
 }

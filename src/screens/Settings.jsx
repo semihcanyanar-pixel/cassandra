@@ -20,7 +20,7 @@ export function Settings({ session, data, house, onBack }) {
       </div>
 
       <div class="card row">
-        <span class="avatar static">{me.initial}</span>
+        <span class={`avatar static p${me.slot ?? 0}`}>{me.initial}</span>
         <div class="grow">
           <div style="font-size:17px;font-weight:700">{me.name}</div>
           <div class="sub">Ortak alan: {household.members.length} kişi</div>

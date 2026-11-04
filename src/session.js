@@ -48,7 +48,7 @@ export function useSession() {
         };
         setState({
           status: 'ready', user, household, hid: HOUSEHOLD_ID, profile, patchProfile,
-          me: { uid: user.uid, name, initial: p.initial || name.charAt(0).toUpperCase() },
+          me: { uid: user.uid, name, initial: p.initial || name.charAt(0).toUpperCase(), slot: Math.min(1, Math.max(0, (household.members || []).indexOf(user.uid))) },
         });
       } catch (e) {
         console.error(e);

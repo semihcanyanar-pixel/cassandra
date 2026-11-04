@@ -1,9 +1,10 @@
 // Where a note lives is decided ONLY by the category the user picked (SPEC §5: never leak personal data to the household).
 export const NOTE_CATEGORIES = [
-  { value: 'ev', label: 'Ev' },
-  { value: 'aslan', label: 'Aslan' },
+  { value: 'aile', label: 'Aile' },
   { value: 'kisisel', label: 'Kişisel' },
 ];
+// Older household notes were saved as 'ev' / 'aslan'; they all count as 'aile' now.
+export const normalizeCategory = (c) => (c === 'kisisel' ? 'kisisel' : 'aile');
 
 export const noteScope = (category) => (category === 'kisisel' ? 'personal' : 'household');
 
@@ -22,7 +23,8 @@ export const categoryLabel = (list, value) => list.find((c) => c.value === value
 // Notes shown for a filter chip. `all` = household notes + my personal notes.
 export function filterNotes(householdNotes, personalNotes, filter) {
   const mine = personalNotes.map((n) => ({ ...n, category: 'kisisel' }));
+  const shared = householdNotes.map((n) => ({ ...n, category: 'aile' }));
   if (filter === 'kisisel') return mine;
-  const shared = householdNotes.filter((n) => filter === 'all' || n.category === filter);
-  return filter === 'all' ? [...shared, ...mine] : shared;
+  if (filter === 'aile') return shared;
+  return [...shared, ...mine];
 }

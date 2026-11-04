@@ -8,7 +8,7 @@ const TOKEN = /^[0-9a-f]{48}$/;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const REPEATS = ['none', 'weekly', 'monthly', 'yearly'];
 const REMINDS = ['none', 'at', '30m', '2h', '1d'];
-const LIMITS = { ai: 6, sync: 300 }; // per user per day
+const LIMITS = { ai: 10, sync: 300 }; // per user per day
 
 const cors = (env, req) => {
   const origin = req.headers.get('Origin') || '';
@@ -90,27 +90,57 @@ function cleanInsightInput(body) {
   return acts;
 }
 
-async function handleInsight(env, req, uid) {
-  const acts = cleanInsightInput(await req.json().catch(() => null));
-  if (!acts.length) return reply(env, req, { error: 'no data' }, 400);
-  if (!(await rateLimit(env, uid, 'ai'))) return reply(env, req, { error: 'rate' }, 429);
-  const prompt = `Aşağıda bir kişinin aktivitelerinin son 4 haftalık toplam süreleri (dakika; dizinin son elemanı içinde bulunulan hafta, henüz bitmemiş olabilir) ve varsa haftalık hedefleri var.\n`
-    + `Türkçe, sıcak ve kısa (en çok 3 cümle) bir yorum yaz ve en çok iki somut öneri ver. Tıbbi ya da finansal tavsiye verme. Veride olmayan şeyi uydurma.\n`
-    + `Yalnızca şu JSON biçiminde yanıt ver: {"yorum": string, "oneriler": [string]}\n\n${JSON.stringify(acts)}`;
+async function gemini(env, prompt) {
   const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.6 } }),
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.7 } }),
   });
-  if (!r.ok) return reply(env, req, { error: 'ai failed', status: r.status }, 502);
+  if (!r.ok) return { fail: r.status };
   try {
     const data = await r.json();
-    const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
-    return reply(env, req, { text: str(parsed.yorum, 600), tips: (Array.isArray(parsed.oneriler) ? parsed.oneriler : []).slice(0, 2).map((t) => str(t, 240)) });
-  } catch {
-    return reply(env, req, { error: 'bad ai output' }, 502);
-  }
+    return { json: JSON.parse(data.candidates[0].content.parts[0].text) };
+  } catch { return { fail: 'bad output' }; }
+}
+
+async function handleInsight(env, req, uid) {
+  const acts = cleanInsightInput(await req.json().catch(() => null));
+  if (!acts.length) return reply(env, req, { error: 'no data' }, 400);
+  if (!(await rateLimit(env, uid, 'ai'))) return reply(env, req, { error: 'rate' }, 429);
+  const prompt = 'Aşağıda bir kişinin aktivitelerinin son 4 haftalık toplam süreleri (dakika; dizinin son elemanı içinde bulunulan hafta, henüz bitmemiş olabilir) ve varsa haftalık hedefleri var.\n'
+    + 'Türkçe, sıcak ve kısa (en çok 3 cümle) bir yorum yaz ve en çok iki somut öneri ver. Tıbbi ya da finansal tavsiye verme. Veride olmayan şeyi uydurma.\n'
+    + `Yalnızca şu JSON biçiminde yanıt ver: {"yorum": string, "oneriler": [string]}\n\n${JSON.stringify(acts)}`;
+  const g = await gemini(env, prompt);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail }, 502);
+  const p = g.json;
+  return reply(env, req, { text: str(p.yorum, 600), tips: (Array.isArray(p.oneriler) ? p.oneriler : []).slice(0, 2).map((t) => str(t, 240)) });
+}
+
+function cleanDailyInput(body) {
+  const acts = (Array.isArray(body?.activities) ? body.activities : []).slice(0, 12).map((a) => ({
+    ad: str(a?.name, 40),
+    bugun_dk: Number.isFinite(a?.todayMin) ? Math.round(a.todayMin) : 0,
+    gunluk_hedef_dk: Number.isFinite(a?.dailyTargetMin) ? Math.round(a.dailyTargetMin) : null,
+    son_7_gun_dk: (Array.isArray(a?.last7) ? a.last7 : []).slice(0, 7).map((n) => (Number.isFinite(n) ? Math.round(n) : 0)),
+  })).filter((a) => a.ad);
+  const hour = Number.isFinite(body?.hour) ? Math.min(23, Math.max(0, Math.round(body.hour))) : null;
+  const streak = Number.isFinite(body?.streak) ? Math.max(0, Math.round(body.streak)) : 0;
+  return { acts, hour, streak };
+}
+
+async function handleDaily(env, req, uid) {
+  const { acts, hour, streak } = cleanDailyInput(await req.json().catch(() => null));
+  if (!acts.length) return reply(env, req, { error: 'no data' }, 400);
+  if (!(await rateLimit(env, uid, 'ai'))) return reply(env, req, { error: 'rate' }, 429);
+  const prompt = 'Aşağıda bir kişinin bugünkü aktivite süreleri (dakika), günlük hedefleri, son 7 günün süreleri (sonuncusu bugün) ve gün serisi var. '
+    + `Şu an günün saati ${hour ?? 'bilinmiyor'} (gün henüz bitmemiş olabilir).\n`
+    + 'İki şey yaz, Türkçe ve sıcak bir dille: (1) "degerlendirme": bugünün kısa değerlendirmesi, en çok 2 cümle, veride olmayan şeyi uydurma. '
+    + '(2) "motivasyon": kişinin motivasyonunu sürdürmesine yardım eden kısa bir söz, bilgi ya da ipucu (alışkanlık oluşturma, süreklilik, dinlenme gibi), en çok 2 cümle. Gerçek bir kişiye atfedilmiş alıntı verme, kaynak uydurma. Tıbbi ya da finansal tavsiye verme. '
+    + 'Yalnızca şu JSON biçiminde yanıt ver: {"degerlendirme": string, "motivasyon": string}\n\n' + JSON.stringify({ gun_serisi: streak, aktiviteler: acts });
+  const g = await gemini(env, prompt);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail }, 502);
+  return reply(env, req, { text: str(g.json.degerlendirme, 500), quote: str(g.json.motivasyon, 400) });
 }
 
 export default {
@@ -123,10 +153,11 @@ export default {
     m = url.pathname.match(/^\/cal\/([0-9a-f]{48})\/med\.ics$/);
     if (m && req.method === 'GET') return serveIcs(env, req, m[1], 'med');
 
-    if (req.method === 'POST' && (url.pathname === '/cal/sync' || url.pathname === '/ai/weekly')) {
+    if (req.method === 'POST' && ['/cal/sync', '/ai/weekly', '/ai/daily'].includes(url.pathname)) {
       const uid = await auth(env, req);
       if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
-      return url.pathname === '/cal/sync' ? handleSync(env, req, uid) : handleInsight(env, req, uid);
+      if (url.pathname === '/cal/sync') return handleSync(env, req, uid);
+      return url.pathname === '/ai/daily' ? handleDaily(env, req, uid) : handleInsight(env, req, uid);
     }
     return reply(env, req, { error: 'not found' }, 404);
   },

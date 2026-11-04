@@ -1,14 +1,14 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips, COLOR_COUNT, actColor } from '../components/ui.jsx';
 import { IconPlus, IconTrash } from '../icons.jsx';
-import { NOTE_CATEGORIES, noteScope } from '../lib/notes.js';
+import { NOTE_CATEGORIES, noteScope, normalizeCategory } from '../lib/notes.js';
 import { saveNote, deleteNote } from '../data.js';
 
 const NOTE_COLORS = 4;
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
   const existing = id ? (initialCategory === 'kisisel' ? data.notes : house.notes).find((n) => n.id === id) : null;
-  const [category, setCategory] = useState(existing?.category || initialCategory || 'ev');
+  const [category, setCategory] = useState(normalizeCategory(existing?.category || initialCategory));
   const [title, setTitle] = useState(existing?.title || '');
   const [kind, setKind] = useState(existing?.items ? 'list' : 'text');
   const [body, setBody] = useState(existing?.body || '');

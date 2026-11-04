@@ -17,3 +17,12 @@
 .dose.taken .dose-main, .dose.skipped .dose-main { opacity: .7; }
 .up-row.period { align-items: center; padding: 8px 0; min-height: 56px; }
 .med-card .filter { margin-bottom: 8px; }
+
+/* Person colours (first member / second member / Aslan), per theme. */
+:root, :root[data-theme='mozaik'] { --p0-bg: #121212; --p0-fg: #FFD43B; --p1-bg: #2F4BFF; --p1-fg: #FFFFFF; --p2-bg: #FF8FC7; --p2-fg: #121212; }
+:root[data-theme='yorunge'] { --p0-bg: #C6F432; --p0-fg: #0B0F1A; --p1-bg: #B79CFF; --p1-fg: #0B0F1A; --p2-bg: #4FD8EB; --p2-fg: #0B0F1A; }
+:root[data-theme='teknik'] { --p0-bg: #0A0A0A; --p0-fg: #FAFAFA; --p1-bg: #FF4F00; --p1-fg: #0A0A0A; --p2-bg: #FFD400; --p2-fg: #0A0A0A; }
+.avatar.p0 { background: var(--p0-bg); color: var(--p0-fg); }
+.avatar.p1 { background: var(--p1-bg); color: var(--p1-fg); }
+.avatar.p2 { background: var(--p2-bg); color: var(--p2-fg); }
+:root[data-theme='teknik'] .avatar.p1, :root[data-theme='teknik'] .avatar.p2 { border: 2px solid #0A0A0A; }

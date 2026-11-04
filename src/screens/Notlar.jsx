@@ -13,7 +13,7 @@ export function Notlar({ me, house, data, nav, onSettings }) {
     <main class="screen">
       <div class="topbar">
         <h1 style="font-size:40px">Notlar</h1>
-        <button class="avatar" aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
       <div class="scroll-chips" role="radiogroup" aria-label="Kategori">
@@ -25,7 +25,7 @@ export function Notlar({ me, house, data, nav, onSettings }) {
         ))}
       </div>
 
-      <button class="btn" onClick={() => nav.go({ n: 'note', category: filter === 'all' ? 'ev' : filter })}><IconPlus />Not ekle</button>
+      <button class="btn" onClick={() => nav.go({ n: 'note', category: filter === 'all' ? 'aile' : filter })}><IconPlus />Not ekle</button>
 
       {notes.length === 0 && <div class="card empty"><div class="title-sm">Not yok</div><div class="sub">İlk notunu ekle.</div></div>}
 

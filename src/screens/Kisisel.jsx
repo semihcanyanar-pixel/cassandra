@@ -24,7 +24,7 @@ export function Kisisel({ me, uid, data, nav, onSettings }) {
           <h1 style="font-size:40px">Kişisel</h1>
           <span class="badge" style="margin-top:8px"><IconLock />Sadece sen görürsün</span>
         </div>
-        <button class="avatar" aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
       <button class="card tap" onClick={() => nav.go({ n: 'report' })} aria-label="Bu hafta, raporu aç">

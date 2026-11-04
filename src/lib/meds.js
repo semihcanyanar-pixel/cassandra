@@ -21,20 +21,23 @@ export const suggestTimes = (n) => (SUGGESTED[n] || SUGGESTED[1]).slice();
 export const endFromDays = (start, days) => addDays(start, Math.max(1, days) - 1);
 export const daysBetween = (start, end) => diffDays(end, start) + 1;
 
+// Colour slot of a person: 0 = first household member, 1 = second, 2 = dependents (Aslan). Same on both phones.
+export const memberSlot = (household, uid) => Math.min(1, Math.max(0, (household.members || []).indexOf(uid)));
+
 // People a medication can be for: the two members (profiles) plus dependents (Aslan).
 export function medPeople(household, meUid) {
   const members = (household.members || []).map((uid) => {
     const p = household.profiles?.[uid] || {};
     const name = p.name || (uid === meUid ? 'Ben' : 'Eşi');
-    return { id: uid, name, initial: p.initial || name.charAt(0).toUpperCase(), kind: 'member' };
+    return { id: uid, name, initial: p.initial || name.charAt(0).toUpperCase(), kind: 'member', slot: memberSlot(household, uid) };
   });
-  const deps = (household.dependents || []).map((d) => ({ id: d.id, name: d.name, initial: d.initial || d.name.charAt(0), kind: 'dependent' }));
+  const deps = (household.dependents || []).map((d) => ({ id: d.id, name: d.name, initial: d.initial || d.name.charAt(0), kind: 'dependent', slot: 2 }));
   return [...members, ...deps];
 }
 // 'me' / 'other' are dev-demo aliases for the signed-in member and the partner.
 export function personById(people, id, meUid) {
   const real = id === 'me' ? meUid : id === 'other' ? people.find((p) => p.kind === 'member' && p.id !== meUid)?.id : id;
-  return people.find((p) => p.id === real) || { id, name: id === 'other' ? 'Eşi' : 'Bilinmiyor', initial: id === 'other' ? 'E' : '?', kind: 'member' };
+  return people.find((p) => p.id === real) || { id, name: id === 'other' ? 'Eşi' : 'Bilinmiyor', initial: id === 'other' ? 'E' : '?', kind: 'member', slot: id === 'other' ? 1 : 0 };
 }
 
 export const isActiveOn = (med, iso) => !med.archived && med.startDate <= iso && iso <= med.endDate;

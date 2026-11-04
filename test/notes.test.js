@@ -8,7 +8,8 @@ describe('note scope', () => {
     expect(noteScope('kisisel')).toBe('personal');
     expect(notePath('kisisel', ctx)).toEqual(['users', 'U1', 'notes']);
   });
-  it('ev / aslan go to the household', () => {
+  it('aile (and legacy ev / aslan) go to the household', () => {
+    expect(notePath('aile', ctx)).toEqual(['households', 'H1', 'notes']);
     expect(notePath('ev', ctx)).toEqual(['households', 'H1', 'notes']);
     expect(notePath('aslan', ctx)).toEqual(['households', 'H1', 'notes']);
   });
@@ -23,5 +24,8 @@ describe('filterNotes', () => {
   const mine = [{ id: 'p1' }];
   it('all = shared + mine', () => expect(filterNotes(shared, mine, 'all').map((n) => n.id)).toEqual(['s1', 's2', 'p1']));
   it('kisisel = only mine', () => expect(filterNotes(shared, mine, 'kisisel').map((n) => n.id)).toEqual(['p1']));
-  it('ev excludes personal', () => expect(filterNotes(shared, mine, 'ev').map((n) => n.id)).toEqual(['s1']));
+  it('aile = all household notes (legacy ev/aslan included), never personal', () => {
+    expect(filterNotes(shared, mine, 'aile').map((n) => n.id)).toEqual(['s1', 's2']);
+    expect(filterNotes(shared, mine, 'aile').every((n) => n.category === 'aile')).toBe(true);
+  });
 });

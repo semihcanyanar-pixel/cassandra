@@ -142,8 +142,8 @@ function demoHouse() {
       { id: `md2_${dayOffset(0)}_08:00`, medicationId: 'md2', forId: 'me', date: dayOffset(0), time: '08:00', status: 'alindi', doneBy: 'me', doneAt: null },
     ],
     notes: [
-      { id: 'n1', category: 'ev', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
-      { id: 'n2', category: 'aslan', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
+      { id: 'n1', category: 'aile', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
+      { id: 'n2', category: 'aile', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
     ],
   };
 }

@@ -74,8 +74,16 @@ describe('Worker', () => {
     expect(await r.json()).toEqual({ text: 'İyi gidiyor', tips: ['a', 'b'] });
     expect(calls[0].init.headers['x-goog-api-key']).toBe('k');
     expect(calls[0].url).not.toContain('key=');
-    for (let i = 0; i < 5; i++) await worker.fetch(post('/ai/weekly', body), env());
+    for (let i = 0; i < 9; i++) await worker.fetch(post('/ai/weekly', body), env());
     expect((await worker.fetch(post('/ai/weekly', body), env())).status).toBe(429);
+    vi.unstubAllGlobals();
+  });
+  it('AI günlük: değerlendirme + motivasyon döner, 401/400 kontrolü', async () => {
+    expect((await worker.fetch(post('/ai/daily', {}, null), env())).status).toBe(401);
+    expect((await worker.fetch(post('/ai/daily', { activities: [] }), env())).status).toBe(400);
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"degerlendirme":"Güzel gün","motivasyon":"Küçük adımlar birikir"}' }] } }] }), { status: 200 }));
+    const r = await worker.fetch(post('/ai/daily', { activities: [{ name: 'Spor', todayMin: 40, dailyTargetMin: 60, last7: [0, 30, 0, 45, 40, 0, 40] }], hour: 20, streak: 3 }), env());
+    expect(await r.json()).toEqual({ text: 'Güzel gün', quote: 'Küçük adımlar birikir' });
     vi.unstubAllGlobals();
   });
 });

@@ -45,7 +45,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
           <div class="title-sm muted">Merhaba {me.name}</div>
           <h1>{dateLabel()}</h1>
         </div>
-        <button class="avatar" aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
       {active.length === 0 ? (
