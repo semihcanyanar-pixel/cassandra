@@ -58,8 +58,8 @@ export function InsightCard({ uid, data }) {
   const pick = (m) => { setMode(m); setState('idle'); };
 
   return (
-    <Card label="YORUM">
-      <Chips options={[{ value: 'day', label: 'Günlük' }, { value: 'week', label: 'Haftalık' }]} value={mode} onChange={pick} label="Yorum türü" />
+    <Card label="DEĞERLENDİRME">
+      <Chips options={[{ value: 'day', label: 'Günlük' }, { value: 'week', label: 'Haftalık' }]} value={mode} onChange={pick} label="Değerlendirme türü" />
       <div style="margin-top:12px">
         {cached ? (
           <>
@@ -73,12 +73,13 @@ export function InsightCard({ uid, data }) {
             <div class="sub" style="margin-top:10px">Yapay zekâ tarafından üretildi; {mode === 'day' ? 'bugün' : 'bu hafta'} için bir kez.</div>
           </>
         ) : !hasData ? (
-          <div class="sub">{mode === 'day' ? 'Yorum için son günlerde birkaç süre kaydı ekle.' : 'Yorum için son haftalarda birkaç süre kaydı ekle.'}</div>
+          <div class="sub">{mode === 'day' ? 'Değerlendirme için son günlerde birkaç süre kaydı ekle.' : 'Değerlendirme için son haftalarda birkaç süre kaydı ekle.'}</div>
         ) : (
           <>
             <div class="sub">{mode === 'day' ? 'Bugünün süreleri değerlendirilir ve kısa bir motivasyon notu eklenir.' : 'Son 4 haftanın toplam süreleri özetlenir.'} Yalnızca aktivite adları ve süreler gönderilir.</div>
-            <button class="btn" style="margin-top:12px" disabled={state === 'loading'} onClick={generate}>{state === 'loading' ? 'Hazırlanıyor…' : 'Yorum oluştur'}</button>
-            {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Yorum oluşturulamadı, biraz sonra tekrar dene. <span class="sub">({why})</span></div>}
+            <button class="btn" style="margin-top:12px" disabled={state === 'loading'} onClick={generate}>{state === 'loading' ? 'Hazırlanıyor…' : 'Değerlendirme oluştur'}</button>
+            {state === 'loading' && <div class="loadbar" role="progressbar" aria-label="Hazırlanıyor"><i /></div>}
+            {state === 'error' && <div class="error" role="alert" style="margin-top:8px">Değerlendirme oluşturulamadı, biraz sonra tekrar dene. <span class="sub">({why})</span></div>}
             {state === 'limit' && <div class="error" role="alert" style="margin-top:8px">Bugünkü istek sınırına ulaşıldı.</div>}
           </>
         )}

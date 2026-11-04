@@ -25,13 +25,20 @@
     html[data-theme='teknik'] body { background: #FAFAFA; }
     html[data-theme='mozaik'] body { background: #E8ECF3; }
     .splash { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
+    .splash { flex-direction: column; gap: 28px; }
+    .splash .bar { width: 120px; height: 5px; border-radius: 3px; overflow: hidden; background: rgba(128,128,128,.25); position: relative; }
+    .splash .bar i { position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 3px; background: #888; animation: splash-bar 1.2s ease-in-out infinite; }
+    @keyframes splash-bar { 0% { left: -40%; } 100% { left: 100%; } }
+    html[data-theme='mozaik'] .splash .bar i { background: #121212; }
+    html[data-theme='yorunge'] .splash .bar i { background: #C6F432; }
+    html[data-theme='teknik'] .splash .bar i { background: #FF4F00; }
     .splash img { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.18); animation: splash-pulse 1.6s ease-in-out infinite; }
     @keyframes splash-pulse { 0%, 100% { transform: scale(.94); opacity: .85; } 50% { transform: scale(1); opacity: 1; } }
-    @media (prefers-reduced-motion: reduce) { .splash img { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .splash img, .splash .bar i { animation: none; } }
   </style>
 </head>
 <body>
-  <div id="app"><div class="splash" role="status" aria-label="Yükleniyor"><img src="./icon-192.png" alt="" width="96" height="96"></div></div>
+  <div id="app"><div class="splash" role="status" aria-label="Yükleniyor"><img src="./icon-192.png" alt="" width="96" height="96"><div class="bar"><i></i></div></div></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
