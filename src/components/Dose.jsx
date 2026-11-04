@@ -45,4 +45,4 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
   );
 }
 
-export const MED_NOTE = 'Hatırlatma teslimi iPhone Takvim eşlemesiyle gelecek; Takvim alarmı bir dozun verildiğini bilmez. Önemli ilaçlar için telefon alarmını da kurabilirsin.';
+export const MED_NOTE = "Hatırlatma, Ayarlar'dan ilaç takvimi eşlenince iPhone'a düşer; Takvim alarmı bir dozun verildiğini bilmez. Önemli ilaçlar için telefon alarmını da kurabilirsin.";

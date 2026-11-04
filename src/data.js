@@ -43,6 +43,7 @@ function demoData() {
     ],
     events: [{ id: 'pe1', title: 'Berber', date: dayOffset(18), time: null, repeat: 'none', remind: 'none' }],
     notes: [{ id: 'pn1', title: 'Doğum günü fikirleri', body: 'Kitap, eşarp, çiçek', color: 1, updatedAt: null }],
+    insights: [],
     goals: [{ id: 'g1', title: 'Yıl sonuna kadar İngilizce', period: 'long', target: 100, unit: 'saat', linkedActivityId: 'a', startDate: d(60), dueDate: null, progress: 0 }],
   };
 }
@@ -55,7 +56,8 @@ export function useUserData(uid) {
   const goals = useUserCollection(uid, 'goals');
   const notes = useUserCollection(uid, 'notes');
   const events = useUserCollection(uid, 'events');
-  const ready = activities && logs && tasks && goals && notes && events;
+  const insights = useUserCollection(uid, 'insights');
+  const ready = activities && logs && tasks && goals && notes && events && insights;
   return {
     ready: Boolean(ready),
     activities: (activities || []).slice().sort((a, b) => created(a) - created(b)),
@@ -64,6 +66,7 @@ export function useUserData(uid) {
     goals: (goals || []).slice().sort((a, b) => created(a) - created(b)),
     notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
     events: events || [],
+    insights: insights || [],
   };
 }
 
@@ -92,6 +95,9 @@ export const saveGoal = (uid, id, data) => fire(() => id
   ? updateDoc(ref(uid, 'goals', id), data)
   : addDoc(col(uid, 'goals'), { ...data, createdAt: serverTimestamp() }));
 export const deleteGoal = (uid, id) => fire(() => deleteDoc(ref(uid, 'goals', id)));
+
+// Weekly AI summary cache: users/{uid}/insights/{weekId} (weekId = Monday ISO date).
+export const saveInsight = (uid, weekId, data) => fire(() => setDoc(ref(uid, 'insights', weekId), { ...data, createdAt: serverTimestamp() }));
 
 export { setDoc };
 

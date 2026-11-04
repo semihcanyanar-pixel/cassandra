@@ -51,7 +51,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
         <Card label="TEKRAR"><Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" /></Card>
         <Card label="HATIRLATMA">
           <Chips options={remindOptions} value={effRemind} onChange={setRemind} label="Hatırlatma" />
-          <div class="sub" style="margin-top:8px">Hatırlatmalar iPhone Takvim eşlemesi eklenince telefona düşecek.</div>
+          <div class="sub" style="margin-top:8px">Hatırlatma, Ayarlar'dan iPhone Takvim eşlenince telefona düşer.</div>
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
         {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Kaydı sil</button>}

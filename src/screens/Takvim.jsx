@@ -76,8 +76,8 @@ export function Takvim({ me, house, data, nav, onSettings }) {
 
       <div class="card row">
         <IconCalendarSmall />
-        <div class="grow"><div class="title-sm">iPhone Takvim</div><div class="sub">Eşleme sonraki aşamada eklenecek</div></div>
-        <button class="chip small" disabled>Eşle</button>
+        <div class="grow"><div class="title-sm">iPhone Takvim</div><div class="sub">Hatırlatmalar telefona böyle düşer</div></div>
+        <button class="chip small" onClick={onSettings}>Eşle</button>
       </div>
     </main>
   );

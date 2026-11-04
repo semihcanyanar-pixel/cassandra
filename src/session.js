@@ -41,8 +41,13 @@ export function useSession() {
         if (profile.theme) applyTheme(profile.theme);
         const p = household.profiles?.[user.uid] || {};
         const name = p.name || profile.displayName;
+        // Profile fields the app edits later (calendar token, who gets medication reminders).
+        const patchProfile = async (patch) => {
+          await updateDoc(ref, patch);
+          setState((s) => (s.status === 'ready' ? { ...s, profile: { ...s.profile, ...patch } } : s));
+        };
         setState({
-          status: 'ready', user, household, hid: HOUSEHOLD_ID,
+          status: 'ready', user, household, hid: HOUSEHOLD_ID, profile, patchProfile,
           me: { uid: user.uid, name, initial: p.initial || name.charAt(0).toUpperCase() },
         });
       } catch (e) {

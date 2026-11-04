@@ -18,6 +18,7 @@ import { LogForm } from './screens/LogForm.jsx';
 import { Report } from './screens/Report.jsx';
 import { TaskForm } from './screens/TaskForm.jsx';
 import { Goals, GoalForm } from './screens/Goals.jsx';
+import { useCalendarSync } from './calsync.js';
 import { Nav } from './components/Nav.jsx';
 import { Notice } from './components/Notice.jsx';
 
@@ -50,6 +51,7 @@ function Main({ session }) {
     back: () => { setStack((s) => s.slice(0, -1)); window.scrollTo(0, 0); },
     replace: (r) => setStack((s) => [...s.slice(0, -1), r]),
   };
+  useCalendarSync({ session, data, house });
   const route = stack[stack.length - 1];
   const uid = me.uid;
 
@@ -58,7 +60,7 @@ function Main({ session }) {
   let body;
   if (route) {
     switch (route.n) {
-      case 'settings': body = <Settings session={session} onBack={nav.back} />; break;
+      case 'settings': body = <Settings session={session} data={data} house={house} onBack={nav.back} />; break;
       case 'activity': body = <ActivityForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       case 'log': body = <LogForm uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;
       case 'report': body = <Report uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;

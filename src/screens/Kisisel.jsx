@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks';
+import { InsightCard } from './InsightCard.jsx';
 import { Card, Progress } from '../components/ui.jsx';
 import { IconLock, IconPlus, IconNext } from '../icons.jsx';
 import { fmtDur, goalProgress, activeDays } from '../lib/stats.js';
 import { today, weekStart, addDays, DAY_SHORT } from '../lib/dates.js';
 
-export function Kisisel({ me, data, nav, onSettings }) {
+export function Kisisel({ me, uid, data, nav, onSettings }) {
   const [showArchive, setShowArchive] = useState(false);
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
@@ -83,6 +84,7 @@ export function Kisisel({ me, data, nav, onSettings }) {
       </div>
 
       <GoalsCard data={data} nav={nav} />
+      <InsightCard uid={me.uid} data={data} />
 
       {archived.length > 0 && (
         <>
