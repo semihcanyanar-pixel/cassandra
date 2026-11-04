@@ -24,7 +24,7 @@ export function buildDailyInput(data, t = today(), hour = new Date().getHours())
   const activities = data.activities.filter((a) => !a.archived).map((a) => {
     const last7 = days.map((d) => sum(data.logs.filter((l) => l.activityId === a.id && l.date === d)));
     return { name: a.name, todayMin: last7[6], dailyTargetMin: a.dailyMinutes || null, last7 };
-  }).filter((a) => a.last7.some((m) => m > 0));
+  });
   return { activities, hour, streak: calcStreak(data.logs, null, t) };
 }
 
@@ -39,7 +39,7 @@ export function InsightCard({ uid, data }) {
   const cached = data.insights.find((i) => i.id === id);
   const daily = buildDailyInput(data, t);
   const weekly = buildInsightInput(data, t);
-  const hasData = mode === 'day' ? daily.activities.length > 0 : weekly.length > 0;
+  const hasData = mode === 'day' || weekly.length > 0; // the daily note also works with no logs yet
 
   async function generate() {
     setState('loading');

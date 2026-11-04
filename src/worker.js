@@ -16,5 +16,3 @@ export async function callWorker(path, body) {
   return r.json();
 }
 
-// webcal:// link the iPhone turns into a calendar subscription.
-export const webcalUrl = (token, kind) => `${WORKER_URL.replace(/^https?:/, 'webcal:')}/cal/${token}${kind === 'med' ? '/med' : ''}.ics`;

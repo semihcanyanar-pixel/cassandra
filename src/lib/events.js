@@ -6,14 +6,6 @@ export const REPEATS = [
   { value: 'monthly', label: 'Aylık' },
   { value: 'yearly', label: 'Yıllık' },
 ];
-export const REMINDS = [
-  { value: 'none', label: 'Yok' },
-  { value: 'at', label: 'Zamanında', needsTime: true },
-  { value: '30m', label: '30 dk önce', needsTime: true },
-  { value: '2h', label: '2 saat önce', needsTime: true },
-  { value: '1d', label: '1 gün önce' },
-];
-export const remindLabel = (v) => (v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null);
 export const repeatLabel = (v) => (v && v !== 'none' ? REPEATS.find((r) => r.value === v)?.label : null);
 
 const daysInMonth = (y, m) => new Date(y, m + 1, 0).getDate(); // m: 0-11

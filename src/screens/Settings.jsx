@@ -4,9 +4,8 @@ import { auth } from '../firebase.js';
 import { THEMES, currentTheme } from '../theme.js';
 import { saveTheme } from '../session.js';
 import { IconBack, IconCheck } from '../icons.jsx';
-import { CalendarSection } from './CalendarSection.jsx';
 
-export function Settings({ session, data, house, onBack }) {
+export function Settings({ session, onBack }) {
   const [theme, setTheme] = useState(currentTheme());
   const { me, household } = session;
 
@@ -41,7 +40,6 @@ export function Settings({ session, data, house, onBack }) {
         ))}
       </div>
 
-      <CalendarSection session={session} data={data} house={house} />
 
       <button class="chip" style="margin-top:6px;min-height:48px" onClick={() => signOut(auth)}>Çıkış yap</button>
     </main>

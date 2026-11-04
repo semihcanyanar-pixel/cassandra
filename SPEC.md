@@ -235,3 +235,7 @@ Her aşamadan önce kısa plan yaz ve onay al. Aşama bitince çalışan hâli g
 ## 12. Tasarımda çizilmeyenler (kullanıcıyla netleştir)
 
 Ortak (v2 temaları), günlük görevler (Bugün'de), hedefler ekranı, tam ekran rapor görünümü, boş durumlar, giriş ekranı, aktivite düzenleme/arşiv.
+
+
+## KARAR: iPhone Takvim akışı iptal (Aşama 7)
+Kullanıcı kararıyla iPhone Takvim abonelik akışı (§9) ve kayıt/ilaç hatırlatması kaldırıldı: Worker yalnızca Gemini vekilidir (/ai/weekly, /ai/daily), istemcide Eşle/ayar bölümü ve kayıt formunda Hatırlatma yoktur. Bildirim/hatırlatma şu an yok; ilaç dozları uygulamada elle işaretlenir. Gerekirse ileride web push değerlendirilir.

@@ -4,8 +4,6 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, configured, HOUSEHOLD_ID } from './firebase.js';
 import { applyTheme, currentTheme } from './theme.js';
 
-const randomToken = () => Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join('');
-
 // status: loading | signedOut | ready | notMember | error | unconfigured
 export function useSession() {
   const [state, setState] = useState({ status: configured ? 'loading' : 'unconfigured' });
@@ -31,8 +29,6 @@ export function useSession() {
             displayName: household.profiles?.[user.uid]?.name || user.email.split('@')[0],
             theme: currentTheme(),
             householdId: HOUSEHOLD_ID,
-            calendarToken: randomToken(),
-            medReminderFor: ['self', 'aslan'],
           };
           await setDoc(ref, profile);
         } else if (profile.householdId !== HOUSEHOLD_ID) {
@@ -41,13 +37,8 @@ export function useSession() {
         if (profile.theme) applyTheme(profile.theme);
         const p = household.profiles?.[user.uid] || {};
         const name = p.name || profile.displayName;
-        // Profile fields the app edits later (calendar token, who gets medication reminders).
-        const patchProfile = async (patch) => {
-          await updateDoc(ref, patch);
-          setState((s) => (s.status === 'ready' ? { ...s, profile: { ...s.profile, ...patch } } : s));
-        };
         setState({
-          status: 'ready', user, household, hid: HOUSEHOLD_ID, profile, patchProfile,
+          status: 'ready', user, household, hid: HOUSEHOLD_ID,
           me: { uid: user.uid, name, initial: p.initial || name.charAt(0).toUpperCase(), slot: Math.min(1, Math.max(0, (household.members || []).indexOf(user.uid))) },
         });
       } catch (e) {
