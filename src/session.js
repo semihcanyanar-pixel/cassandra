@@ -42,7 +42,7 @@ export function useSession() {
         const p = household.profiles?.[user.uid] || {};
         const name = p.name || profile.displayName;
         setState({
-          status: 'ready', user, household,
+          status: 'ready', user, household, hid: HOUSEHOLD_ID,
           me: { uid: user.uid, name, initial: p.initial || name.charAt(0).toUpperCase() },
         });
       } catch (e) {

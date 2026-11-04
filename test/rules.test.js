@@ -83,3 +83,17 @@ describe('6. İlaç verisi yalnızca hane üyelerine açık', () => {
     it(`${c}: anonim okuyamaz`, () => assertFails(getDoc(doc(anon(), 'households', HID, c, id))));
   }
 });
+
+describe('7. Notlar: kişisel notlar gizli, ortak notlar hane içinde', () => {
+  it('A, B nin kişisel notunu okuyamaz ve yazamaz', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'users', 'B', 'notes', 'n1'), { title: 'gizli' }));
+    await assertFails(getDoc(doc(as('A'), 'users', 'B', 'notes', 'n1')));
+    await assertFails(setDoc(doc(as('A'), 'users', 'B', 'notes', 'n2'), { title: 'x' }));
+    await assertFails(getDocs(collection(as('A'), 'users', 'B', 'notes')));
+  });
+  it('hane notlarını iki üye de okur ve yazar, dışarıdan biri okuyamaz', async () => {
+    await assertSucceeds(addDoc(collection(as('A'), 'households', HID, 'notes'), { category: 'ev', title: 't' }));
+    await assertSucceeds(getDocs(collection(as('B'), 'households', HID, 'notes')));
+    await assertFails(getDocs(collection(as('C'), 'households', HID, 'notes')));
+  });
+});

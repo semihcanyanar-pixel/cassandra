@@ -3,7 +3,7 @@ export const IconToday = () => <svg {...P}><circle cx="12" cy="12" r="8.5" /><pa
 export const IconCalendar = () => <svg {...P}><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>;
 export const IconNotes = () => <svg {...P}><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z" /><path d="M14.5 3.5V8H19M8.5 12.5h7M8.5 16h5" /></svg>;
 export const IconShared = () => <svg {...P}><circle cx="9" cy="9" r="3.2" /><circle cx="17" cy="10" r="2.5" /><path d="M3 19c.5-3 3-4.5 6-4.5s5.5 1.5 6 4.5M15.5 14.8c2.4-.3 4.7.8 5.5 3.7" /></svg>;
-export const IconLock = () => <svg {...P}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
+export const IconLock = ({ small }) => <svg {...P} {...(small ? { width: 12, height: 12, "stroke-width": 3 } : {})}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
 export const IconBack = () => <svg {...P} stroke-width="2.6"><path d="M15 5l-7 7 7 7" /></svg>;
 export const IconClose = () => <svg {...P} stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 export const IconPlus = () => <svg {...P} width="20" height="20" stroke-width="2.6"><path d="M12 5v14M5 12h14" /></svg>;

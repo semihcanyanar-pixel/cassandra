@@ -18,6 +18,7 @@ function useUserCollection(uid, name) {
   return items;
 }
 
+const updated = (x) => x.updatedAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
 const created = (x) => x.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
 
 // Dev-only visual check: http://localhost:5173/?demo=1 shows sample data and never writes to Firestore.
@@ -39,6 +40,7 @@ function demoData() {
       { id: 't1', title: 'Vitamin al', repeat: 'daily', date: d(10), doneDates: [d(0)] },
       { id: 't2', title: 'Faturayı öde', repeat: 'none', date: d(0), done: false },
     ],
+    notes: [{ id: 'pn1', title: 'Doğum günü fikirleri', body: 'Kitap, eşarp, çiçek', color: 1, updatedAt: null }],
     goals: [{ id: 'g1', title: 'Yıl sonuna kadar İngilizce', period: 'long', target: 100, unit: 'saat', linkedActivityId: 'a', startDate: d(60), dueDate: null, progress: 0 }],
   };
 }
@@ -49,13 +51,15 @@ export function useUserData(uid) {
   const logs = useUserCollection(uid, 'logs');
   const tasks = useUserCollection(uid, 'tasks');
   const goals = useUserCollection(uid, 'goals');
-  const ready = activities && logs && tasks && goals;
+  const notes = useUserCollection(uid, 'notes');
+  const ready = activities && logs && tasks && goals && notes;
   return {
     ready: Boolean(ready),
     activities: (activities || []).slice().sort((a, b) => created(a) - created(b)),
     logs: logs || [],
     tasks: (tasks || []).slice().sort((a, b) => created(a) - created(b)),
     goals: (goals || []).slice().sort((a, b) => created(a) - created(b)),
+    notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
   };
 }
 
@@ -86,3 +90,71 @@ export const saveGoal = (uid, id, data) => fire(() => id
 export const deleteGoal = (uid, id) => fire(() => deleteDoc(ref(uid, 'goals', id)));
 
 export { setDoc };
+
+// ---------- Household (shared) data: households/{hid}/... ----------
+const hcol = (hid, name) => collection(db, 'households', hid, name);
+const href = (hid, name, id) => doc(db, 'households', hid, name, id);
+
+function useHouseCollection(hid, name) {
+  const [items, setItems] = useState(null);
+  useEffect(() => onSnapshot(
+    hcol(hid, name),
+    (snap) => setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err) => { console.error(name, err); setItems([]); },
+  ), [hid, name]);
+  return items;
+}
+
+function demoHouse() {
+  return {
+    ready: true,
+    shopping: [
+      { id: 's1', text: 'Süt', category: 'market', done: false, addedBy: 'me', createdAt: null },
+      { id: 's2', text: 'Ekmek', category: 'market', done: true, addedBy: 'other', createdAt: null },
+      { id: 's3', text: 'Çamaşır suyu', category: 'ev', done: false, addedBy: 'other', createdAt: null },
+      { id: 's4', text: 'Bebek bezi', category: 'aslan', done: false, addedBy: 'me', createdAt: null },
+    ],
+    todos: [
+      { id: 'f1', text: 'Aşı randevusu al', done: false, assignee: 'me', addedBy: 'other', createdAt: null },
+      { id: 'f2', text: 'Faturaları öde', done: false, assignee: null, addedBy: 'me', createdAt: null },
+    ],
+    notes: [
+      { id: 'n1', category: 'ev', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
+      { id: 'n2', category: 'aslan', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
+    ],
+  };
+}
+
+export function useHouseData(hid) {
+  if (DEMO) return demoHouse();
+  const shopping = useHouseCollection(hid, 'shoppingItems');
+  const todos = useHouseCollection(hid, 'familyTodos');
+  const notes = useHouseCollection(hid, 'notes');
+  return {
+    ready: Boolean(shopping && todos && notes),
+    shopping: (shopping || []).slice().sort((a, b) => created(a) - created(b)),
+    todos: (todos || []).slice().sort((a, b) => created(a) - created(b)),
+    notes: (notes || []).slice().sort((a, b) => updated(b) - updated(a)),
+  };
+}
+
+export const addShopping = (hid, uid, { text, category }) => fire(() => addDoc(hcol(hid, 'shoppingItems'),
+  { text, category, done: false, addedBy: uid, createdAt: serverTimestamp() }));
+export const setShoppingDone = (hid, id, done) => fire(() => updateDoc(href(hid, 'shoppingItems', id), { done }));
+export const deleteShopping = (hid, id) => fire(() => deleteDoc(href(hid, 'shoppingItems', id)));
+
+export const addFamilyTodo = (hid, uid, text) => fire(() => addDoc(hcol(hid, 'familyTodos'),
+  { text, done: false, assignee: null, addedBy: uid, createdAt: serverTimestamp() }));
+export const setFamilyTodoDone = (hid, id, done) => fire(() => updateDoc(href(hid, 'familyTodos', id), { done }));
+export const setFamilyTodoAssignee = (hid, id, assignee) => fire(() => updateDoc(href(hid, 'familyTodos', id), { assignee }));
+export const deleteFamilyTodo = (hid, id) => fire(() => deleteDoc(href(hid, 'familyTodos', id)));
+
+// Note destination comes only from the picked category (see lib/notes.js).
+export function saveNote({ uid, hid }, category, id, data) {
+  const personal = category === 'kisisel';
+  const base = personal ? col(uid, 'notes') : hcol(hid, 'notes');
+  const payload = { ...data, updatedAt: serverTimestamp() };
+  if (id) return fire(() => updateDoc(personal ? ref(uid, 'notes', id) : href(hid, 'notes', id), payload));
+  return fire(() => addDoc(base, personal ? payload : { ...payload, category, addedBy: uid }));
+}
+export const deleteNote = ({ uid, hid }, category, id) => fire(() => deleteDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id)));

@@ -97,6 +97,10 @@ users/{uid}/notes/{id}            title, body|items[], color, updatedAt
 users/{uid}/events/{id}           kişisel takvim kaydı (alanlar aşağıdaki event ile aynı)
 users/{uid}/insights/{weekId}     yapay zekâ haftalık özet önbelleği
 
+Aşama 3 şema notları (uygulanan):
+- households/{hid}/notes.category yalnızca "ev"|"aslan" (Market kararı gereği); not rengi `color` (0–3, tema paleti sırası); `items` [{t, done}] ya da `body`. Kişisel notlar `users/{uid}/notes` altında, kategori alanı yok; hedef koleksiyon yalnızca seçilen kategoriden belirlenir (`src/lib/notes.js`, testli).
+- shoppingItems/familyTodos: `assignee` uid ya da null; uygulama içinde atanan kişi avatarına dokunarak döner (atanmamış → ben → eşi).
+
 Aşama 2 şema notları (uygulanan):
 - activities.color = tema paletinden renk SIRASI (0–5), hex değil; renkler temayla birlikte değişir (`--act-0..5`).
 - tasks: repeat "none"|"daily"|"days", days [0–6, Pzt=0], date (tek seferlik için gün, tekrarlı için başlangıç), done (tek seferlik), doneDates [] (tekrarlı). Açık kalan tek seferlik görev ertesi gün "geçmiş tarihli" olarak görünmeye devam eder.

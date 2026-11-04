@@ -1,0 +1,36 @@
+/* Stage 3: Ortak lists and Notlar. */
+.avatar.mini { width: 28px; height: 28px; font-size: 12px; }
+.avatar.mini.empty { background: transparent; color: var(--muted); border: 2px dashed var(--muted); }
+.iconbtn.plain { background: transparent; border: 0; color: var(--muted); }
+.count { margin-left: 6px; font-size: 12px; opacity: .8; }
+.chip.on .count { opacity: 1; }
+.has-addbar { padding-bottom: calc(env(safe-area-inset-bottom) + 190px); }
+.addbar { position: fixed; left: 50%; transform: translateX(-50%); width: min(calc(100% - 32px), 488px); bottom: calc(env(safe-area-inset-bottom) + 94px);
+  padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--card); border: var(--card-border); border-radius: var(--r); box-shadow: 0 4px 18px rgba(0,0,0,.12); }
+.addinput { flex: 1; min-width: 0; height: 48px; padding: 0 14px; font-size: 16px; background: transparent; color: var(--text); border: 2px solid var(--line); border-radius: var(--r-ctl); outline: none; }
+.addinput:focus-visible { border-color: var(--ring); }
+.addbar .btn { padding: 0; width: 48px; min-width: 48px; }
+.note-cols { display: flex; gap: 10px; align-items: flex-start; }
+.note-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.note { width: 100%; padding: 14px; min-height: 96px; text-align: left; display: flex; flex-direction: column; gap: 8px; font: inherit; color: var(--text);
+  background: var(--card); border: var(--card-border); border-radius: var(--r-sm); }
+.note-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--muted); }
+.note-title { font-size: 16px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.note-body { font-size: 14px; font-weight: 600; line-height: 1.3; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.note-lines { display: flex; flex-direction: column; gap: 6px; }
+.note-line { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.note-line.done { opacity: .55; text-decoration: line-through; }
+.note-line .box { width: 15px; height: 15px; margin-top: 1px; flex: none; box-sizing: border-box; border: 2px solid currentColor; border-radius: var(--check-r, 4px); }
+.note-line.done .box { background: currentColor; }
+:root[data-theme='mozaik'] .note { background: var(--c); color: #121212; }
+:root[data-theme='mozaik'] .note-tag { color: rgba(18,18,18,.75); }
+:root[data-theme='mozaik'] .note.personal { background: #2F4BFF; color: #FFFFFF; }
+:root[data-theme='mozaik'] .note.personal .note-tag { color: rgba(255,255,255,.85); }
+:root[data-theme='yorunge'] .note-tag { color: var(--c); }
+:root[data-theme='yorunge'] .note.personal .note-tag { color: #B79CFF; }
+:root[data-theme='teknik'] .note-tag { color: var(--text); }
+:root[data-theme='teknik'] .note-tag::before { content: ''; width: 8px; height: 8px; background: var(--c); }
+:root[data-theme='teknik'] .note.personal { border-color: #FF4F00; }
+.note-area { display: block; width: 100%; margin-top: 10px; padding: 12px 14px; font: inherit; font-size: 16px; color: var(--text); background: transparent; border: 2px solid var(--line); border-radius: var(--r-ctl); resize: vertical; outline: none; }
+.note-area:focus-visible, .item-input:focus-visible { border-color: var(--ring); }
+.item-input { min-width: 0; height: 44px; padding: 0 10px; font-size: 16px; background: transparent; color: var(--text); border: 0; border-bottom: 2px solid var(--line); outline: none; }
