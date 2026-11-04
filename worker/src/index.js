@@ -1,6 +1,7 @@
 import { verifyIdToken } from './jwt.js';
+import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue } from './push.js';
 
-// Gemini proxy. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
+// Gemini proxy + web push. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
 const LIMITS = { ai: 10 }; // per user per day
 
 const cors = (env, req) => {
@@ -9,7 +10,7 @@ const cors = (env, req) => {
   return {
     'Access-Control-Allow-Origin': ok ? origin : 'null',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     Vary: 'Origin',
   };
 };
@@ -37,16 +38,14 @@ async function auth(env, req) {
   try { return await verifyIdToken(h.slice(7), env.FIREBASE_PROJECT_ID); } catch { return null; }
 }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// One model call. Busy (429/500/503) is retried once; a missing model (404) falls through to the next model.
+// One quick call per model (12 s cap). Busy answers are not retried on the same model: we move on to the next one instead.
 async function callModel(env, model, prompt) {
-  let last = { fail: 0 };
-  for (let attempt = 0; attempt < 2; attempt++) {
+  try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.7 } }),
+      signal: AbortSignal.timeout(12000),
     });
     if (r.ok) {
       try {
@@ -55,21 +54,41 @@ async function callModel(env, model, prompt) {
       } catch { return { fail: 'bad output' }; }
     }
     const body = await r.text().catch(() => '');
-    console.log('gemini error', model, r.status, body.slice(0, 400));
+    console.log('gemini error', model, r.status, body.slice(0, 300));
     let msg = '';
     try { msg = JSON.parse(body).error?.message || ''; } catch { /* not json */ }
-    last = { fail: r.status, detail: msg.slice(0, 200) };
-    if (![429, 500, 503].includes(r.status)) break;
-    await sleep(800);
+    return { fail: r.status, detail: msg.slice(0, 200) };
+  } catch (e) {
+    console.log('gemini fetch failed', model, String(e));
+    return { fail: 'timeout', detail: 'zaman aşımı' };
   }
-  return last;
 }
 
-// Primary model first, then the fallback (a different model is often free when one is overloaded).
+// Text-capable "flash" models this key can use (so we are not tied to one name that may be overloaded or retired).
+async function discoverModels(env) {
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100', {
+      headers: { 'x-goog-api-key': env.GEMINI_API_KEY }, signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return (j.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent') && /flash|lite/.test(m.name) && !/image|tts|live|audio|embed|robotics|computer|thinking/.test(m.name))
+      .map((m) => m.name.replace('models/', ''));
+  } catch { return []; }
+}
+
 async function gemini(env, prompt) {
-  const models = [env.GEMINI_MODEL || 'gemini-3.8-flash', env.GEMINI_FALLBACK_MODEL || 'gemini-flash-latest'];
+  const first = [env.GEMINI_MODEL || 'gemini-3.8-flash', env.GEMINI_FALLBACK_MODEL || 'gemini-flash-latest'];
   let res = { fail: 0 };
-  for (const m of models) {
+  for (const m of first) {
+    res = await callModel(env, m, prompt);
+    if (res.json) return res;
+  }
+  // Both are busy or gone: try whatever else this key offers.
+  const others = (await discoverModels(env)).filter((m) => !first.includes(m)).slice(0, 3);
+  console.log('gemini fallback models', others.join(','));
+  for (const m of others) {
     res = await callModel(env, m, prompt);
     if (res.json) return res;
   }
@@ -126,13 +145,24 @@ async function handleDaily(env, req, uid) {
 }
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDue(env).then((n) => { if (n) console.log('push delivered', n); }).catch((e) => console.log('push cron failed', String(e))));
+  },
   async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env, req) });
-    if (req.method === 'POST' && (url.pathname === '/ai/weekly' || url.pathname === '/ai/daily')) {
+    if (req.method === 'GET' && url.pathname === '/push/key') return reply(env, req, { key: (await getVapid(env)).pub });
+    const authed = ['/ai/weekly', '/ai/daily', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test'];
+    if (req.method === 'POST' && authed.includes(url.pathname)) {
       const uid = await auth(env, req);
       if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
-      return url.pathname === '/ai/daily' ? handleDaily(env, req, uid) : handleWeekly(env, req, uid);
+      if (url.pathname === '/ai/daily') return handleDaily(env, req, uid);
+      if (url.pathname === '/ai/weekly') return handleWeekly(env, req, uid);
+      const body = await req.json().catch(() => ({}));
+      if (url.pathname === '/push/subscribe') return (await subscribe(env, uid, body.subscription)) ? reply(env, req, { ok: true }) : reply(env, req, { error: 'bad subscription' }, 400);
+      if (url.pathname === '/push/unsubscribe') { await unsubscribe(env, uid, String(body.endpoint || '')); return reply(env, req, { ok: true }); }
+      if (url.pathname === '/push/schedule') return reply(env, req, await setSchedule(env, uid, body.items));
+      return reply(env, req, await sendTest(env, uid));
     }
     return reply(env, req, { error: 'not found' }, 404);
   },

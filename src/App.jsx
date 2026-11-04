@@ -19,6 +19,7 @@ import { Report } from './screens/Report.jsx';
 import { TaskForm } from './screens/TaskForm.jsx';
 import { Goals, GoalForm } from './screens/Goals.jsx';
 import { Splash } from './components/Splash.jsx';
+import { usePushSchedule } from './push.js';
 import { Nav } from './components/Nav.jsx';
 import { Notice } from './components/Notice.jsx';
 
@@ -51,6 +52,7 @@ function Main({ session }) {
     back: () => { setStack((s) => s.slice(0, -1)); window.scrollTo(0, 0); },
     replace: (r) => setStack((s) => [...s.slice(0, -1), r]),
   };
+  usePushSchedule({ session, data, house });
   const route = stack[stack.length - 1];
   const uid = me.uid;
 

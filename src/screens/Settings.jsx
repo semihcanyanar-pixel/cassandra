@@ -4,6 +4,7 @@ import { auth } from '../firebase.js';
 import { THEMES, currentTheme } from '../theme.js';
 import { saveTheme } from '../session.js';
 import { IconBack, IconCheck } from '../icons.jsx';
+import { PushSection } from './PushSection.jsx';
 
 export function Settings({ session, onBack }) {
   const [theme, setTheme] = useState(currentTheme());
@@ -40,6 +41,8 @@ export function Settings({ session, onBack }) {
         ))}
       </div>
 
+
+      <PushSection session={session} />
 
       <button class="chip" style="margin-top:6px;min-height:48px" onClick={() => signOut(auth)}>Çıkış yap</button>
     </main>

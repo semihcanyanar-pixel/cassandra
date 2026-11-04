@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips, Switch } from '../components/ui.jsx';
-import { REPEATS } from '../lib/events.js';
+import { REPEATS, REMINDS } from '../lib/events.js';
 import { saveEvent, deleteEvent } from '../data.js';
 import { today } from '../lib/dates.js';
 
@@ -14,13 +14,17 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
   const [time, setTime] = useState(existing?.time || '09:00');
   const [scope, setScope] = useState(initialScope || 'aile');
   const [repeat, setRepeat] = useState(existing?.repeat || 'none');
+  const [remind, setRemind] = useState(existing?.remind || 'none');
   const [error, setError] = useState('');
+
+  const remindOptions = REMINDS.filter((r) => hasTime || !r.needsTime).map(({ value, label }) => ({ value, label }));
+  const effRemind = !hasTime && REMINDS.find((r) => r.value === remind)?.needsTime ? 'none' : remind;
 
   function submit(e) {
     e.preventDefault();
     if (!title.trim()) { setError('Kayda bir başlık yaz.'); return; }
     if (!date) { setError('Tarih seç.'); return; }
-    saveEvent(ctx, scope, id, { title: title.trim(), date, time: hasTime ? time : null, repeat });
+    saveEvent(ctx, scope, id, { title: title.trim(), date, time: hasTime ? time : null, repeat, remind: effRemind });
     nav.back();
   }
   const remove = () => { if (confirm('Kayıt silinsin mi?')) { deleteEvent(ctx, scope, id); nav.back(); } };
@@ -45,6 +49,10 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
           {hasTime && <input class="date-input" type="time" value={time} aria-label="Saat" style="margin-top:10px" onInput={(e) => setTime(e.target.value)} />}
         </Card>
         <Card label="TEKRAR"><Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" /></Card>
+        <Card label="HATIRLATMA">
+          <Chips options={remindOptions} value={effRemind} onChange={setRemind} label="Hatırlatma" />
+          <div class="sub" style="margin-top:8px">Bildirim için Ayarlar’dan bildirimleri aç.</div>
+        </Card>
         {error && <div class="error" role="alert">{error}</div>}
         {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Kaydı sil</button>}
       </Page>

@@ -12,3 +12,6 @@ GEMINI_MODEL = "gemini-3.8-flash"
 [[kv_namespaces]]
 binding = "KV"
 id = "377cfcea45e24a6187e188d3158db383"
+
+[triggers]
+crons = ["* * * * *"]

@@ -45,4 +45,4 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
   );
 }
 
-export const MED_NOTE = "Uygulama bildirim göndermez; dozları burada işaretlersiniz. Önemli ilaçlar için telefon alarmını da kurun.";
+export const MED_NOTE = "Bildirimleri Ayarlar > Bildirimler bölümünden açabilirsin. Önemli ilaçlar için telefon alarmını da kurmanı öneririm.";
