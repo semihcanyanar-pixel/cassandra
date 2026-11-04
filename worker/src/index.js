@@ -34,24 +34,43 @@ async function auth(env, req) {
   try { return await verifyIdToken(h.slice(7), env.FIREBASE_PROJECT_ID); } catch { return null; }
 }
 
-async function gemini(env, prompt) {
-  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.7 } }),
-  });
-  if (!r.ok) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// One model call. Busy (429/500/503) is retried once; a missing model (404) falls through to the next model.
+async function callModel(env, model, prompt) {
+  let last = { fail: 0 };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.7 } }),
+    });
+    if (r.ok) {
+      try {
+        const data = await r.json();
+        return { json: JSON.parse(data.candidates[0].content.parts[0].text) };
+      } catch { return { fail: 'bad output' }; }
+    }
     const body = await r.text().catch(() => '');
-    console.log('gemini error', r.status, body.slice(0, 400));
+    console.log('gemini error', model, r.status, body.slice(0, 400));
     let msg = '';
     try { msg = JSON.parse(body).error?.message || ''; } catch { /* not json */ }
-    return { fail: r.status, detail: msg.slice(0, 200) };
+    last = { fail: r.status, detail: msg.slice(0, 200) };
+    if (![429, 500, 503].includes(r.status)) break;
+    await sleep(800);
   }
-  try {
-    const data = await r.json();
-    return { json: JSON.parse(data.candidates[0].content.parts[0].text) };
-  } catch { return { fail: 'bad output' }; }
+  return last;
+}
+
+// Primary model first, then the fallback (a different model is often free when one is overloaded).
+async function gemini(env, prompt) {
+  const models = [env.GEMINI_MODEL || 'gemini-3.8-flash', env.GEMINI_FALLBACK_MODEL || 'gemini-flash-latest'];
+  let res = { fail: 0 };
+  for (const m of models) {
+    res = await callModel(env, m, prompt);
+    if (res.json) return res;
+  }
+  return res;
 }
 
 function cleanWeekly(body) {
