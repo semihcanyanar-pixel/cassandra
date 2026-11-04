@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cassandra</title>
+  <meta name="theme-color" content="#E8ECF3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cassandra">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <script>
+    // Apply saved theme before first paint.
+    try {
+      var t = localStorage.getItem('cassandra.theme');
+      if (t === 'mozaik' || t === 'yorunge' || t === 'teknik') document.documentElement.dataset.theme = t;
+      else document.documentElement.dataset.theme = 'mozaik';
+    } catch (e) { document.documentElement.dataset.theme = 'mozaik'; }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

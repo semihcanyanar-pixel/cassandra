@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Ortak · İlaçlar · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:10px;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h1 style="margin:0;font-size:40px;line-height:1;{{th.h1}}">Ortak</h1>
+      <button style="height:42px;padding:0 16px 0 12px;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;{{th.ctaS}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>İlaç ekle</button>
+    </div>
+
+    <div style="display:flex;gap:4px;padding:4px;flex:none;{{th.segS}}">
+      <button style="flex:1;height:38px;padding:0;font-size:13px;font-weight:700;{{th.segOff}}">Ev İhtiyaçları</button>
+      <button style="flex:1;height:38px;padding:0;font-size:13px;font-weight:700;{{th.segOff}}">Yapılacaklar</button>
+      <button style="flex:1;height:38px;padding:0;font-size:13px;font-weight:700;{{th.segOn}}">İlaçlar</button>
+    </div>
+
+    <div style="display:flex;gap:6px;flex:none">
+      <button style="height:36px;padding:0 14px;font-size:13px;font-weight:700;{{th.chipOn}}">Hepsi</button>
+      <sc-for list="{{th.people}}" as="p" hint-placeholder-count="3">
+        <button style="height:36px;padding:0 12px 0 6px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;{{th.chipOff}}"><span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;{{p.av}}">{{p.l}}</span>{{p.name}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;padding:4px 4px 0;font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px"><span>BUGÜN</span><span>4/5 doz</span></div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;flex:none">
+      <sc-for list="{{th.doses}}" as="d" hint-placeholder-count="5">
+        <div style="box-sizing:border-box;min-height:52px;padding:6px 12px 6px 10px;display:flex;align-items:center;gap:10px;{{d.row}}">
+          <span style="width:44px;font-size:14px;font-weight:700">{{d.t}}</span>
+          <span style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;{{d.av}}">{{d.l}}</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:15px;font-weight:700;white-space:nowrap">{{d.name}}</span>
+              <sc-if value="{{d.hasMeal}}" hint-placeholder-val="{{true}}"><span style="height:18px;padding:0 6px;display:flex;align-items:center;font-size:10px;font-weight:700;letter-spacing:0.3px;{{d.mealS}}">{{d.meal}}</span></sc-if>
+            </div>
+            <div style="font-size:12px;font-weight:600;{{d.sub}}">{{d.dose}} · {{d.status}}</div>
+          </div>
+          <sc-if value="{{d.done}}" hint-placeholder-val="{{true}}">
+            <span aria-label="Verildi" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex:none;{{th.checkS}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          </sc-if>
+          <sc-if value="{{d.next}}" hint-placeholder-val="{{false}}">
+            <button style="height:38px;padding:0 14px;font-size:13px;font-weight:700;flex:none;{{th.nextBtn}}">Aldım</button>
+          </sc-if>
+          <sc-if value="{{d.later}}" hint-placeholder-val="{{false}}">
+            <button aria-label="İşaretle" style="width:26px;height:26px;padding:0;flex:none;background:transparent;border:2.5px solid currentColor;border-radius:{{th.dotR}}px"></button>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="padding:8px 4px 0;font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">AKTİF DÖNEMLER</div>
+    <div style="display:flex;flex-direction:column;gap:6px;flex:none">
+      <sc-for list="{{th.courses}}" as="c" hint-placeholder-count="2">
+        <div style="box-sizing:border-box;padding:10px 14px 12px;{{th.cardS}}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;{{c.av}}">{{c.l}}</span>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">{{c.name}}</div><div style="font-size:12px;font-weight:600;color:{{th.muted}}">{{c.plan}}</div></div>
+            <span style="font-size:13px;font-weight:700">{{c.prog}}</span>
+          </div>
+          <div style="height:6px;margin-top:8px;border-radius:{{th.barR}}px;background:{{th.ttr}}"><div style="width:{{c.pct}}%;height:6px;border-radius:{{th.barR}}px;background:{{th.fill}}"></div></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <nav aria-label="Ana menü" style="position:absolute;left:40px;right:40px;bottom:20px;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;{{th.navS}}">
+      <button aria-label="Bugün" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb0}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      <button aria-label="Takvim" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb1}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
+      <button aria-label="Notlar" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb2}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h9l4 4v12H6z"/><path d="M9 12h7M9 16h5"/></svg></button>
+      <button aria-label="Ortak" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb3}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>
+      <button aria-label="Kişisel" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb4}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    </nav>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core(active) {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 22, rr: 18, pr: 48, pb: '', text: '#121212', muted: '#4A5568', ttr: 'rgba(18,18,18,0.16)', dotR: 13, barR: 3, fill: '#121212',
+        av: { S: ['#2F4BFF', '#FFFFFF', '0'], E: ['#FF9EC0', '#121212', '0'], A: ['#FFD43B', '#121212', '0'] }, avR: 14,
+        cta: 'background:#121212;color:#FFD43B;border:0;', ctaR: 21, chipR: 18,
+        on: 'background:#121212;color:#FFFFFF;border:0;', off: 'background:#FFFFFF;color:#121212;border:0;',
+        navBg: 'background:#121212;border:0;border-radius:32px;', ni: '#D5DAE6', non: 'background:#FFD43B;color:#121212;', nr: 23,
+        check: 'background:#121212;color:#FFD43B;border-radius:13px;', rowDone: 'background:#FFFFFF;color:#121212;', rowNext: 'background:#FFD43B;color:#121212;', rowLater: 'background:#FFFFFF;color:#121212;',
+        nextBtn: 'background:#121212;color:#FFD43B;border:0;border-radius:19px;', mealTok: 'background:#121212;color:#FFFFFF;border-radius:9px;', mealAc: 'background:transparent;color:#121212;border:1.5px solid #121212;border-radius:9px;', seg: 'background:#FFFFFF;border-radius:22px;', segOn: 'background:#121212;color:#FFFFFF;border:0;border-radius:18px;', segOff: 'background:transparent;color:#121212;border:0;border-radius:18px;' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;',
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 20, rr: 16, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', ttr: '#263050', dotR: 13, barR: 3, fill: '#C6F432',
+        av: { S: ['#C6F432', '#0B0F1A', '0'], E: ['#FF7A66', '#0B0F1A', '0'], A: ['#7CC8FF', '#0B0F1A', '0'] }, avR: 14,
+        cta: 'background:#C6F432;color:#0B0F1A;border:0;', ctaR: 21, chipR: 18,
+        on: 'background:#EEF1FA;color:#0B0F1A;border:0;', off: 'background:#151B2B;color:#EEF1FA;border:0;',
+        navBg: 'background:#151B2B;border:1px solid #263050;border-radius:32px;', ni: '#9AA3BD', non: 'background:#C6F432;color:#0B0F1A;', nr: 23,
+        check: 'background:#C6F432;color:#0B0F1A;border-radius:13px;', rowDone: 'background:#151B2B;color:#EEF1FA;', rowNext: 'background:#151B2B;color:#EEF1FA;box-shadow:inset 0 0 0 2px #C6F432;', rowLater: 'background:#151B2B;color:#EEF1FA;',
+        nextBtn: 'background:#C6F432;color:#0B0F1A;border:0;border-radius:19px;', mealTok: 'background:#EEF1FA;color:#0B0F1A;border-radius:9px;', mealAc: 'background:transparent;color:#EEF1FA;border:1.5px solid #EEF1FA;border-radius:9px;', seg: 'background:#151B2B;border-radius:22px;', segOn: 'background:#C6F432;color:#0B0F1A;border:0;border-radius:18px;', segOff: 'background:transparent;color:#9AA3BD;border:0;border-radius:18px;' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;text-transform:uppercase;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, rr: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', ttr: '#E4E4E4', dotR: 0, barR: 0, fill: '#0A0A0A',
+        av: { S: ['#0A0A0A', '#FAFAFA', '0'], E: ['#FF4F00', '#0A0A0A', '1.5px solid #0A0A0A'], A: ['#E4E4E4', '#0A0A0A', '1.5px solid #0A0A0A'] }, avR: 0,
+        cta: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', ctaR: 0, chipR: 0,
+        on: 'background:#0A0A0A;color:#FAFAFA;border:2px solid #0A0A0A;', off: 'background:transparent;color:#0A0A0A;border:2px solid #0A0A0A;',
+        navBg: 'background:#FAFAFA;border:2px solid #0A0A0A;border-radius:0;', ni: '#0A0A0A', non: 'background:#FF4F00;color:#0A0A0A;', nr: 0,
+        check: 'background:#0A0A0A;color:#FAFAFA;border-radius:0;', rowDone: 'background:#FFFFFF;color:#0A0A0A;border:1px solid #C9C9C9;', rowNext: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', rowLater: 'background:#FFFFFF;color:#0A0A0A;border:2px solid #0A0A0A;',
+        nextBtn: 'background:#0A0A0A;color:#FAFAFA;border:0;border-radius:0;', mealTok: 'background:#0A0A0A;color:#FAFAFA;border-radius:0;', mealAc: 'background:transparent;color:#0A0A0A;border:1.5px solid #0A0A0A;border-radius:0;', seg: 'background:transparent;border:2px solid #0A0A0A;border-radius:0;', segOn: 'background:#0A0A0A;color:#FAFAFA;border:0;border-radius:0;', segOff: 'background:transparent;color:#0A0A0A;border:0;border-radius:0;' }
+    ];
+    return D.map((d) => {
+      const o = {
+        key: d.key, muted: d.muted, ttr: d.ttr, dotR: d.dotR, barR: d.barR, fill: d.fill,
+        phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+        h1: 'font-family:' + d.hf + ';' + d.hs,
+        cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+        ctaS: d.cta + 'border-radius:' + d.ctaR + 'px;',
+        chipOn: d.on + 'border-radius:' + d.chipR + 'px;',
+        chipOff: d.off + 'border-radius:' + d.chipR + 'px;',
+        segS: d.seg, segOn: d.segOn, segOff: d.segOff,
+        navS: d.navBg, checkS: d.check, nextBtn: d.nextBtn,
+        d
+      };
+      for (let i = 0; i < 5; i++) o['nb' + i] = 'border-radius:' + d.nr + 'px;' + (i === active ? d.non : 'background:transparent;color:' + d.ni + ';');
+      return o;
+    });
+  }
+  renderVals() {
+    const names = { S: 'Ben', E: 'Eşi', A: 'Aslan' };
+    const doses = [
+      { t: '07:30', who: 'E', name: 'Mide koruyucu', dose: '1 kapsül', meal: 'AÇ', st: 'done', by: 'Eşi 07:35' },
+      { t: '08:00', who: 'S', name: 'Antibiyotik', dose: '1 tablet', meal: 'TOK', st: 'done', by: 'Ben 08:04' },
+      { t: '09:00', who: 'A', name: 'D vitamini', dose: '5 damla', meal: '', st: 'done', by: 'Eşi 09:10' },
+      { t: '14:00', who: 'S', name: 'Antibiyotik', dose: '1 tablet', meal: 'TOK', st: 'done', by: 'Ben 14:12' },
+      { t: '20:00', who: 'S', name: 'Antibiyotik', dose: '1 tablet', meal: 'TOK', st: 'next', by: '' }
+    ];
+    const courses = [
+      { who: 'S', name: 'Antibiyotik', plan: 'Günde 3 · 7 gün', prog: '5/7 gün', pct: 71 },
+      { who: 'A', name: 'D vitamini', plan: 'Günde 1 · 30 gün', prog: '9/30 gün', pct: 30 }
+    ];
+    const themes = this.core(3).map((th) => {
+      const avS = (w) => { const a = th.d.av[w]; return 'background:' + a[0] + ';color:' + a[1] + ';border:' + a[2] + ';border-radius:' + th.d.avR + 'px;'; };
+      return {
+        ...th,
+        people: ['S', 'E', 'A'].map((w) => ({ l: w, name: names[w], av: avS(w) })),
+        doses: doses.map((x) => ({
+          t: x.t, l: x.who, name: x.name, dose: x.dose,
+          av: avS(x.who),
+          row: (x.st === 'next' ? th.d.rowNext : x.st === 'done' ? th.d.rowDone : th.d.rowLater) + 'border-radius:' + th.d.rr + 'px;',
+          hasMeal: !!x.meal, meal: x.meal, mealS: x.meal === 'TOK' ? th.d.mealTok : th.d.mealAc,
+          status: x.st === 'done' ? 'verildi · ' + x.by : 'sıradaki doz',
+          sub: x.st === 'next' && th.key === 'teknik' ? 'color:#0A0A0A;' : x.st === 'next' && th.key === 'mozaik' ? 'color:#121212;' : 'color:' + th.d.muted + ';',
+          done: x.st === 'done', next: x.st === 'next', later: x.st === 'later'
+        })),
+        courses: courses.map((c) => ({ l: c.who, av: avS(c.who), name: c.name, plan: c.plan, prog: c.prog, pct: c.pct }))
+      };
+    });
+    return { themes };
+  }
+}
+</script>
+</body>
+</html>

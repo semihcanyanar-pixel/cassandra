@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>İlaç dönemi ekle · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:10px;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h1 style="margin:0;font-size:30px;line-height:1;{{th.h1}}">Yeni ilaç dönemi</h1>
+      <button aria-label="Kapat" style="width:42px;height:42px;padding:0;display:flex;align-items:center;justify-content:center;{{th.chipOff}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">KİMİN İÇİN?</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <sc-for list="{{th.people}}" as="p" hint-placeholder-count="3">
+          <button style="flex:1;height:48px;padding:0 8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:700;{{p.btn}}"><span style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;{{p.av}}">{{p.l}}</span>{{p.name}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;display:flex;gap:12px;{{th.cardS}}">
+      <div style="flex:3;min-width:0">
+        <label for="ilac-ad" style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">İLAÇ ADI</label>
+        <input id="ilac-ad" value="Antibiyotik" style="display:block;width:100%;box-sizing:border-box;height:40px;padding:0;border:0;background:transparent;color:inherit;font-size:20px;font-weight:700;outline:none;border-bottom:1.5px solid {{th.line}}">
+      </div>
+      <div style="flex:2;min-width:0">
+        <label for="ilac-doz" style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">DOZ</label>
+        <input id="ilac-doz" value="1 tablet" style="display:block;width:100%;box-sizing:border-box;height:40px;padding:0;border:0;background:transparent;color:inherit;font-size:20px;font-weight:700;outline:none;border-bottom:1.5px solid {{th.line}}">
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;{{th.cardS}}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">GÜNDE KAÇ KEZ?</span>
+        <span style="font-size:13px;font-weight:700">3 kez</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <sc-for list="{{th.counts}}" as="c" hint-placeholder-count="6">
+          <button style="flex:1;height:44px;padding:0;font-size:16px;font-weight:700;{{c.s}}">{{c.l}}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px">
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">SAATLER</span>
+        <span style="font-size:12px;font-weight:600;color:{{th.muted}}">otomatik önerildi, dokunup değiştir</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <sc-for list="{{th.times}}" as="t" hint-placeholder-count="3">
+          <button style="flex:1;height:48px;padding:0;font-size:18px;font-weight:700;{{th.timeS}}">{{t}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">AÇ MI, TOK MU?</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <sc-for list="{{th.meals}}" as="m" hint-placeholder-count="3">
+          <button style="flex:1;height:46px;padding:0;font-size:14px;font-weight:700;{{m.s}}">{{m.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;{{th.cardS}}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">SÜRE</span>
+        <span style="font-size:13px;font-weight:700">4 Kas → 10 Kas</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <sc-for list="{{th.days}}" as="c" hint-placeholder-count="5">
+          <button style="flex:1;height:44px;padding:0;font-size:14px;font-weight:700;{{c.s}}">{{c.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="padding:0 4px;font-size:12px;font-weight:600;line-height:1.4;color:{{th.muted}}">Doktorun yazdığı kullanım şeklini gir. Uygulama doz önermez, yalnızca hatırlatır.</div>
+
+    <button style="position:absolute;left:24px;right:24px;bottom:28px;height:56px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;{{th.ctaS}}">Kaydet</button>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core() {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 24, pr: 48, pb: '', text: '#121212', muted: '#4A5568', line: '#C9CFDD', chipR: 16,
+        av: { S: ['#2F4BFF', '#FFFFFF', '0'], E: ['#FF9EC0', '#121212', '0'], A: ['#FFD43B', '#121212', '0'] }, avR: 13,
+        cta: 'background:#121212;color:#FFD43B;border:0;', ctaR: 28,
+        on: 'background:#121212;color:#FFFFFF;border:0;', off: 'background:#EEF1F7;color:#121212;border:0;',
+        timeOn: 'background:#FFD43B;color:#121212;border:0;' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;',
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 22, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', line: '#3A4670', chipR: 14,
+        av: { S: ['#C6F432', '#0B0F1A', '0'], E: ['#FF7A66', '#0B0F1A', '0'], A: ['#7CC8FF', '#0B0F1A', '0'] }, avR: 13,
+        cta: 'background:#C6F432;color:#0B0F1A;border:0;', ctaR: 28,
+        on: 'background:#C6F432;color:#0B0F1A;border:0;', off: 'background:#1E2640;color:#EEF1FA;border:0;',
+        timeOn: 'background:#1E2640;color:#C6F432;border:0;' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1px;text-transform:uppercase;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', line: '#0A0A0A', chipR: 0,
+        av: { S: ['#0A0A0A', '#FAFAFA', '0'], E: ['#FF4F00', '#0A0A0A', '1.5px solid #0A0A0A'], A: ['#E4E4E4', '#0A0A0A', '1.5px solid #0A0A0A'] }, avR: 0,
+        cta: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', ctaR: 0,
+        on: 'background:#0A0A0A;color:#FAFAFA;border:2px solid #0A0A0A;', off: 'background:transparent;color:#0A0A0A;border:2px solid #0A0A0A;',
+        timeOn: 'background:#FFFFFF;color:#0A0A0A;border:2px solid #0A0A0A;' }
+    ];
+    return D.map((d) => ({ d,
+      key: d.key, muted: d.muted, line: d.line,
+      phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+      h1: 'font-family:' + d.hf + ';' + d.hs,
+      cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+      ctaS: d.cta + 'border-radius:' + d.ctaR + 'px;',
+      chipOff: d.off + 'border-radius:' + d.chipR + 'px;',
+      timeS: d.timeOn + 'border-radius:' + d.chipR + 'px;'
+    }));
+  }
+  renderVals() {
+    const themes = this.core().map((th) => {
+      const d = th.d;
+      const chip = (sel) => (sel ? d.on : d.off) + 'border-radius:' + d.chipR + 'px;';
+      const avS = (w) => { const a = d.av[w]; return 'background:' + a[0] + ';color:' + a[1] + ';border:' + a[2] + ';border-radius:' + d.avR + 'px;'; };
+      return {
+        ...th,
+        people: [['S', 'Ben', true], ['E', 'Eşi', false], ['A', 'Aslan', false]].map((p) => ({ l: p[0], name: p[1], av: avS(p[0]), btn: chip(p[2]) })),
+        counts: [1, 2, 3, 4, 5, 6].map((n) => ({ l: String(n), s: chip(n === 3) })),
+        times: ['08:00', '14:00', '20:00'],
+        meals: [['Aç karnına', false], ['Tok karnına', true], ['Fark etmez', false]].map((m) => ({ l: m[0], s: chip(m[1]) })),
+        days: ['3 gün', '5 gün', '7 gün', '10 gün', '14 gün'].map((l) => ({ l, s: chip(l === '7 gün') }))
+      };
+    });
+    return { themes };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function isMember(hid) {
+      return signedIn() &&
+        request.auth.uid in get(/databases/$(db)/documents/households/$(hid)).data.members;
+    }
+    match /users/{uid}/{document=**} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+    match /households/{hid} {
+      allow read: if isMember(hid);
+      allow write: if false;
+      // Needs at least one collection segment, so it does NOT cover the household doc itself.
+      match /{sub}/{document=**} {
+        allow read, write: if isMember(hid);
+      }
+    }
+  }
+}

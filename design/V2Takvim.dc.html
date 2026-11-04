@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Takvim v2 · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:{{th.muted}}">Takvim · 2026</div>
+        <h1 style="margin:0;font-size:42px;line-height:1;{{th.h1}}">Kasım</h1>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button aria-label="Önceki ay" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;{{th.chipOffS}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button aria-label="Sonraki ay" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;{{th.chipOffS}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button aria-label="Kayıt ekle" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;{{th.ctaS}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:14px;font-size:12px;font-weight:700;color:{{th.muted}};text-align:center"><span>P</span><span>S</span><span>Ç</span><span>P</span><span>C</span><span>C</span><span>P</span></div>
+    <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:5px">
+      <sc-for list="{{th.cells}}" as="c" hint-placeholder-count="42">
+        <div style="position:relative;height:37px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;{{c.s}}">{{c.n}}<sc-if value="{{c.lock}}" hint-placeholder-val="{{false}}"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;top:3px;right:3px"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></sc-if></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:9px;font-size:12px;font-weight:700;color:{{th.muted}}">
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:{{th.lgR}}px;{{th.famBox}}"></span>Aile</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:{{th.lgR}}px;{{th.perBox}}"></span>Kişisel</span>
+    </div>
+
+    <div style="margin-top:10px;box-sizing:border-box;padding:12px 18px 4px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">6 KASIM · CUMA</div>
+      <div style="display:flex;align-items:center;gap:12px;height:50px;margin-top:4px">
+        <span style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:{{th.lgR}}px;{{th.famBox}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <div style="flex:1"><div style="font-size:16px;font-weight:700">Hastane randevusu</div><div style="font-size:12px;font-weight:600;color:{{th.muted}}">10:30 · 1 gün önce hatırlat</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px;margin-top:8px">YAKLAŞANLAR</div>
+      <div style="display:flex;align-items:center;gap:12px;height:40px;border-top:1px solid {{th.line}};margin-top:4px">
+        <span style="width:46px;font-size:13px;font-weight:700">14 Kas</span>
+        <span style="flex:1;font-size:15px;font-weight:700">Doğum günü: Annem</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;height:40px;border-top:1px solid {{th.line}}">
+        <span style="width:46px;font-size:13px;font-weight:700">22 Kas</span>
+        <span style="flex:1;font-size:15px;font-weight:700">Berber</span>
+        <span style="height:22px;padding:0 8px;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;{{th.perTag}}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Kişisel</span>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;box-sizing:border-box;height:62px;padding:0 14px 0 18px;display:flex;align-items:center;gap:12px;{{th.cardS}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">iPhone Takvim</div><div style="font-size:12px;font-weight:600;color:{{th.muted}}">Bağlı değil</div></div>
+      <button style="height:38px;padding:0 16px;font-size:14px;font-weight:700;{{th.chipOnS}}">Eşle</button>
+    </div>
+
+    <nav aria-label="Ana menü" style="position:absolute;left:40px;right:40px;bottom:20px;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;{{th.navS}}">
+      <button aria-label="Bugün" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb0}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      <button aria-label="Takvim" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb1}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
+      <button aria-label="Notlar" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb2}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h9l4 4v12H6z"/><path d="M9 12h7M9 16h5"/></svg></button>
+      <button aria-label="Ortak" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb3}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>
+      <button aria-label="Kişisel" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb4}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    </nav>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core(active) {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 28, rs: 20, pr: 48, pb: '', text: '#121212', muted: '#4A5568', line: '#E3E7EF', cr: 12, lgR: 5,
+        av: 'background:#121212;color:#FFD43B;', navBg: 'background:#121212;border:0;border-radius:32px;', ni: '#D5DAE6', non: 'background:#FFD43B;color:#121212;', nr: 23,
+        cta: 'background:#121212;color:#FFD43B;border:0;', ctaR: 20, chipR: 20,
+        on: 'background:#121212;color:#FFFFFF;border:0;', off: 'background:#FFFFFF;color:#121212;border:0;',
+        norm: ['#F4F6FA', '#121212', '0'], fam: ['#FFD43B', '#121212'], per: ['#2F4BFF', '#FFFFFF'], ring: '#121212', oth: '#5F6675' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;',
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 24, rs: 18, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', line: '#263050', cr: 14, lgR: 6,
+        av: 'background:#C6F432;color:#0B0F1A;', navBg: 'background:#151B2B;border:1px solid #263050;border-radius:32px;', ni: '#9AA3BD', non: 'background:#C6F432;color:#0B0F1A;', nr: 23,
+        cta: 'background:#C6F432;color:#0B0F1A;border:0;', ctaR: 20, chipR: 20,
+        on: 'background:#EEF1FA;color:#0B0F1A;border:0;', off: 'background:#151B2B;color:#EEF1FA;border:0;',
+        norm: ['#151B2B', '#EEF1FA', '0'], fam: ['#2C3860', '#EEF1FA'], per: ['#B79CFF', '#0B0F1A'], ring: '#C6F432', oth: '#6B769A' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;text-transform:uppercase;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, rs: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', line: '#C9C9C9', cr: 0, lgR: 0,
+        av: 'background:#0A0A0A;color:#FAFAFA;', navBg: 'background:#FAFAFA;border:2px solid #0A0A0A;border-radius:0;', ni: '#0A0A0A', non: 'background:#FF4F00;color:#0A0A0A;', nr: 0,
+        cta: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', ctaR: 0, chipR: 0,
+        on: 'background:#0A0A0A;color:#FAFAFA;border:2px solid #0A0A0A;', off: 'background:transparent;color:#0A0A0A;border:2px solid #0A0A0A;',
+        norm: ['#FFFFFF', '#0A0A0A', '1px solid #C9C9C9'], fam: ['#0A0A0A', '#FAFAFA'], per: ['#FF4F00', '#0A0A0A'], ring: '#FF4F00', oth: '#6E6E6E' }
+    ];
+    return D.map((d) => {
+      const o = {
+        key: d.key, muted: d.muted, line: d.line, lgR: Math.min(d.lgR, 6),
+        phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+        h1: 'font-family:' + d.hf + ';' + d.hs,
+        cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+        navS: d.navBg,
+        ctaS: d.cta + 'border-radius:' + d.ctaR + 'px;',
+        chipOffS: d.off + 'border-radius:' + d.chipR + 'px;',
+        chipOnS: d.on + 'border-radius:' + d.chipR + 'px;',
+        famBox: 'background:' + d.fam[0] + ';color:' + d.fam[1] + ';',
+        perBox: 'background:' + d.per[0] + ';color:' + d.per[1] + ';',
+        perTag: 'background:' + d.per[0] + ';color:' + d.per[1] + ';border-radius:' + Math.min(d.rs, 11) + 'px;',
+        d
+      };
+      for (let i = 0; i < 5; i++) o['nb' + i] = 'border-radius:' + d.nr + 'px;' + (i === active ? d.non : 'background:transparent;color:' + d.ni + ';');
+      return o;
+    });
+  }
+  renderVals() {
+    const fam = { 6: 1, 14: 1, 19: 1, 27: 1 };
+    const per = { 22: 1 };
+    const raw = [];
+    for (let i = 0; i < 42; i++) {
+      let n, other = false;
+      if (i < 6) { n = 26 + i; other = true; }
+      else if (i < 36) { n = i - 5; }
+      else { n = i - 35; other = true; }
+      raw.push({ n, other, fam: !other && !!fam[n], per: !other && !!per[n], today: !other && n === 4, sel: !other && n === 6 });
+    }
+    const themes = this.core(1).map((th) => ({
+      ...th,
+      cells: raw.map((c) => {
+        const d = th.d;
+        let bg = d.norm[0], col = d.norm[1], bd = d.norm[2];
+        if (c.other) { bg = 'transparent'; col = d.oth; bd = '0'; }
+        if (c.fam) { bg = d.fam[0]; col = d.fam[1]; }
+        if (c.per) { bg = d.per[0]; col = d.per[1]; }
+        let s = 'background:' + bg + ';color:' + col + ';border:' + bd + ';border-radius:' + d.cr + 'px;font-weight:' + (c.today ? 800 : 600) + ';';
+        if (c.today) s += 'text-decoration:underline;text-underline-offset:3px;';
+        if (c.sel) s += 'box-shadow:0 0 0 3px ' + d.ring + ';';
+        return { n: c.n, lock: c.per, s };
+      })
+    }));
+    return { themes };
+  }
+}
+</script>
+</body>
+</html>

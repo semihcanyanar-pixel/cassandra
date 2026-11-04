@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Kişisel · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:10px;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div>
+        <h1 style="margin:0;font-size:40px;line-height:1;{{th.h1}}">Kişisel</h1>
+        <span style="margin-top:8px;height:24px;padding:0 10px;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;{{th.perTag}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Sadece sen görürsün</span>
+      </div>
+      <button aria-label="Ayarlar" style="width:42px;height:42px;padding:0;font-size:15px;font-weight:700;{{th.avS}}">S</button>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 12px;{{th.cardS}}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:13px;font-weight:700;color:{{th.muted}}">Bu hafta</span>
+        <span style="font-size:20px;{{th.nm}}">5 sa 40 dk</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;height:70px;margin-top:6px">
+        <sc-for list="{{th.week}}" as="w" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:36px">
+            <div style="width:24px;height:{{w.h}}px;border-radius:{{th.dotR}}px;background:{{w.c}}"></div>
+            <span style="font-size:11px;font-weight:700;color:{{th.muted}}">{{w.d}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-for list="{{th.acts}}" as="a" hint-placeholder-count="3">
+      <div style="flex:none;box-sizing:border-box;padding:12px 16px 14px;{{th.cardS}}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="width:12px;height:12px;border-radius:{{th.dotR}}px;background:{{a.dot}};flex:none"></span>
+          <div style="flex:1">
+            <div style="font-size:17px;font-weight:700">{{a.name}}</div>
+            <div style="font-size:12px;font-weight:600;color:{{th.muted}}">{{a.plan}}</div>
+          </div>
+          <span style="font-size:13px;font-weight:700">{{a.count}}</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <sc-for list="{{a.pips}}" as="p" hint-placeholder-count="7">
+            <span style="flex:1;height:8px;border-radius:{{th.dotR}}px;{{p.s}}"></span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <button style="flex:none;height:52px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700;{{th.ctaS}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Aktivite ekle</button>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">HEDEFLER · AYLIK</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px">
+        <span style="font-size:16px;font-weight:700">Kasım: 20 gün spor</span>
+        <span style="font-size:13px;font-weight:700">3/20</span>
+      </div>
+      <div style="height:6px;margin-top:8px;border-radius:3px;background:{{th.ttr}}"><div style="width:15%;height:6px;border-radius:3px;background:{{th.goal}}"></div></div>
+    </div>
+
+    <nav aria-label="Ana menü" style="position:absolute;left:40px;right:40px;bottom:20px;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;{{th.navS}}">
+      <button aria-label="Bugün" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb0}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      <button aria-label="Takvim" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb1}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
+      <button aria-label="Notlar" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb2}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h9l4 4v12H6z"/><path d="M9 12h7M9 16h5"/></svg></button>
+      <button aria-label="Ortak" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb3}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>
+      <button aria-label="Kişisel" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb4}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    </nav>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core(active) {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;', nm: 'font-weight:800;letter-spacing:-0.5px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 28, rs: 20, pr: 48, pb: '', text: '#121212', muted: '#4A5568', line: '#E3E7EF', ttr: 'rgba(18,18,18,0.16)', dotR: 4,
+        av: 'background:#121212;color:#FFD43B;border:0;', avR: 21, navBg: 'background:#121212;border:0;border-radius:32px;', ni: '#D5DAE6', non: 'background:#FFD43B;color:#121212;', nr: 23,
+        cta: 'background:#121212;color:#FFD43B;border:0;', ctaR: 26, per: ['#2F4BFF', '#FFFFFF'],
+        dots: ['#FFD43B', '#FF9EC0', '#5EEAD4'], bars: ['#C9CFDD', '#2F4BFF', '#E3E7EF'], goal: '#FF9EC0' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;', nm: "font-family:'Unbounded',sans-serif;font-weight:600;",
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 24, rs: 18, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', line: '#263050', ttr: '#263050', dotR: 6,
+        av: 'background:#C6F432;color:#0B0F1A;border:0;', avR: 21, navBg: 'background:#151B2B;border:1px solid #263050;border-radius:32px;', ni: '#9AA3BD', non: 'background:#C6F432;color:#0B0F1A;', nr: 23,
+        cta: 'background:#C6F432;color:#0B0F1A;border:0;', ctaR: 26, per: ['#B79CFF', '#0B0F1A'],
+        dots: ['#C6F432', '#FF7A66', '#7CC8FF'], bars: ['#3A4670', '#C6F432', '#1E2640'], goal: '#FF7A66' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1.5px;text-transform:uppercase;', nm: 'font-weight:800;letter-spacing:-0.5px;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, rs: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', line: '#C9C9C9', ttr: '#E4E4E4', dotR: 0,
+        av: 'background:#0A0A0A;color:#FAFAFA;border:0;', avR: 0, navBg: 'background:#FAFAFA;border:2px solid #0A0A0A;border-radius:0;', ni: '#0A0A0A', non: 'background:#FF4F00;color:#0A0A0A;', nr: 0,
+        cta: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', ctaR: 0, per: ['#FF4F00', '#0A0A0A'],
+        dots: ['#0A0A0A', '#FF4F00', '#6B6B6B'], bars: ['#6B6B6B', '#FF4F00', '#E4E4E4'], goal: '#FF4F00' }
+    ];
+    return D.map((d) => {
+      const o = {
+        key: d.key, muted: d.muted, line: d.line, ttr: d.ttr, nm: d.nm, dotR: d.dotR, goal: d.goal,
+        phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+        h1: 'font-family:' + d.hf + ';' + d.hs,
+        cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+        avS: d.av + 'border-radius:' + d.avR + 'px;',
+        navS: d.navBg,
+        ctaS: d.cta + 'border-radius:' + d.ctaR + 'px;',
+        perTag: 'background:' + d.per[0] + ';color:' + d.per[1] + ';border-radius:' + Math.min(d.rs, 12) + 'px;',
+        d
+      };
+      for (let i = 0; i < 5; i++) o['nb' + i] = 'border-radius:' + d.nr + 'px;' + (i === active ? d.non : 'background:transparent;color:' + d.ni + ';');
+      return o;
+    });
+  }
+  renderVals() {
+    const acts = [
+      { name: 'İngilizce', plan: 'haftada 4 gün · günlük 45 dk', count: '2/4 gün', days: [1, 0, 1, 0, 0, 0, 0] },
+      { name: 'Spor', plan: 'haftada 3 gün', count: '3/3 gün', days: [1, 1, 1, 0, 0, 0, 0] },
+      { name: 'Yazılım', plan: 'haftada 5 gün · günlük 90 dk', count: '2/5 gün', days: [1, 1, 0, 0, 0, 0, 0] }
+    ];
+    const hs = [44, 38, 54, 4, 4, 4, 4];
+    const ds = ['P', 'S', 'Ç', 'P', 'C', 'C', 'P'];
+    const themes = this.core(4).map((th) => ({
+      ...th,
+      week: hs.map((h, i) => ({ d: ds[i], h, c: i < 2 ? th.d.bars[0] : i === 2 ? th.d.bars[1] : th.d.bars[2] })),
+      acts: acts.map((a, k) => {
+        const dot = th.d.dots[k];
+        return {
+          name: a.name, plan: a.plan, count: a.count, dot,
+          pips: a.days.map((x, i) => ({
+            s: x ? 'background:' + dot + ';' : 'background:' + th.d.ttr + ';' + (i === 2 ? 'box-shadow:0 0 0 2px ' + th.d.text + ';' : '')
+          }))
+        };
+      })
+    }));
+    return { themes };
+  }
+}
+</script>
+</body>
+</html>

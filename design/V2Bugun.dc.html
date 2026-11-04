@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Bugün · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:10px;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:{{th.muted}}">Merhaba Semihcan</div>
+        <h1 style="margin:2px 0 0;font-size:28px;line-height:1.05;{{th.h1}}">Çarşamba, 4 Kasım</h1>
+      </div>
+      <button aria-label="Ayarlar" style="width:42px;height:42px;padding:0;font-size:15px;font-weight:700;{{th.avS}}">S</button>
+    </div>
+
+    <sc-if value="{{th.isM}}" hint-placeholder-val="{{true}}">
+      <div style="height:156px;flex:none;box-sizing:border-box;padding:18px 20px;border-radius:28px;background:#2F4BFF;color:#FFFFFF;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:14px;font-weight:700">Bugün</span>
+          <span style="height:28px;padding:0 12px;border-radius:14px;background:#FFD43B;color:#121212;font-size:12px;font-weight:700;display:flex;align-items:center">12 gün seri</span>
+        </div>
+        <div style="font-size:54px;font-weight:800;letter-spacing:-2px;line-height:1">2 sa 15 dk</div>
+        <div>
+          <div style="display:flex;gap:3px;height:10px;border-radius:5px;overflow:hidden">
+            <div style="flex:35 1 0;background:#FFD43B"></div>
+            <div style="flex:60 1 0;background:#FF9EC0"></div>
+            <div style="flex:40 1 0;background:#5EEAD4"></div>
+            <div style="flex:60 1 0;background:rgba(255,255,255,0.28)"></div>
+          </div>
+          <div style="margin-top:6px;font-size:12px;font-weight:600">Günlük hedefin %69'u tamam</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{th.isY}}" hint-placeholder-val="{{false}}">
+      <div style="height:156px;flex:none;box-sizing:border-box;padding:16px 20px;display:flex;align-items:center;gap:18px;{{th.cardS}}">
+        <svg width="124" height="124" viewBox="0 0 124 124" role="img" aria-label="Bugünkü çalışma halkaları" style="flex:none">
+          <g fill="none" stroke-width="10" stroke-linecap="round" transform="rotate(-90 62 62)">
+            <circle cx="62" cy="62" r="54" stroke="#263050"/>
+            <circle cx="62" cy="62" r="40" stroke="#263050"/>
+            <circle cx="62" cy="62" r="26" stroke="#263050"/>
+            <circle cx="62" cy="62" r="54" stroke="#7CC8FF" stroke-dasharray="149 339"/>
+            <circle cx="62" cy="62" r="40" stroke="#FF7A66" stroke-dasharray="251 251"/>
+            <circle cx="62" cy="62" r="26" stroke="#C6F432" stroke-dasharray="127 163"/>
+          </g>
+        </svg>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#9AA3BD;letter-spacing:0.6px">BUGÜN</div>
+          <div style="margin-top:4px;font-family:'Unbounded',sans-serif;font-weight:600;font-size:24px;letter-spacing:-0.5px">2sa 15dk</div>
+          <div style="margin-top:6px;font-size:12px;font-weight:600;color:#9AA3BD">Hedefin %69'u · 12 gün seri</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{th.isT}}" hint-placeholder-val="{{false}}">
+      <div style="height:156px;flex:none;box-sizing:border-box;padding:14px 18px;display:flex;flex-direction:column;justify-content:space-between;{{th.cardS}}">
+        <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700"><span>BUGÜN</span><span style="background:#0A0A0A;color:#FAFAFA;padding:2px 8px">SERİ 12</span></div>
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <span style="font-size:96px;font-weight:800;line-height:0.8;letter-spacing:-5px">135</span>
+          <span style="padding-bottom:2px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;line-height:1.5">DK<br><span style="color:#5C5C5C">= 2 SA 15 DK</span></span>
+        </div>
+        <div style="display:flex;gap:2px;height:8px">
+          <div style="flex:35 1 0;background:#0A0A0A"></div>
+          <div style="flex:60 1 0;background:#FF4F00"></div>
+          <div style="flex:40 1 0;background:#6B6B6B"></div>
+          <div style="flex:60 1 0;background:#E4E4E4"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;flex:none">
+      <sc-for list="{{th.tiles}}" as="t" hint-placeholder-count="3">
+        <div style="height:124px;box-sizing:border-box;padding:14px;display:flex;flex-direction:column;justify-content:space-between;{{t.s}}">
+          <span style="font-size:13px;font-weight:700">{{t.name}}</span>
+          <span style="font-size:34px;line-height:1;{{th.nm}}">{{t.val}}<span style="font-size:13px;font-weight:700;letter-spacing:0"> dk</span></span>
+          <div>
+            <div style="height:6px;border-radius:3px;background:{{th.ttr}}"><div style="width:{{t.pct}}%;height:6px;border-radius:3px;background:{{t.fill}}"></div></div>
+            <div style="margin-top:4px;font-size:11px;font-weight:700">{{t.sub}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 6px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">YAKLAŞAN</div>
+      <div style="display:flex;align-items:center;gap:12px;height:44px;margin-top:6px;border-top:1px solid {{th.line}}">
+        <span style="width:46px;font-size:13px;font-weight:700">6 Kas</span>
+        <span style="flex:1;font-size:15px;font-weight:700">Hastane randevusu</span>
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}}">10:30</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;height:44px;border-top:1px solid {{th.line}}">
+        <span style="width:46px;font-size:13px;font-weight:700">22 Kas</span>
+        <span style="flex:1;font-size:15px;font-weight:700">Berber</span>
+        <span style="height:22px;padding:0 8px;display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;{{th.perTag}}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Kişisel</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;height:44px;border-top:1px solid {{th.line}}">
+        <span style="width:46px;font-size:13px;font-weight:700">Bugün</span>
+        <span style="flex:1;font-size:15px;font-weight:700">Ailenin yapılacakları</span>
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}}">2 açık</span>
+      </div>
+    </div>
+
+    <nav aria-label="Ana menü" style="position:absolute;left:40px;right:40px;bottom:20px;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;{{th.navS}}">
+      <button aria-label="Bugün" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb0}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      <button aria-label="Takvim" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb1}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button>
+      <button aria-label="Notlar" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb2}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h9l4 4v12H6z"/><path d="M9 12h7M9 16h5"/></svg></button>
+      <button aria-label="Ortak" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb3}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>
+      <button aria-label="Kişisel" style="width:46px;height:46px;border:0;padding:0;display:flex;align-items:center;justify-content:center;{{th.nb4}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></button>
+    </nav>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core(active) {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1.2px;', nm: 'font-weight:800;letter-spacing:-1px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 28, rs: 20, pr: 48, pb: '', text: '#121212', muted: '#4A5568', line: '#E3E7EF', ttr: 'rgba(18,18,18,0.16)',
+        av: 'background:#121212;color:#FFD43B;border:0;', avR: 21, navBg: 'background:#121212;border:0;border-radius:32px;', ni: '#D5DAE6', non: 'background:#FFD43B;color:#121212;', nr: 23,
+        per: ['#2F4BFF', '#FFFFFF'],
+        act: [['#FFD43B', '#121212', '#121212'], ['#FF9EC0', '#121212', '#121212'], ['#5EEAD4', '#121212', '#121212']], tb: '0' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;', nm: "font-family:'Unbounded',sans-serif;font-weight:600;",
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 24, rs: 18, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', line: '#263050', ttr: '#263050',
+        av: 'background:#C6F432;color:#0B0F1A;border:0;', avR: 21, navBg: 'background:#151B2B;border:1px solid #263050;border-radius:32px;', ni: '#9AA3BD', non: 'background:#C6F432;color:#0B0F1A;', nr: 23,
+        per: ['#B79CFF', '#0B0F1A'],
+        act: [['#151B2B', '#EEF1FA', '#C6F432'], ['#151B2B', '#EEF1FA', '#FF7A66'], ['#151B2B', '#EEF1FA', '#7CC8FF']], tb: '0' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1.2px;text-transform:uppercase;', nm: 'font-weight:800;letter-spacing:-2px;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, rs: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', line: '#C9C9C9', ttr: '#E4E4E4',
+        av: 'background:#0A0A0A;color:#FAFAFA;border:0;', avR: 0, navBg: 'background:#FAFAFA;border:2px solid #0A0A0A;border-radius:0;', ni: '#0A0A0A', non: 'background:#FF4F00;color:#0A0A0A;', nr: 0,
+        per: ['#FF4F00', '#0A0A0A'],
+        act: [['#FFFFFF', '#0A0A0A', '#0A0A0A'], ['#FFFFFF', '#0A0A0A', '#FF4F00'], ['#FFFFFF', '#0A0A0A', '#6B6B6B']], tb: '2px solid #0A0A0A' }
+    ];
+    return D.map((d) => {
+      const o = {
+        key: d.key, muted: d.muted, line: d.line, ttr: d.ttr, nm: d.nm,
+        isM: d.key === 'mozaik', isY: d.key === 'yorunge', isT: d.key === 'teknik',
+        phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+        h1: 'font-family:' + d.hf + ';' + d.hs,
+        cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+        avS: d.av + 'border-radius:' + d.avR + 'px;',
+        navS: d.navBg,
+        perTag: 'background:' + d.per[0] + ';color:' + d.per[1] + ';border-radius:' + Math.min(d.rs, 11) + 'px;'
+      };
+      for (let i = 0; i < 5; i++) o['nb' + i] = 'border-radius:' + d.nr + 'px;' + (i === active ? d.non : 'background:transparent;color:' + d.ni + ';');
+      o.act = d.act; o.rs = d.rs; o.tb = d.tb;
+      return o;
+    });
+  }
+  renderVals() {
+    const data = [
+      { name: 'İngilizce', val: '35', sub: 'hedef 45 dk', pct: 78 },
+      { name: 'Spor', val: '60', sub: 'tamam', pct: 100 },
+      { name: 'Yazılım', val: '40', sub: 'hedef 90 dk', pct: 44 }
+    ];
+    const themes = this.core(0).map((th) => ({
+      ...th,
+      tiles: data.map((x, i) => ({
+        ...x,
+        s: 'background:' + th.act[i][0] + ';color:' + th.act[i][1] + ';border:' + th.tb + ';border-radius:' + th.rs + 'px;',
+        fill: th.act[i][2]
+      }))
+    }));
+    return { themes };
+  }
+}
+</script>
+</body>
+</html>

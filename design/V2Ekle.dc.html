@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Aktivite ekle · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:12px;{{th.phoneS}}">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h1 style="margin:0;font-size:32px;line-height:1;{{th.h1}}">Yeni aktivite</h1>
+      <button aria-label="Kapat" style="width:42px;height:42px;padding:0;display:flex;align-items:center;justify-content:center;{{th.chipOffS}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 8px;{{th.cardS}}">
+      <label for="ad" style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">ADI</label>
+      <input id="ad" value="Kitap okuma" style="display:block;width:100%;box-sizing:border-box;height:46px;margin-top:2px;padding:0;border:0;background:transparent;color:inherit;font-size:24px;font-weight:700;outline:none;{{th.nm}}">
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 16px;{{th.cardS}}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">HAFTADA KAÇ GÜN?</span>
+        <span style="font-size:13px;font-weight:700">3 gün</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <sc-for list="{{th.days}}" as="c" hint-placeholder-count="7">
+          <button style="flex:1;height:46px;padding:0;font-size:16px;font-weight:700;{{c.s}}">{{c.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 16px;{{th.cardS}}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">GÜNLÜK SÜRE HEDEFİ</div>
+          <div style="font-size:13px;font-weight:600;color:{{th.muted}};margin-top:2px">İsteğe bağlı</div>
+        </div>
+        <button role="switch" aria-checked="true" aria-label="Günlük süre hedefi" style="width:54px;height:32px;padding:3px;display:flex;justify-content:flex-end;align-items:center;box-sizing:border-box;{{th.togS}}"><span style="width:24px;height:24px;{{th.knobS}}"></span></button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <sc-for list="{{th.durs}}" as="c" hint-placeholder-count="5">
+          <button style="flex:1;height:42px;padding:0;font-size:14px;font-weight:700;{{c.s}}">{{c.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px 18px;{{th.cardS}}">
+      <div style="font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">RENK</div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;padding:0 4px">
+        <sc-for list="{{th.swatches}}" as="w" hint-placeholder-count="5">
+          <button aria-label="Renk seç" style="width:36px;height:36px;padding:0;border:{{th.swB}};border-radius:{{th.swR}}px;background:{{w.c}};{{w.ring}}"></button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="padding:0 4px;font-size:12px;font-weight:600;line-height:1.45;color:{{th.muted}}">Kişisel alanında durur, eşin görmez. Sonradan düzenleyebilir ya da arşivleyebilirsin.</div>
+
+    <button style="position:absolute;left:24px;right:24px;bottom:28px;height:56px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;{{th.ctaS}}">Kaydet</button>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core() {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1px;', nm: 'font-weight:800;letter-spacing:-0.5px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 28, pr: 48, pb: '', text: '#121212', muted: '#4A5568',
+        cta: 'background:#121212;color:#FFD43B;border:0;', ctaR: 28, chipR: 16,
+        on: 'background:#121212;color:#FFFFFF;border:0;', off: 'background:#EEF1F7;color:#121212;border:0;',
+        tog: 'background:#121212;border:0;border-radius:16px;', knob: 'background:#FFD43B;border-radius:12px;',
+        sw: ['#FFD43B', '#FF9EC0', '#5EEAD4', '#2F4BFF', '#121212'], swB: '0', swR: 18 },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;', nm: 'font-weight:700;',
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 24, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD',
+        cta: 'background:#C6F432;color:#0B0F1A;border:0;', ctaR: 28, chipR: 14,
+        on: 'background:#C6F432;color:#0B0F1A;border:0;', off: 'background:#1E2640;color:#EEF1FA;border:0;',
+        tog: 'background:#C6F432;border:0;border-radius:16px;', knob: 'background:#0B0F1A;border-radius:12px;',
+        sw: ['#C6F432', '#FF7A66', '#7CC8FF', '#B79CFF', '#EEF1FA'], swB: '0', swR: 18 },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1px;text-transform:uppercase;', nm: 'font-weight:800;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C',
+        cta: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;', ctaR: 0, chipR: 0,
+        on: 'background:#0A0A0A;color:#FAFAFA;border:2px solid #0A0A0A;', off: 'background:transparent;color:#0A0A0A;border:2px solid #0A0A0A;',
+        tog: 'background:#FF4F00;border:2px solid #0A0A0A;border-radius:0;', knob: 'background:#0A0A0A;border-radius:0;',
+        sw: ['#0A0A0A', '#FF4F00', '#6B6B6B', '#C9C9C9', '#FFFFFF'], swB: '2px solid #0A0A0A', swR: 0 }
+    ];
+    return D.map((d) => {
+      const chip = (sel) => (sel ? d.on : d.off) + 'border-radius:' + d.chipR + 'px;';
+      return {
+        key: d.key, muted: d.muted, nm: d.nm, swB: d.swB, swR: d.swR,
+        phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+        h1: 'font-family:' + d.hf + ';' + d.hs,
+        cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+        ctaS: d.cta + 'border-radius:' + d.ctaR + 'px;',
+        chipOffS: chip(false),
+        togS: d.tog, knobS: d.knob,
+        days: [1, 2, 3, 4, 5, 6, 7].map((n) => ({ l: String(n), s: chip(n === 3) })),
+        durs: [15, 30, 45, 60, 90].map((n) => ({ l: n + ' dk', s: chip(n === 30) })),
+        swatches: d.sw.map((c, i) => ({ c, ring: i === 2 ? 'outline:3px solid ' + d.text + ';outline-offset:2px;' : '' }))
+      };
+    });
+  }
+  renderVals() {
+    return { themes: this.core() };
+  }
+}
+</script>
+</body>
+</html>

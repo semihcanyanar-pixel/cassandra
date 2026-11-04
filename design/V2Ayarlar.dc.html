@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Ayarlar · üç tema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Unbounded:wght@500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width:1330px;height:924px;box-sizing:border-box;padding:40px;background:#2A2A30;display:flex;gap:40px">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="3">
+  <div style="position:relative;width:390px;height:844px;box-sizing:border-box;overflow:hidden;padding:40px 24px 0;display:flex;flex-direction:column;gap:10px;{{th.phoneS}}">
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button aria-label="Geri" style="width:42px;height:42px;padding:0;display:flex;align-items:center;justify-content:center;{{th.chipOffS}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1 style="margin:0;font-size:34px;line-height:1;{{th.h1}}">Ayarlar</h1>
+    </div>
+
+    <div style="flex:none;box-sizing:border-box;padding:14px 18px;display:flex;align-items:center;gap:14px;{{th.cardS}}">
+      <span style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;{{th.avS}}">S</span>
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:700">Semihcan</div>
+        <div style="font-size:12px;font-weight:600;color:{{th.muted}}">Ortak alan: 2 kişi</div>
+      </div>
+    </div>
+
+    <div style="margin-top:6px;padding:0 4px;font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">TEMA</div>
+    <sc-for list="{{th.options}}" as="o" hint-placeholder-count="3">
+      <div style="flex:none;box-sizing:border-box;height:72px;padding:0 16px;display:flex;align-items:center;gap:14px;{{th.cardS}}{{o.ring}}">
+        <div style="display:flex;gap:3px;flex:none">
+          <sc-for list="{{o.sw}}" as="w" hint-placeholder-count="4"><span style="width:16px;height:34px;border:1px solid rgba(128,128,128,0.45);box-sizing:border-box;border-radius:{{th.swR}}px;background:{{w.c}}"></span></sc-for>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700">{{o.name}}</div>
+          <div style="font-size:12px;font-weight:600;color:{{th.muted}}">{{o.desc}}</div>
+        </div>
+        <sc-if value="{{o.on}}" hint-placeholder-val="{{false}}">
+          <span aria-label="Seçili" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;{{th.checkS}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        </sc-if>
+        <sc-if value="{{o.off}}" hint-placeholder-val="{{true}}">
+          <span style="width:26px;height:26px;box-sizing:border-box;border:2px solid {{th.radio}};border-radius:{{th.radR}}px"></span>
+        </sc-if>
+      </div>
+    </sc-for>
+
+    <div style="margin-top:6px;padding:0 4px;font-size:12px;font-weight:700;color:{{th.muted}};letter-spacing:0.6px">BAĞLANTILAR VE BİLDİRİM</div>
+    <div style="flex:none;box-sizing:border-box;padding:0 18px;{{th.cardS}}">
+      <div style="display:flex;align-items:center;gap:12px;height:64px">
+        <div style="flex:1"><div style="font-size:15px;font-weight:700">iPhone Takvim</div><div style="font-size:12px;font-weight:600;color:{{th.muted}}">Aile ve kişisel kayıtların · bağlı değil</div></div>
+        <button style="height:38px;padding:0 16px;font-size:14px;font-weight:700;{{th.chipOnS}}">Eşle</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;height:60px;border-top:1px solid {{th.line}}">
+        <div style="flex:1"><div style="font-size:15px;font-weight:700">Hatırlatma bildirimleri</div><div style="font-size:12px;font-weight:600;color:{{th.muted}}">Takvim kayıtları için</div></div>
+        <button role="switch" aria-checked="true" aria-label="Hatırlatma bildirimleri" style="width:54px;height:32px;padding:3px;display:flex;justify-content:flex-end;align-items:center;box-sizing:border-box;{{th.togS}}"><span style="width:24px;height:24px;{{th.knobS}}"></span></button>
+      </div>
+    </div>
+
+    <button style="flex:none;margin-top:6px;height:48px;font-size:15px;font-weight:700;{{th.chipOffS}}">Çıkış yap</button>
+  </div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1330,"height":924}}'>
+class Component extends DCLogic {
+  core() {
+    const D = [
+      { key: 'mozaik', font: "'Bricolage Grotesque',sans-serif", hf: "'Bricolage Grotesque',sans-serif", hs: 'font-weight:800;letter-spacing:-1.2px;',
+        bg: '#E8ECF3', card: '#FFFFFF', cb: '0', r: 24, pr: 48, pb: '', text: '#121212', muted: '#4A5568', line: '#E3E7EF', swR: 5, radio: '#121212', radR: 13,
+        av: 'background:#121212;color:#FFD43B;border:0;', avR: 24, chipR: 18,
+        on: 'background:#121212;color:#FFFFFF;border:0;', off: 'background:#FFFFFF;color:#121212;border:0;',
+        tog: 'background:#121212;border:0;border-radius:16px;', knob: 'background:#FFD43B;border-radius:12px;',
+        check: 'background:#121212;color:#FFD43B;border-radius:13px;', ring: 'outline:3px solid #121212;outline-offset:-3px;' },
+      { key: 'yorunge', font: "'Manrope',sans-serif", hf: "'Unbounded',sans-serif", hs: 'font-weight:600;letter-spacing:-0.5px;',
+        bg: '#0B0F1A', card: '#151B2B', cb: '0', r: 22, pr: 48, pb: 'border:1px solid #263050;', text: '#EEF1FA', muted: '#9AA3BD', line: '#263050', swR: 8, radio: '#6B769A', radR: 13,
+        av: 'background:#C6F432;color:#0B0F1A;border:0;', avR: 24, chipR: 18,
+        on: 'background:#C6F432;color:#0B0F1A;border:0;', off: 'background:#1E2640;color:#EEF1FA;border:0;',
+        tog: 'background:#C6F432;border:0;border-radius:16px;', knob: 'background:#0B0F1A;border-radius:12px;',
+        check: 'background:#C6F432;color:#0B0F1A;border-radius:13px;', ring: 'outline:2px solid #C6F432;outline-offset:-2px;' },
+      { key: 'teknik', font: "'Archivo',sans-serif", hf: "'Archivo',sans-serif", hs: 'font-weight:800;letter-spacing:-1.2px;text-transform:uppercase;',
+        bg: '#FAFAFA', card: '#FFFFFF', cb: '2px solid #0A0A0A', r: 0, pr: 44, pb: '', text: '#0A0A0A', muted: '#5C5C5C', line: '#C9C9C9', swR: 0, radio: '#0A0A0A', radR: 0,
+        av: 'background:#0A0A0A;color:#FAFAFA;border:0;', avR: 0, chipR: 0,
+        on: 'background:#0A0A0A;color:#FAFAFA;border:2px solid #0A0A0A;', off: 'background:transparent;color:#0A0A0A;border:2px solid #0A0A0A;',
+        tog: 'background:#FF4F00;border:2px solid #0A0A0A;border-radius:0;', knob: 'background:#0A0A0A;border-radius:0;',
+        check: 'background:#FF4F00;color:#0A0A0A;border:2px solid #0A0A0A;border-radius:0;', ring: 'box-shadow:inset 0 0 0 3px #FF4F00;' }
+    ];
+    const opts = [
+      { name: 'Mozaik', desc: 'Renkli bloklar, yumuşak köşeler', sw: ['#2F4BFF', '#FFD43B', '#FF9EC0', '#5EEAD4'] },
+      { name: 'Yörünge', desc: 'Koyu zemin, halkalar', sw: ['#0B0F1A', '#C6F432', '#FF7A66', '#7CC8FF'] },
+      { name: 'Teknik Pano', desc: 'Sade, tablo düzeni, tek vurgu', sw: ['#FAFAFA', '#0A0A0A', '#FF4F00', '#C9C9C9'] }
+    ];
+    return D.map((d, idx) => ({
+      key: d.key, muted: d.muted, line: d.line, swR: d.swR, radio: d.radio, radR: d.radR,
+      phoneS: 'background:' + d.bg + ';color:' + d.text + ';font-family:' + d.font + ';border-radius:' + d.pr + 'px;' + d.pb,
+      h1: 'font-family:' + d.hf + ';' + d.hs,
+      cardS: 'background:' + d.card + ';border:' + d.cb + ';border-radius:' + d.r + 'px;',
+      avS: d.av + 'border-radius:' + d.avR + 'px;',
+      chipOffS: d.off + 'border-radius:' + d.chipR + 'px;',
+      chipOnS: d.on + 'border-radius:' + d.chipR + 'px;',
+      togS: d.tog, knobS: d.knob, checkS: d.check,
+      options: opts.map((o, i) => ({ ...o, on: i === idx, off: i !== idx, ring: i === idx ? d.ring : '' }))
+    }));
+  }
+  renderVals() {
+    return { themes: this.core() };
+  }
+}
+</script>
+</body>
+</html>
