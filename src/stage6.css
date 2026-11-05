@@ -44,10 +44,13 @@
 /* Note editor: format toolbar and line styles. */
 .fmtbar { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .fmtbar::-webkit-scrollbar { display: none; }
-.fmt { flex: none; width: 46px; height: 46px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+.fmt { flex: none; min-width: 52px; height: 56px; padding: 0 6px; display: inline-flex; flex-direction: column; gap: 3px; align-items: center; justify-content: center;
   background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); font: inherit; }
 .fmt.on { background: var(--chip-on-bg); color: var(--chip-on-fg); border: var(--chip-on-border); }
 .fmt[disabled] { opacity: .35; }
+.fl { font-size: 10.5px; font-weight: 700; line-height: 1; white-space: nowrap; }
+.line-view { white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; min-height: 22px; }
+.line-view .b { font-weight: 800; } .line-view .i { font-style: italic; } .line-view .s { text-decoration: line-through; opacity: .6; }
 .fmt-sep { flex: none; width: 1px; height: 26px; background: var(--line); margin: 0 2px; }
 .fi { font-size: 18px; font-weight: 800; font-style: normal; line-height: 1; }
 .fi.sm { font-size: 14px; }
@@ -78,6 +81,11 @@
 .nl .nc { flex: none; width: 14px; height: 14px; margin-top: 1px; box-sizing: border-box; border: 2px solid currentColor; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
 .nl .nc.on { background: currentColor; }
 .nl .nc.on svg { color: var(--note-bg, #fff); }
+/* The card is a div: one transparent button covers it (open), checkbox rows sit above it (tick without opening). */
+.note { position: relative; }
+.note-open { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; border-radius: inherit; cursor: pointer; }
+.nl-tap { position: relative; z-index: 1; width: 100%; padding: 6px 0; margin: -3px 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 30px; }
+.nl .nt.b, .nl .nt .b { font-weight: 800; } .nl .nt .i { font-style: italic; } .nl .nt .s { text-decoration: line-through; opacity: .6; }
 .nl .nm { flex: none; min-width: 14px; text-align: center; font-weight: 700; }
 
 /* Attachments */

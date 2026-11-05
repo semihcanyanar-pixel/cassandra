@@ -2,7 +2,7 @@ import { useRef, useState } from 'preact/hooks';
 import { Page, Card } from '../components/ui.jsx';
 import { Picker } from '../components/Picker.jsx';
 import { Chart } from '../components/Chart.jsx';
-import { IconBack, IconNext, IconTrash } from '../icons.jsx';
+import { IconBack, IconNext, IconTrash, IconEdit } from '../icons.jsx';
 import { MODES, buildSeries, fmtDur, streak, activeDays } from '../lib/stats.js';
 import { today, dayMonth } from '../lib/dates.js';
 import { deleteLog } from '../data.js';
@@ -66,6 +66,7 @@ export function Report({ uid, data, activityId, nav }) {
               <span class="dot" style={`background:var(--act-${a?.color ?? 0})`} />
               <div class="grow"><div class="title-sm">{a?.name || 'Silinmiş aktivite'}</div><div class="sub">{dayMonth(l.date)}</div></div>
               <b>{fmtDur(l.minutes)}</b>
+              <button class="iconbtn" aria-label="Kaydı düzenle" onClick={() => nav.go({ n: 'log', logId: l.id })}><IconEdit /></button>
               <button class="iconbtn" aria-label="Kaydı sil" onClick={() => { if (confirm('Bu kayıt silinsin mi?')) deleteLog(uid, l.id); }}><IconTrash /></button>
             </div>
           );

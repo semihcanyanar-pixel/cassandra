@@ -45,6 +45,50 @@ export function toBlocks(note) {
 }
 export const cleanBlocks = (blocks) => blocks.map((b) => normBlock({ ...b, t: (b.t || '').trim() })).filter((b) => b.t);
 
+// Word-level formatting lives inside the line text as markers: **bold**, __italic__, ~~strikethrough~~.
+export const MARKS = { b: '**', i: '__', s: '~~' };
+const MARK_RE = /(\*\*|__|~~)/;
+
+// Splits a line into runs [{ text, b, i, s }]. A marker with no partner stays literal text.
+export function parseInline(t) {
+  const parts = String(t || '').split(MARK_RE);
+  const left = { '**': 0, '__': 0, '~~': 0 };
+  parts.forEach((p) => { if (p in left) left[p] += 1; });
+  const open = { '**': false, '__': false, '~~': false };
+  const runs = [];
+  parts.forEach((p) => {
+    if (p in open) {
+      // the last marker of an odd count has no partner
+      left[p] -= 1;
+      if (open[p] || left[p] > 0) { open[p] = !open[p]; return; }
+      runs.push({ text: p, b: open['**'], i: open['__'], s: open['~~'] });
+      return;
+    }
+    if (p) runs.push({ text: p, b: open['**'], i: open['__'], s: open['~~'] });
+  });
+  return runs;
+}
+// Text without the markers (for search / summaries).
+export const plainText = (t) => parseInline(t).map((r) => r.text).join('');
+
+// Wraps text[start,end) in the marker, or removes it when that selection is already wrapped. Returns { t, start, end }.
+export function toggleMark(t, start, end, flag) {
+  const m = MARKS[flag];
+  const a = Math.max(0, Math.min(start, end)), z = Math.min(t.length, Math.max(start, end));
+  const sel = t.slice(a, z);
+  if (sel.startsWith(m) && sel.endsWith(m) && sel.length >= 2 * m.length) {
+    const inner = sel.slice(m.length, sel.length - m.length);
+    return { t: t.slice(0, a) + inner + t.slice(z), start: a, end: a + inner.length };
+  }
+  if (t.slice(a - m.length, a) === m && t.slice(z, z + m.length) === m) {
+    return { t: t.slice(0, a - m.length) + sel + t.slice(z + m.length), start: a - m.length, end: z - m.length };
+  }
+  return { t: `${t.slice(0, a)}${m}${sel}${m}${t.slice(z)}`, start: a + m.length, end: z + m.length };
+}
+
+// The note's blocks with the round checkbox at `index` flipped.
+export const toggleCheck = (blocks, index) => blocks.map((b, i) => (i === index && b.k === 'cb' ? { ...b, d: !b.d } : b));
+
 // Labels for numbered lines ("1.", "2." ...): the count restarts whenever the run of numbered lines at that indent is broken.
 export function numberLabels(blocks) {
   const counters = [0, 0, 0];

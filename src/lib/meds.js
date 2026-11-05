@@ -45,7 +45,15 @@ export const isActiveOn = (med, iso) => !med.archived && med.startDate <= iso &&
 export const isOver = (med, iso) => Boolean(med.archived) || med.endDate < iso;
 export const isUpcoming = (med, iso) => !med.archived && med.startDate > iso;
 
-export const logId = (medId, date, time) => `${medId}_${date}_${time}`;
+export const LAST_DOSE_GRACE = 180; // minutes
+export function graceEnd(time) {
+  const [h, m] = time.split(':').map(Number);
+  const t = h * 60 + m + LAST_DOSE_GRACE;
+  if (t >= 24 * 60) return '23:59';
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+}
+
+export const logId =(medId, date, time) => `${medId}_${date}_${time}`;
 
 // All doses due on `iso` for the given medications, sorted by time. `log` is the medLogs doc or null (pending).
 export function dosesForDay(meds, logs, iso, nowHHMM = null) {
@@ -60,9 +68,12 @@ export function dosesForDay(meds, logs, iso, nowHHMM = null) {
   }
   const sorted = out.sort((a, b) => a.time.localeCompare(b.time) || a.med.name.localeCompare(b.med.name, 'tr'));
   // A pending dose counts as missed (kaçtı) once the NEXT dose of the same medication is due. Derived, never stored.
+  // The last dose of the day has no next dose, so it counts as missed LAST_DOSE_GRACE minutes after its time (at the latest 23:59).
   if (nowHHMM) {
     for (const d of sorted) {
-      d.missed = !d.log && sorted.some((o) => o.med.id === d.med.id && o.time > d.time && o.time <= nowHHMM);
+      const nextDue = sorted.some((o) => o.med.id === d.med.id && o.time > d.time && o.time <= nowHHMM);
+      const isLast = !sorted.some((o) => o.med.id === d.med.id && o.time > d.time);
+      d.missed = !d.log && (nextDue || (isLast && nowHHMM >= graceEnd(d.time)));
     }
   }
   return sorted;

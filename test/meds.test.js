@@ -82,15 +82,26 @@ describe('kaçtı (otomatik)', () => {
   it('henüz sonraki doz gelmediyse kaçtı değil', () => {
     expect(dosesForDay([med()], [], day, '13:59').every((x) => !x.missed)).toBe(true);
   });
-  it('işaretlenmiş doz kaçtı sayılmaz; son doz gece boyunca beklemede kalır', () => {
+  it('işaretlenmiş doz kaçtı sayılmaz', () => {
     const l = { id: logId('m1', day, '08:00'), date: day, status: 'alindi' };
-    const d = dosesForDay([med()], [l], day, '23:00');
-    expect(d.map((x) => x.missed)).toEqual([false, true, false]);
+    const d = dosesForDay([med()], [l], day, '22:00');
+    expect(d.map((x) => x.missed)).toEqual([false, true, false]); // 14:00 missed (20:00 is due); last dose still within 3 h
+  });
+  it('günün son dozu saatinden 3 saat sonra kaçtı olur', () => {
+    expect(dosesForDay([med()], [], day, '22:59')[2].missed).toBe(false);
+    expect(dosesForDay([med()], [], day, '23:00')[2].missed).toBe(true);
+    expect(dosesForDay([med()], [{ id: logId('m1', day, '20:00'), date: day, status: 'alindi' }], day, '23:30')[2].missed).toBe(false);
+  });
+  it('geç saatteki son doz en geç 23:59\'da kaçtı olur', () => {
+    const late = med({ times: ['22:30'] });
+    expect(dosesForDay([late], [], day, '23:58')[0].missed).toBe(false);
+    expect(dosesForDay([late], [], day, '23:59')[0].missed).toBe(true);
   });
   it('her ilaç kendi dozlarına göre değerlendirilir', () => {
     const other = med({ id: 'm2', name: 'B', times: ['09:00'] });
-    const d = dosesForDay([med(), other], [], day, '15:00');
+    const d = dosesForDay([med(), other], [], day, '11:59');
     expect(d.find((x) => x.med.id === 'm2').missed).toBe(false);
+    expect(dosesForDay([med(), other], [], day, '12:00').find((x) => x.med.id === 'm2').missed).toBe(true);
   });
   it('now verilmezse kaçtı hesaplanmaz', () => {
     expect(dosesForDay([med()], [], day)[0].missed).toBeUndefined();

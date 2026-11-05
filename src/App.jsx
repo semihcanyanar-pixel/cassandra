@@ -65,7 +65,7 @@ function Main({ session }) {
     switch (route.n) {
       case 'settings': body = <Settings session={session} onBack={nav.back} />; break;
       case 'activity': body = <ActivityForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
-      case 'log': body = <LogForm uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;
+      case 'log': body = <LogForm key={route.logId || 'yeni'} uid={uid} data={data} activityId={route.activityId} logId={route.logId} nav={nav} />; break;
       case 'report': body = <Report uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;
       case 'task': body = <TaskForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       case 'note': body = <NoteForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} category={route.category} nav={nav} />; break;
@@ -84,7 +84,7 @@ function Main({ session }) {
       {tab === 'bugun' && <Bugun session={session} me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />}
       {tab === 'kisisel' && <Kisisel me={me} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'ortak' && <Ortak session={session} house={house} nav={nav} onSettings={onSettings} />}
-      {tab === 'notlar' && <Notlar me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
+      {tab === 'notlar' && <Notlar me={me} ctx={{ uid, hid: session.hid }} house={house} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'takvim' && <Takvim me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
       <Nav tab={tab} onChange={setTab} />
     </div>

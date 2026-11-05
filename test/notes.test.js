@@ -54,3 +54,32 @@ describe('not satırları (biçimli metin + yuvarlak tik)', () => {
     expect(numberLabels(b)).toEqual(['1.', '2.', '1.', '2.', '3.', null, '1.']);
   });
 });
+
+import { parseInline, plainText, toggleMark, toggleCheck } from '../src/lib/notes.js';
+const R = (text, o = {}) => ({ text, b: false, i: false, s: false, ...o });
+
+describe('kelime bazlı biçim', () => {
+  it('işaretleri çalıştırmalara böler', () => {
+    expect(parseInline('a **kalın** b __eğik__ ~~çizili~~')).toEqual([
+      R('a '), R('kalın', { b: true }), R(' b '), R('eğik', { i: true }), R(' '), R('çizili', { s: true }),
+    ]);
+    expect(parseInline('**a __b__ c**')).toEqual([R('a ', { b: true }), R('b', { b: true, i: true }), R(' c', { b: true })]);
+  });
+  it('eşi olmayan işaret düz metin kalır', () => {
+    expect(plainText('2 ** 3')).toBe('2 ** 3');
+    expect(plainText('**açık')).toBe('**açık');
+    expect(parseInline('**açık').every((r) => !r.b)).toBe(true);
+  });
+  it('seçimi sarar ve tekrar basınca çözer', () => {
+    const a = toggleMark('merhaba dünya', 8, 13, 'b');
+    expect(a).toEqual({ t: 'merhaba **dünya**', start: 10, end: 15 });
+    expect(toggleMark(a.t, a.start, a.end, 'b')).toEqual({ t: 'merhaba dünya', start: 8, end: 13 });
+    expect(toggleMark('x **y** z', 2, 7, 'b').t).toBe('x y z'); // selection includes the markers
+  });
+  it('yuvarlak tik yalnızca o satırda değişir', () => {
+    const b = [P({ t: 'a', k: 'cb' }), P({ t: 'b', k: 'cb', d: true }), P({ t: 'c' })];
+    expect(toggleCheck(b, 0).map((x) => x.d)).toEqual([true, true, false]);
+    expect(toggleCheck(b, 1).map((x) => x.d)).toEqual([false, false, false]);
+    expect(toggleCheck(b, 2)).toEqual(b);
+  });
+});

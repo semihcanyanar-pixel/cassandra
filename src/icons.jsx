@@ -9,4 +9,5 @@ export const IconClose = () => <svg {...P} stroke-width="2.6"><path d="M6 6l12 1
 export const IconPlus = () => <svg {...P} width="20" height="20" stroke-width="2.6"><path d="M12 5v14M5 12h14" /></svg>;
 export const IconNext = () => <svg {...P} stroke-width="2.6"><path d="M9 5l7 7-7 7" /></svg>;
 export const IconTrash = () => <svg {...P} width="20" height="20"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>;
+export const IconEdit = () => <svg {...P} width="20" height="20"><path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19z M14.5 6.5l3 3" /></svg>;
 export const IconCheck =() => <svg {...P} width="14" height="14" stroke-width="3.6"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;

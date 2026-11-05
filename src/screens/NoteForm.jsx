@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, Card, Chips, actColor } from '../components/ui.jsx';
-import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock } from '../lib/notes.js';
+import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, parseInline, toggleMark } from '../lib/notes.js';
 import { saveNote, deleteNote } from '../data.js';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
@@ -16,17 +16,18 @@ const Tick = () => (
 
 // Line kinds the toolbar can switch to (tap again = back to plain text).
 const KIND_BUTTONS = [
-  { k: 'h', label: 'Başlık', icon: <b class="fi">H</b> },
-  { k: 's', label: 'Alt başlık', icon: <b class="fi sm">H</b> },
-  { k: 'ul', label: 'Madde', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="7" r="2" /><circle cx="5" cy="17" r="2" /><path d="M10 7h10M10 17h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg> },
-  { k: 'ol', label: 'Numara', icon: <b class="fi sm">1.</b> },
-  { k: 'cb', label: 'Yuvarlak', icon: <span class="circ-icon" aria-hidden="true" /> },
+  { k: 'h', label: 'Başlık', short: 'Başlık', icon: <b class="fi">H</b> },
+  { k: 's', label: 'Alt başlık', short: 'Alt', icon: <b class="fi sm">H</b> },
+  { k: 'ul', label: 'Madde', short: 'Madde', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="7" r="2" /><circle cx="5" cy="17" r="2" /><path d="M10 7h10M10 17h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg> },
+  { k: 'ol', label: 'Numara', short: 'Numara', icon: <b class="fi sm">1.</b> },
+  { k: 'cb', label: 'Yuvarlak', short: 'Daire', icon: <span class="circ-icon" aria-hidden="true" /> },
 ];
 const FLAG_BUTTONS = [
-  { f: 'b', label: 'Kalın', icon: <b class="fi">B</b> },
-  { f: 'i', label: 'İtalik', icon: <i class="fi">I</i> },
-  { f: 's', label: 'Üstü çizili', icon: <s class="fi">S</s> },
+  { f: 'b', label: 'Kalın', short: 'Kalın', icon: <b class="fi">B</b> },
+  { f: 'i', label: 'İtalik', short: 'İtalik', icon: <i class="fi">I</i> },
+  { f: 's', label: 'Üstü çizili', short: 'Çizgi', icon: <s class="fi">S</s> },
 ];
+const Lbl = ({ children }) => <span class="fl">{children}</span>;
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
   const existing = id ? (initialCategory === 'kisisel' ? data.notes : house.notes).find((n) => n.id === id) : null;
@@ -43,11 +44,17 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const scope = noteScope(category) === 'personal' ? 'personal' : 'family';
   const refs = useRef([]);
   const focusAfter = useRef(null);
+  const selAfter = useRef(null); // [start, end] to restore in the focused line after a word-level format change
 
   const grow = (el) => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } };
   useEffect(() => {
     refs.current.forEach(grow);
-    if (focusAfter.current != null) { refs.current[focusAfter.current]?.focus(); focusAfter.current = null; }
+    if (focusAfter.current != null) {
+      const el = refs.current[focusAfter.current];
+      el?.focus();
+      if (el && selAfter.current) el.setSelectionRange(selAfter.current[0], selAfter.current[1]);
+      focusAfter.current = null; selAfter.current = null;
+    }
   });
 
   const upd = (i, patch) => setBlocks((b) => b.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -55,7 +62,16 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const labels = numberLabels(blocks);
 
   const setKind = (k) => { upd(cur, { k: row.k === k ? 'p' : k, d: false }); focusAfter.current = cur; };
-  const toggleFlag = (f) => { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; };
+  // With text selected the format applies to the selection (word level); with just a cursor it applies to the whole line.
+  const toggleFlag = (f) => {
+    const el = refs.current[cur];
+    const a = el?.selectionStart ?? 0, z = el?.selectionEnd ?? 0;
+    if (el && a !== z) {
+      const r = toggleMark(row.t, a, z, f);
+      upd(cur, { t: r.t }); selAfter.current = [r.start, r.end];
+    } else upd(cur, { [f]: !row[f] });
+    focusAfter.current = cur;
+  };
   const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
   const move = (d) => {
     const j = cur + d;
@@ -144,19 +160,19 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
 
         <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
           {KIND_BUTTONS.map((x) => (
-            <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}</button>
+            <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
           ))}
           <span class="fmt-sep" aria-hidden="true" />
           {FLAG_BUTTONS.map((x) => (
-            <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}</button>
+            <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}<Lbl>{x.short}</Lbl></button>
           ))}
           <span class="fmt-sep" aria-hidden="true" />
-          <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /></button>
-          <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /></button>
+          <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /><Lbl>Girinti</Lbl></button>
+          <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /><Lbl>Geri</Lbl></button>
           <span class="fmt-sep" aria-hidden="true" />
-          <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /></button>
-          <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /></button>
-          <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /></button>
+          <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /><Lbl>Yukarı</Lbl></button>
+          <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
+          <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
         </div>
 
         <Card label="NOT">
@@ -170,7 +186,13 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
                 )}
                 {b.k === 'ul' && <span class="mark" aria-hidden="true">•</span>}
                 {b.k === 'ol' && <span class="mark num" aria-hidden="true">{labels[i]}</span>}
-                <textarea ref={(el) => { refs.current[i] = el; }} rows={1}
+                {cur !== i && /(\*\*|__|~~)/.test(b.t) && (
+                  <div class={['line-input', 'line-view', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
+                    onClick={() => { focusAfter.current = i; setCur(i); }}>
+                    {parseInline(b.t).map((r, j) => <span key={j} class={`${r.b ? 'b' : ''} ${r.i ? 'i' : ''} ${r.s ? 's' : ''}`}>{r.text}</span>)}
+                  </div>
+                )}
+                <textarea ref={(el) => { refs.current[i] = el; }} rows={1} hidden={cur !== i && /(\*\*|__|~~)/.test(b.t)}
                   class={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
                   aria-label={`Satır ${i + 1}`} value={b.t} maxLength={500} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
                   onFocus={() => setCur(i)} onKeyDown={(e) => onKeyDown(e, i)}
@@ -178,7 +200,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               </div>
             ))}
           </div>
-          <div class="sub" style="margin-top:8px">Araç çubuğu, imlecin olduğu satırı biçimlendirir. Enter yeni satır açar; boş madde ya da yuvarlak satırda Enter listeyi bitirir.</div>
+          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan yalnızca seçili kısım biçimlenir (satırda ** __ ~~ işaretleri görünür, satırdan çıkınca biçimli görünür). Seçim yoksa tüm satır biçimlenir. Enter yeni satır açar; boş madde ya da yuvarlak satırda Enter listeyi bitirir.</div>
         </Card>
 
         {filesEnabled && (
