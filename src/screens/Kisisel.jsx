@@ -77,7 +77,7 @@ export function Kisisel({ me, uid, data, nav, onSettings }) {
 
       <div class="row" style="gap:10px">
         <button class="btn grow" onClick={() => nav.go({ n: 'activity' })}><IconPlus />Aktivite ekle</button>
-        <button class="chip grow" onClick={() => nav.go({ n: 'log' })} disabled={!active.length}><IconPlus />Süre ekle</button>
+        <button class="btn grow" onClick={() => nav.go({ n: 'task' })}><IconPlus />Görev ekle</button>
       </div>
 
       <GoalsCard data={data} nav={nav} />

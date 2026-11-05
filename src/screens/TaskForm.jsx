@@ -33,7 +33,7 @@ export function TaskForm({ uid, data, id, nav }) {
           <label class="label" for="gorev" style="padding:0;margin:0">GÖREV</label>
           <input id="gorev" class="big-input" value={title} maxLength={80} placeholder="Örn. Vitamin al" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
         </Card>
-        {!existing && <div class="sub" style="padding:0 4px;line-height:1.45">Süresini ölçmeyeceğin, yalnızca tik atacağın işler için. Süre tutmak istediğin şeyler (kitap, spor…) için Kişisel bölümünden aktivite ekle.</div>}
+        {!existing && <div class="sub" style="padding:0 4px;line-height:1.45">Süresini ölçmeyeceğin, yalnızca tik atacağın işler için. Süre tutmak istediğin şeyler (kitap, spor…) için aktivite ekle.</div>}
         <Card label="TEKRAR">
           <Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" />
           {repeat === 'days' && (

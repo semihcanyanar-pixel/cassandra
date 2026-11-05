@@ -98,8 +98,8 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </Card>
       )}
 
-      <Card label="GÜNLÜK GÖREVLER" right={<button class="chip small" onClick={() => nav.go({ n: 'task' })}><IconPlus />Ekle</button>}>
-        {todays.length === 0 && <div class="sub" style="padding:8px 0">Bugün için görev yok.</div>}
+      <Card label="GÜNLÜK GÖREVLER">
+        {todays.length === 0 && <div class="sub" style="padding:8px 0">Bugün için görev yok. Görev eklemek için Kişisel sayfasını kullan.</div>}
         {/* Tasks that are not due today (other weekdays, future dates) stay reachable so they can be edited or deleted. */}
         {todays.map((task) => {
           const done = taskDone(task, t);
