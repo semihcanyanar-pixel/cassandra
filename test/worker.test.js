@@ -54,6 +54,18 @@ describe('Worker (Gemini vekili)', () => {
     expect(empty.status).toBe(200);
     vi.unstubAllGlobals();
   });
+  it('slot: sabah/öğle/akşam notu; geçersiz slot ya da boş veri 400', async () => {
+    expect((await worker.fetch(post('/ai/slot', {}, null), env())).status).toBe(401);
+    expect((await worker.fetch(post('/ai/slot', { slot: 'gece', tasks: [{ title: 'x' }] }), env())).status).toBe(400);
+    expect((await worker.fetch(post('/ai/slot', { slot: 'sabah', tasks: [], activities: [] }), env())).status).toBe(400);
+    let prompt = '';
+    vi.stubGlobal('fetch', async (url, init) => { prompt = JSON.parse(init.body).contents[0].parts[0].text; return gem({ mesaj: 'Günaydın' })(); });
+    const r = await worker.fetch(post('/ai/slot', { slot: 'aksam', hour: 20, tasks: [{ title: 'Faturayı öde', done: false }], activities: [{ name: 'Spor', todayMin: 0, dailyTargetMin: 60 }], streak: 2 }), env());
+    expect(await r.json()).toEqual({ text: 'Günaydın' });
+    expect(prompt).toContain('AKŞAM');
+    expect(prompt).toContain('Faturayı öde');
+    vi.unstubAllGlobals();
+  });
   it('Gemini hatası 502 döner', async () => {
     vi.stubGlobal('fetch', async () => new Response('x', { status: 403 }));
     expect((await worker.fetch(post('/ai/daily', { activities: [] }), env())).status).toBe(502);

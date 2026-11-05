@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { useAutoNote } from '../autoNote.js';
 import { Card, Progress } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
 import { DoseRow } from '../components/Dose.jsx';
@@ -17,6 +18,7 @@ const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day:
 export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings }) {
   const theme = useTheme();
   const t = today();
+  const { note, weekly } = useAutoNote(uid, data);
   const active = data.activities.filter((a) => !a.archived);
   const todayMin = (id) => minutesByDay(data.logs, id)[t] || 0;
   const rows = active.map((a) => ({ a, min: todayMin(a.id) }));
@@ -71,6 +73,23 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
             })}
           </div>
         </>
+      )}
+
+      {weekly && (
+        <Card label="HAFTALIK DEĞERLENDİRME">
+          <div class="title-sm" style="font-weight:600;line-height:1.5">{weekly.text}</div>
+          {(weekly.tips || []).length > 0 && (
+            <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+              {weekly.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
+            </ul>
+          )}
+        </Card>
+      )}
+
+      {note && (
+        <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
+          <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
+        </Card>
       )}
 
       <Card label="GÜNLÜK GÖREVLER" right={<button class="chip small" onClick={() => nav.go({ n: 'task' })}><IconPlus />Ekle</button>}>

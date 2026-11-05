@@ -2,7 +2,7 @@ import { verifyIdToken } from './jwt.js';
 import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue } from './push.js';
 
 // Gemini proxy + web push. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
-const LIMITS = { ai: 10 }; // per user per day
+const LIMITS = { ai: 10, slot: 6 }; // per user per day
 
 const cors = (env, req) => {
   const origin = req.headers.get('Origin') || '';
@@ -144,6 +144,36 @@ async function handleDaily(env, req, uid) {
   return reply(env, req, { text: str(g.json.degerlendirme, 500), quote: str(g.json.motivasyon, 400) });
 }
 
+const SLOT_GUIDE = {
+  sabah: 'Şu an SABAH. Güne başlarken motive edici ol: bugünkü görevleri ve hedefleri kısaca say, küçük bir planlama önerisi ver (hangisiyle başlamalı, ne zaman yapmalı). Bugün hepsini halledebileceğini hissettir.',
+  ogle: 'Şu an ÖĞLEDEN SONRA. Duruma göre konuş: hiçbir şeye başlanmamışsa "en az bir tanesini yapsan bile iyi olur ama hâlâ vakit var" tonunda, hangisinden başlanabileceğini söyle; ilerleme varsa tebrik et ve kalan en önemli şeyi öner.',
+  aksam: 'Şu an AKŞAM. Gün sonu: çok şey yapılmışsa tebrik et ve kalan son şeyi tamamlamayı öner; hiçbir şey yapılmamışsa suçlamadan, en azından şunları yapabileceğini söyle (küçük, kolay olanı seç).',
+};
+
+function cleanSlot(body) {
+  const slot = SLOT_GUIDE[body?.slot] ? body.slot : null;
+  const tasks = (Array.isArray(body?.tasks) ? body.tasks : []).slice(0, 15).map((t) => ({ gorev: str(t?.title, 60), yapildi: Boolean(t?.done) })).filter((t) => t.gorev);
+  const acts = (Array.isArray(body?.activities) ? body.activities : []).slice(0, 12).map((a) => ({
+    aktivite: str(a?.name, 40), bugun_dk: num(a?.todayMin), gunluk_hedef_dk: Number.isFinite(a?.dailyTargetMin) ? Math.round(a.dailyTargetMin) : null,
+  })).filter((a) => a.aktivite);
+  return { slot, tasks, acts, streak: Number.isFinite(body?.streak) ? Math.max(0, Math.round(body.streak)) : 0 };
+}
+
+// Automatic day note (morning / afternoon / evening) from today's tasks and activity progress.
+async function handleSlot(env, req, uid) {
+  const { slot, tasks, acts, streak } = cleanSlot(await req.json().catch(() => null));
+  if (!slot || (!tasks.length && !acts.length)) return reply(env, req, { error: 'no data' }, 400);
+  if (!(await rateLimit(env, uid, 'slot'))) return reply(env, req, { error: 'rate' }, 429);
+  const prompt = 'Sen sıcak, motive edici ama baskı yapmayan bir kişisel asistansın. Aşağıda bir kişinin bugünkü görevleri, aktivite süreleri (dakika, hedefe göre) ve gün serisi var.\n'
+    + `${SLOT_GUIDE[slot]}\n`
+    + 'Türkçe yaz, en çok 3 kısa cümle, "sen" diye hitap et. Veride olmayan görev ya da ilerleme uydurma; emoji kullanma; tıbbi ya da finansal tavsiye verme.\n'
+    + 'Yalnızca şu JSON biçiminde yanıt ver: {"mesaj": string}\n\n' + JSON.stringify({ gun_serisi: streak, gorevler: tasks, aktiviteler: acts });
+  const g = await gemini(env, prompt);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
+  await recordUse(env, uid, 'slot');
+  return reply(env, req, { text: str(g.json.mesaj, 420) });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runDue(env).then((n) => { if (n) console.log('push delivered', n); }).catch((e) => console.log('push cron failed', String(e))));
@@ -152,11 +182,12 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env, req) });
     if (req.method === 'GET' && url.pathname === '/push/key') return reply(env, req, { key: (await getVapid(env)).pub });
-    const authed = ['/ai/weekly', '/ai/daily', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test'];
+    const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test'];
     if (req.method === 'POST' && authed.includes(url.pathname)) {
       const uid = await auth(env, req);
       if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
       if (url.pathname === '/ai/daily') return handleDaily(env, req, uid);
+      if (url.pathname === '/ai/slot') return handleSlot(env, req, uid);
       if (url.pathname === '/ai/weekly') return handleWeekly(env, req, uid);
       const body = await req.json().catch(() => ({}));
       if (url.pathname === '/push/subscribe') return (await subscribe(env, uid, body.subscription)) ? reply(env, req, { ok: true }) : reply(env, req, { error: 'bad subscription' }, 400);

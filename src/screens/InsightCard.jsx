@@ -70,7 +70,6 @@ export function InsightCard({ uid, data }) {
                 {cached.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
               </ul>
             )}
-            <div class="sub" style="margin-top:10px">Yapay zekâ tarafından üretildi; {mode === 'day' ? 'bugün' : 'bu hafta'} için bir kez.</div>
           </>
         ) : !hasData ? (
           <div class="sub">{mode === 'day' ? 'Değerlendirme için son günlerde birkaç süre kaydı ekle.' : 'Değerlendirme için son haftalarda birkaç süre kaydı ekle.'}</div>
