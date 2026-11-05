@@ -65,3 +65,4 @@ button.hg-row { cursor: pointer; }
 .hg.dense .hg-head, .hg.dense .hg-row { grid-template-columns: minmax(70px, 1.1fr) repeat(var(--n), minmax(0, 1fr)); column-gap: 2px; }
 .hg.dense .hg-c { width: 21px; height: 21px; border-width: 1.5px; }
 .hg.dense .hg-head span { font-size: 10px; }
+.vlink { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; padding: 0; }
