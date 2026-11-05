@@ -24,8 +24,6 @@
 .note-line.done .box { background: currentColor; }
 :root[data-theme='mozaik'] .note { background: var(--c); color: #121212; }
 :root[data-theme='mozaik'] .note-tag { color: rgba(18,18,18,.75); }
-:root[data-theme='mozaik'] .note.personal { background: #2F4BFF; color: #FFFFFF; }
-:root[data-theme='mozaik'] .note.personal .note-tag { color: rgba(255,255,255,.85); }
 :root[data-theme='yorunge'] .note-tag { color: var(--c); }
 :root[data-theme='yorunge'] .note.personal .note-tag { color: #B79CFF; }
 :root[data-theme='teknik'] .note-tag { color: var(--text); }
