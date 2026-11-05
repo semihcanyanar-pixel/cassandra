@@ -11,7 +11,7 @@ const sum = (logs) => logs.reduce((s, l) => s + l.minutes, 0);
 export function buildInsightInput(data, t = today()) {
   const ws = weekStart(t);
   const starts = [-3, -2, -1, 0].map((n) => addDays(ws, n * 7));
-  return data.activities.filter((a) => !a.archived).map((a) => ({
+  return data.activities.map((a) => ({
     name: a.name,
     weeklyTargetMin: a.dailyMinutes && a.weeklyDays ? a.dailyMinutes * a.weeklyDays : null,
     weeks: starts.map((s) => sum(data.logs.filter((l) => l.activityId === a.id && l.date >= s && l.date <= addDays(s, 6)))),
@@ -21,7 +21,7 @@ export function buildInsightInput(data, t = today()) {
 // Today's minutes + last 7 days per active activity, overall streak and the hour of day.
 export function buildDailyInput(data, t = today(), hour = new Date().getHours()) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(t, i - 6));
-  const activities = data.activities.filter((a) => !a.archived).map((a) => {
+  const activities = data.activities.map((a) => {
     const last7 = days.map((d) => sum(data.logs.filter((l) => l.activityId === a.id && l.date === d)));
     return { name: a.name, todayMin: last7[6], dailyTargetMin: a.dailyMinutes || null, last7 };
   });

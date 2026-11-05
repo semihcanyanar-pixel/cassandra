@@ -19,7 +19,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const theme = useTheme();
   const t = today();
   const { note, weekly } = useAutoNote(uid, data);
-  const active = data.activities.filter((a) => !a.archived);
+  const active = data.activities;
   const todayMin = (id) => minutesByDay(data.logs, id)[t] || 0;
   const rows = active.map((a) => ({ a, min: todayMin(a.id) }));
   const total = data.logs.filter((l) => l.date === t).reduce((s, l) => s + l.minutes, 0);

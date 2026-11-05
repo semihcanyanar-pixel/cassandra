@@ -28,7 +28,7 @@ export function Report({ uid, data, activityId, nav }) {
     if (Math.abs(dx) > 50) page(dx > 0 ? -1 : 1); // swipe right = earlier
   };
 
-  const picks = [{ value: 'all', label: 'Genel' }, ...data.activities.filter((a) => !a.archived).map((a) => ({ value: a.id, label: a.name }))];
+  const picks = [{ value: 'all', label: 'Genel' }, ...data.activities.map((a) => ({ value: a.id, label: a.name }))];
   const recent = data.logs.filter((l) => !filterId || l.activityId === filterId)
     .slice().sort((a, b) => (b.date + (b.createdAt?.toMillis?.() ?? 9e15)).localeCompare(a.date + (a.createdAt?.toMillis?.() ?? 9e15))).slice(0, 10);
 

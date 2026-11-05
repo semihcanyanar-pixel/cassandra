@@ -6,7 +6,7 @@ import { today } from '../lib/dates.js';
 const QUICK = [15, 30, 45, 60, 90].map((n) => ({ value: n, label: `${n} dk` }));
 
 export function LogForm({ uid, data, activityId, nav }) {
-  const active = data.activities.filter((a) => !a.archived);
+  const active = data.activities;
   const [act, setAct] = useState(activityId || active[0]?.id || null);
   const [minutes, setMinutes] = useState('');
   const [date, setDate] = useState(today());

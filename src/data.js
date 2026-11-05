@@ -76,7 +76,9 @@ const fire = (thunk) => { if (!DEMO) thunk().catch((e) => console.error(e)); };
 export const saveActivity = (uid, id, data) => fire(() => id
   ? updateDoc(ref(uid, 'activities', id), data)
   : addDoc(col(uid, 'activities'), { ...data, archived: false, createdAt: serverTimestamp() }));
-export const addLog = (uid, data) => fire(() => addDoc(col(uid, 'logs'), { ...data, createdAt: serverTimestamp() }));
+// Deletes an activity together with its time logs (logIds = ids of logs that belong to it).
+export const deleteActivity = (uid, id, logIds) => fire(() => Promise.all([...logIds.map((l) => deleteDoc(ref(uid, 'logs', l))), deleteDoc(ref(uid, 'activities', id))]));
+export const addLog =(uid, data) => fire(() => addDoc(col(uid, 'logs'), { ...data, createdAt: serverTimestamp() }));
 export const deleteLog = (uid, id) => fire(() => deleteDoc(ref(uid, 'logs', id)));
 
 export const saveTask = (uid, id, data) => fire(() => id

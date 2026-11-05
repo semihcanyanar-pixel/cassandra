@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips, Switch, COLOR_COUNT, actColor } from '../components/ui.jsx';
-import { saveActivity } from '../data.js';
+import { saveActivity, deleteActivity } from '../data.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
 const DURS = [15, 30, 45, 60, 90].map((n) => ({ value: n, label: `${n} dk` }));
@@ -22,7 +22,11 @@ export function ActivityForm({ uid, data, id, nav }) {
     saveActivity(uid, id, { name: name.trim(), color, weeklyDays: days, dailyMinutes: hasTarget ? m : null });
     nav.back();
   }
-  const toggleArchive = () => { saveActivity(uid, id, { archived: !existing.archived }); nav.back(); };
+  const remove = () => {
+    if (!confirm(`“${existing.name}” ve bu aktiviteye ait tüm süre kayıtları silinsin mi?`)) return;
+    deleteActivity(uid, id, data.logs.filter((l) => l.activityId === id).map((l) => l.id));
+    nav.back();
+  };
 
   return (
     <form onSubmit={submit}>
@@ -64,12 +68,8 @@ export function ActivityForm({ uid, data, id, nav }) {
           </div>
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
-        <div class="sub" style="padding:0 4px;line-height:1.45">Kişisel alanında durur, eşin görmez. Sonradan düzenleyebilir ya da arşivleyebilirsin; geçmiş kayıtlar silinmez.</div>
-        {existing && (
-          <button type="button" class="chip" style="min-height:48px" onClick={toggleArchive}>
-            {existing.archived ? 'Arşivden çıkar' : 'Arşivle'}
-          </button>
-        )}
+        <div class="sub" style="padding:0 4px;line-height:1.45">Kişisel alanında durur, eşin görmez. Sonradan düzenleyebilirsin.</div>
+        {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Aktiviteyi sil</button>}
       </Page>
     </form>
   );

@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import { InsightCard } from './InsightCard.jsx';
 import { Card, Progress } from '../components/ui.jsx';
 import { IconLock, IconPlus, IconNext } from '../icons.jsx';
@@ -6,15 +5,13 @@ import { fmtDur, goalProgress, activeDays } from '../lib/stats.js';
 import { today, weekStart, addDays, DAY_SHORT } from '../lib/dates.js';
 
 export function Kisisel({ me, uid, data, nav, onSettings }) {
-  const [showArchive, setShowArchive] = useState(false);
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
   const weekLogs = data.logs.filter((l) => l.date >= ws && l.date <= we);
   const byDay = (d, id) => weekLogs.filter((l) => l.date === d && (!id || l.activityId === id)).reduce((s, l) => s + l.minutes, 0);
   const weekTotal = weekLogs.reduce((s, l) => s + l.minutes, 0);
   const maxDay = Math.max(30, ...days.map((d) => byDay(d)));
-  const active = data.activities.filter((a) => !a.archived);
-  const archived = data.activities.filter((a) => a.archived);
+  const active = data.activities;
   const colorOf = (id) => data.activities.find((a) => a.id === id)?.color ?? 0;
 
   return (
@@ -85,17 +82,6 @@ export function Kisisel({ me, uid, data, nav, onSettings }) {
 
       <GoalsCard data={data} nav={nav} />
       <InsightCard uid={me.uid} data={data} />
-
-      {archived.length > 0 && (
-        <>
-          <button class="chip" onClick={() => setShowArchive(!showArchive)} aria-expanded={showArchive}>Arşiv ({archived.length})</button>
-          {showArchive && archived.map((a) => (
-            <button key={a.id} class="card tap" onClick={() => nav.go({ n: 'activity', id: a.id })}>
-              <div class="row"><span class="dot" style={`background:var(--act-${a.color})`} /><span class="title-sm grow">{a.name}</span><span class="sub">Arşivde</span></div>
-            </button>
-          ))}
-        </>
-      )}
     </main>
   );
 }
