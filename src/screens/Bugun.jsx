@@ -23,7 +23,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const todays = tasksForDay(data.tasks, t);
   const events = occurrences(tagScopes(house.events, data.events), t, t);
   const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
-  const openTodos = house.todos.filter((x) => !x.done).length;
+  const todoOpen = house.todos.filter((x) => !x.done);
   const openMed = () => { ortakStart.sub = 'ilac'; goTab('ortak'); };
 
   const items = [
@@ -139,21 +139,28 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         ))}
       </div>
 
-      <Card label="YAKLAŞAN" class="list-card-pad">
-        {upcoming.length === 0 && <div class="sub" style="padding:8px 0">Yaklaşan kayıt yok.</div>}
-        {upcoming.map((e) => (
-          <button key={e.scope + e.id + e.date} class="up-row" onClick={() => goTab('takvim')}>
-            <span class="up-date">{e.date === t ? 'Bugün' : dayMonth(e.date)}</span>
-            <span class="grow">{e.title}</span>
-            {e.scope === 'kisisel' ? <span class="badge small"><IconLock small />Kişisel</span> : e.time && <span class="sub">{e.time}</span>}
-          </button>
-        ))}
-        <button class="up-row" onClick={() => goTab('ortak')}>
-          <span class="up-date">Bugün</span>
-          <span class="grow">Yapılacaklar listesi</span>
-          <span class="sub">{openTodos} açık</span>
-        </button>
-      </Card>
+      {upcoming.length > 0 && (
+        <Card label="YAKLAŞAN TAKVİM KAYITLARI" class="list-card-pad">
+          {upcoming.map((e) => (
+            <button key={e.scope + e.id + e.date} class="up-row" onClick={() => goTab('takvim')}>
+              <span class="up-date">{e.date === t ? 'Bugün' : dayMonth(e.date)}</span>
+              <span class="grow">{e.title}</span>
+              {e.scope === 'kisisel' ? <span class="badge small"><IconLock small />Kişisel</span> : e.time && <span class="sub">{e.time}</span>}
+            </button>
+          ))}
+        </Card>
+      )}
+
+      {todoOpen.length > 0 && (
+        <Card label="ORTAK YAPILACAKLAR" class="list-card-pad">
+          {todoOpen.slice(0, 3).map((x) => (
+            <button key={x.id} class="up-row" onClick={() => { ortakStart.sub = 'todo'; goTab('ortak'); }}>
+              <span class="grow">{x.text}</span>
+            </button>
+          ))}
+          {todoOpen.length > 3 && <button class="up-row" onClick={() => { ortakStart.sub = 'todo'; goTab('ortak'); }}><span class="grow sub">+{todoOpen.length - 3} iş daha</span></button>}
+        </Card>
+      )}
     </main>
   );
 }
