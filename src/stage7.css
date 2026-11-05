@@ -97,3 +97,7 @@ button.hg-row { cursor: pointer; }
 /* Bugün: timeline heading and the plain "İlaçları göster" text link next to it */
 .flow-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
 .flow-meds { align-self: center; font-size: 14px; font-weight: 600; color: var(--muted); padding: 0; text-align: right; }
+
+/* Note colour must be visible in every theme (Mozaik paints the whole card; the other two get a coloured edge) */
+:root[data-theme='yorunge'] .note { box-shadow: inset 7px 0 0 var(--c); padding-left: 20px; }
+:root[data-theme='teknik'] .note { box-shadow: inset 0 9px 0 var(--c); padding-top: 22px; }
