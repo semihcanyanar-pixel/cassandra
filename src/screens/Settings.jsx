@@ -5,7 +5,8 @@ import { THEMES, currentTheme } from '../theme.js';
 import { saveTheme } from '../session.js';
 import { IconBack, IconCheck } from '../icons.jsx';
 import { PushSection } from './PushSection.jsx';
-import { buildBackup, backupCounts, saveBackup } from '../lib/backup.js';
+import { buildBackup, backupCounts, saveBackup, parseBackup, restoreOps } from '../lib/backup.js';
+import { applyRestore } from '../data.js';
 
 export function Settings({ session, data, house, onBack }) {
   const [theme, setTheme] = useState(currentTheme());
@@ -13,6 +14,21 @@ export function Settings({ session, data, house, onBack }) {
   const [backupMsg, setBackupMsg] = useState('');
   const { me, household } = session;
 
+  async function doRestore(file) {
+    if (!file) return;
+    setBackupBusy(true); setBackupMsg('');
+    try {
+      const r = parseBackup(await file.text(), me.uid);
+      if (!r.ok) { setBackupMsg(r.error); return; }
+      const c = r.counts;
+      if (!confirm(`Yedekteki ${c.personal} kişisel kayıt geri yüklenecek. Aynı kayıtlar yedekteki hâliyle değişir, yedekte olmayanlar silinmez. Devam edilsin mi?`)) return;
+      const sameHouse = r.backup.household.id === session.hid && c.household > 0;
+      const withHouse = sameHouse && confirm(`Ortak veriler de (${c.household} kayıt: alışveriş, notlar, takvim, ilaçlar…) geri yüklensin mi? Eşin de görür. İptal dersen yalnızca kişisel verilerin yüklenir.`);
+      const n = await applyRestore(restoreOps(r.backup, { uid: me.uid, hid: session.hid, includeHousehold: withHouse }));
+      setBackupMsg(`${n} kayıt geri yüklendi.`);
+    } catch (e) { setBackupMsg('Geri yükleme tamamlanamadı, tekrar dene.'); }
+    finally { setBackupBusy(false); }
+  }
   async function doBackup() {
     setBackupBusy(true); setBackupMsg('');
     try {
@@ -62,6 +78,7 @@ export function Settings({ session, data, house, onBack }) {
       <div class="card">
         <div class="sub" style="line-height:1.45">Notların, aktivite sürelerin, görevlerin ve ortak verilerin tek bir dosyada. Telefon değişirse ya da bir şey silinirse elinde kopyası olur. Resim ve PDF ekleri dosyaya girmez.</div>
         <button class="btn wide" style="margin-top:12px" disabled={backupBusy} onClick={doBackup}>Verimi indir</button>
+        <label class="chip filebtn" style="margin-top:10px;display:flex;justify-content:center">Yedekten geri yükle<input class="vh" type="file" accept="application/json,.json" disabled={backupBusy} onChange={(e) => { doRestore(e.target.files[0]); e.target.value = ''; }} /></label>
         {backupMsg && <div class="sub" style="margin-top:8px" role="status">{backupMsg}</div>}
       </div>
 

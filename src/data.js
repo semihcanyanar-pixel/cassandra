@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import {
-  collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove,
+  collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, writeBatch, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase.js';
+import { reviveTimestamps } from './lib/backup.js';
 
 // Personal data lives ONLY under users/{uid}/... (SPEC §4/§5); nothing here touches households/.
 const col = (uid, name) => collection(db, 'users', uid, name);
@@ -82,6 +83,16 @@ export const deleteActivity = (uid, id, logIds) => fire(() => Promise.all([...lo
 export const addLog =(uid, data) => fire(() => addDoc(col(uid, 'logs'), { ...data, createdAt: serverTimestamp() }));
 // One-tap "done today" for an activity: a log without minutes. Undoing removes only such minute-less logs of that day.
 export const markActivityDone = (uid, activityId, date) => addLog(uid, { activityId, date, minutes: null });
+// Writes the restore operations (see lib/backup.js) in batches of 400. Returns the number of documents written.
+export async function applyRestore(ops) {
+  if (DEMO) return 0;
+  for (let i = 0; i < ops.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const { path, data } of ops.slice(i, i + 400)) batch.set(doc(db, ...path), reviveTimestamps(data, (sec, ns) => new Timestamp(sec, ns)));
+    await batch.commit();
+  }
+  return ops.length;
+}
 export const updateLog =(uid, id, data) => fire(() => updateDoc(ref(uid, 'logs', id), data));
 export const deleteLog = (uid, id) => fire(() => deleteDoc(ref(uid, 'logs', id)));
 

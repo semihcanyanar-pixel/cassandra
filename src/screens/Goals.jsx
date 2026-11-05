@@ -5,7 +5,7 @@ import { goalProgress } from '../lib/stats.js';
 import { saveGoal, deleteGoal } from '../data.js';
 import { today, diffDays, dayMonth } from '../lib/dates.js';
 
-const UNITS = [{ value: 'saat', label: 'saat' }, { value: 'gün', label: 'gün' }, { value: 'adet', label: 'adet' }];
+const UNITS = [{ value: 'gün', label: 'gün' }, { value: 'saat', label: 'saat' }, { value: 'adet', label: 'adet' }];
 
 export function Goals({ data, nav }) {
   const t = today();
@@ -17,7 +17,7 @@ export function Goals({ data, nav }) {
         <div class="card empty"><div class="title-sm">Henüz hedef yok</div><div class="sub">Örn. “Yıl sonuna kadar 100 saat İngilizce”.</div></div>
       )}
       {data.goals.map((g) => {
-        const p = goalProgress(g, data.logs);
+        const p = goalProgress(g, data.logs, data.tasks);
         const left = g.dueDate ? diffDays(g.dueDate, t) : null;
         const done = p >= g.target;
         return (
@@ -39,13 +39,17 @@ export function GoalForm({ uid, data, id, nav }) {
   const existing = id ? data.goals.find((g) => g.id === id) : null;
   const [title, setTitle] = useState(existing?.title || '');
   const [target, setTarget] = useState(existing?.target ?? '');
-  const [unit, setUnit] = useState(existing?.unit || 'saat');
+  const [unit, setUnit] = useState(existing?.unit || 'gün');
   const [due, setDue] = useState(existing?.dueDate || '');
   const [linked, setLinked] = useState(existing?.linkedActivityId || '');
   const [progress, setProgress] = useState(existing?.progress ?? 0);
   const [error, setError] = useState('');
   const canLink = unit === 'saat' || unit === 'gün';
-  const isLinked = canLink && linked;
+  // repeating tasks can be a source too, but only for counting days (they have no minutes)
+  const sources = [...data.activities.map((a) => ({ value: a.id, label: a.name })), ...(unit === 'gün' ? data.tasks.filter((t) => t.repeat === 'daily' || t.repeat === 'days').map((t) => ({ value: t.id, label: `${t.title} (görev)` })) : [])];
+  const linkedOk = sources.some((x) => x.value === linked);
+  const noMinutes = unit === 'saat' && linked && !data.logs.some((l) => l.activityId === linked && l.minutes);
+  const isLinked = canLink && linked && linkedOk;
 
   function submit(e) {
     e.preventDefault();
@@ -76,11 +80,12 @@ export function GoalForm({ uid, data, id, nav }) {
           </div>
           <div style="margin-top:10px"><Chips options={UNITS} value={unit} onChange={setUnit} label="Birim" /></div>
         </Card>
-        {canLink && data.activities.length > 0 && (
+        {canLink && sources.length > 0 && (
           <Card label="İLERLEME KAYNAĞI">
-            <Chips options={[{ value: '', label: 'Elle gir' }, ...data.activities.map((a) => ({ value: a.id, label: a.name }))]}
+            <Chips options={[{ value: '', label: 'Elle gir' }, ...sources]}
               value={linked} onChange={setLinked} label="İlerleme kaynağı" />
-            <div class="sub" style="margin-top:8px">{linked ? `Seçili aktivitenin kayıtları${existing ? '' : ' bugünden itibaren'} otomatik sayılır.` : 'İlerlemeyi sen güncellersin.'}</div>
+            <div class="sub" style="margin-top:8px">{linked && linkedOk ? (unit === 'gün' ? `Seçilenin yapıldığı günler${existing ? '' : ' bugünden itibaren'} otomatik sayılır.` : `Seçili aktivitenin süre kayıtları${existing ? '' : ' bugünden itibaren'} otomatik toplanır.`) : 'İlerlemeyi sen güncellersin.'}
+            {noMinutes && <div class="sub" style="margin-top:6px">Bu aktiviteye henüz süre girmedin, saat 0 kalır. Süre girmiyorsan birim olarak “gün” seç.</div>}</div>
           </Card>
         )}
         {!isLinked && (

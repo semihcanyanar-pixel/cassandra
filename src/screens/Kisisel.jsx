@@ -84,7 +84,7 @@ export function Kisisel({ me, data, nav, onSettings }) {
           <Card>
             {data.goals.length === 0 && <div class="sub" style="padding:6px 0">Henüz hedef yok.</div>}
             {data.goals.map((g) => {
-              const p = goalProgress(g, data.logs);
+              const p = goalProgress(g, data.logs, data.tasks);
               return (
                 <button key={g.id} class="vact-row" onClick={() => nav.go({ n: 'goal', id: g.id })}>
                   <div class="row" style="justify-content:space-between"><span class="title-sm">{g.title}</span><span class="sub">{p}/{g.target} {g.unit}</span></div>

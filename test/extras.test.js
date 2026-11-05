@@ -46,3 +46,39 @@ describe('sabit notlar', () => {
     expect(filterNotes(shared, mine, 'kisisel').map((n) => n.id)).toEqual(['p1', 'p2']);
   });
 });
+
+import { parseBackup, restoreOps, reviveTimestamps } from '../src/lib/backup.js';
+
+describe('yedekten geri yükleme', () => {
+  const session = { me: { uid: 'u1', name: 'Semih' }, hid: 'hane1' };
+  const file = JSON.stringify(buildBackup({ session, data: { notes: [{ id: 'n1', title: 'a', updatedAt: { seconds: 5, nanoseconds: 7 } }], logs: [{ id: 'l1', minutes: null }] }, house: { todos: [{ id: 'f1', text: 'x' }], medLogs: [{ id: 'm_2026-11-05_08:00', status: 'alindi' }] } }));
+
+  it('geçerli yedeği okur ve sayar', () => {
+    const r = parseBackup(file, 'u1');
+    expect(r.ok).toBe(true);
+    expect(r.counts).toEqual({ personal: 2, household: 2 });
+  });
+  it('bozuk dosyayı, başka uygulamanın dosyasını ve başka hesabın yedeğini reddeder', () => {
+    expect(parseBackup('{bozuk', 'u1').ok).toBe(false);
+    expect(parseBackup(JSON.stringify({ app: 'baska' }), 'u1').ok).toBe(false);
+    expect(parseBackup(file, 'u2')).toMatchObject({ ok: false, error: expect.stringContaining('başka bir hesaba') });
+  });
+  it('tehlikeli kimlikleri (/, .., __ ile başlayan) atlar', () => {
+    const b = JSON.parse(file);
+    b.personal.notes.push({ id: '../x' }, { id: 'a/b' }, { id: '__evil__' }, { id: '..' });
+    expect(parseBackup(JSON.stringify(b), 'u1').counts.personal).toBe(2);
+  });
+  it('geri yükleme işlemleri doğru yola yazar; ortak veri yalnızca onayla ve aynı haneye', () => {
+    const { backup } = parseBackup(file, 'u1');
+    const own = restoreOps(backup, { uid: 'u1', hid: 'hane1', includeHousehold: false });
+    expect(own.map((o) => o.path.join('/')).sort()).toEqual(['users/u1/logs/l1', 'users/u1/notes/n1']);
+    expect(own.find((o) => o.path[3] === 'n1').data).not.toHaveProperty('id');
+    const all = restoreOps(backup, { uid: 'u1', hid: 'hane1', includeHousehold: true });
+    expect(all.map((o) => o.path.join('/'))).toContain('households/hane1/medLogs/m_2026-11-05_08:00');
+    expect(restoreOps(backup, { uid: 'u1', hid: 'baska', includeHousehold: true })).toHaveLength(2);
+  });
+  it('zaman damgaları geri çevrilir', () => {
+    const out = reviveTimestamps({ a: { seconds: 5, nanoseconds: 7 }, b: [{ seconds: 1, nanoseconds: 2, type: 'firestore/timestamp/1.0' }], c: { seconds: 1 }, d: 'x' }, (s, n) => `TS${s}.${n}`);
+    expect(out).toEqual({ a: 'TS5.7', b: ['TS1.2'], c: { seconds: 1 }, d: 'x' });
+  });
+});

@@ -57,3 +57,20 @@ describe('yapay zeka girdisi', () => {
     expect(d.activities[1]).toMatchObject({ todayDone: true, todayMin: 30, dailyTargetMin: 45 });
   });
 });
+
+import { goalProgress } from '../src/lib/stats.js';
+describe('hedef ilerlemesi', () => {
+  it('bağlı aktivite: gün sayısı süresiz kayıtları da sayar, saat yalnızca süreyi', () => {
+    const logs = [log('a', '2026-11-02'), log('a', '2026-11-03', 90), log('a', '2026-11-03', 30), log('a', '2026-10-01')];
+    expect(goalProgress({ linkedActivityId: 'a', unit: 'gün', startDate: '2026-11-01' }, logs)).toBe(2);
+    expect(goalProgress({ linkedActivityId: 'a', unit: 'saat', startDate: '2026-11-01' }, logs)).toBe(2);
+  });
+  it('bağlı tekrarlı görev: yapıldı günleri başlangıçtan itibaren', () => {
+    const tasks = [{ id: 't', repeat: 'daily', doneDates: ['2026-10-30', '2026-11-02', '2026-11-04'] }];
+    expect(goalProgress({ linkedActivityId: 't', unit: 'gün', startDate: '2026-11-01' }, [], tasks)).toBe(2);
+    expect(goalProgress({ linkedActivityId: 't', unit: 'saat', startDate: '2026-11-01' }, [], tasks)).toBe(0);
+  });
+  it('elle girilen hedef olduğu gibi kalır', () => {
+    expect(goalProgress({ unit: 'adet', progress: 7 }, [])).toBe(7);
+  });
+});

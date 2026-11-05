@@ -115,12 +115,15 @@ export function tasksForDay(tasks, iso) {
   });
 }
 
-// Long-term goal progress, in the goal's unit.
-export function goalProgress(goal, logs) {
+// Long-term goal progress, in the goal's unit. A linked goal counts DAYS DONE (an activity's logs or a repeating task's ticks) since it started;
+// hours need logged minutes, so they only make sense for an activity where minutes are entered.
+export function goalProgress(goal, logs, tasks = []) {
   if (goal.linkedActivityId && (goal.unit === 'saat' || goal.unit === 'gün')) {
     const since = goal.startDate || '0000-00-00';
+    const task = tasks.find((t) => t.id === goal.linkedActivityId);
+    if (task) return goal.unit === 'gün' ? new Set((task.doneDates || []).filter((d) => d >= since)).size : 0;
     const mine = logs.filter((l) => l.activityId === goal.linkedActivityId && l.date >= since);
-    if (goal.unit === 'saat') return Math.round((mine.reduce((s, l) => s + l.minutes, 0) / 60) * 10) / 10;
+    if (goal.unit === 'saat') return Math.round((mine.reduce((s, l) => s + (l.minutes || 0), 0) / 60) * 10) / 10;
     return new Set(mine.map((l) => l.date)).size;
   }
   return goal.progress || 0;
