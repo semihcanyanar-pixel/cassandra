@@ -1,49 +1,58 @@
-import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
 import { Card, Progress } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
-import { DoseRow } from '../components/Dose.jsx';
-import { medPeople, personById, dosesForDay, nextDose, hhmm } from '../lib/meds.js';
-import { IconPlus, IconNext } from '../icons.jsx';
-import { useTheme } from '../theme.js';
+import { IconPlus, IconLock } from '../icons.jsx';
+import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
 import { fmtDur, minutesByDay, streak, tasksForDay, taskDone } from '../lib/stats.js';
-import { today } from '../lib/dates.js';
-import { toggleTask } from '../data.js';
 import { occurrences, tagScopes } from '../lib/events.js';
-import { IconLock } from '../icons.jsx';
-import { dayMonth, addDays, DAY_SHORT } from '../lib/dates.js';
-
-// "Pzt · Çar · Cum" for weekday tasks, "Her gün", or the date of a one-off task.
-const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === 'days' ? (task.days || []).slice().sort().map((d) => DAY_SHORT[d]).join(' · ') : dayMonth(task.date));
+import { today, addDays, dayMonth, DAY_SHORT } from '../lib/dates.js';
+import { toggleTask, markDose, unmarkDose } from '../data.js';
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+const Cross = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
+const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === 'days' ? (task.days || []).slice().sort().map((d) => DAY_SHORT[d]).join(' · ') : null);
+
+// Bugün: summary, activity tiles (swipe sideways), then the day as a timeline of tasks, doses and events.
 export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings }) {
-  const theme = useTheme();
-  const t = today();
+  const t = today(), now = hhmm();
   const { note, weekly } = useAutoNote(uid, data);
-  const active = data.activities;
-  const todayMin = (id) => minutesByDay(data.logs, id)[t] || 0;
-  const rows = active.map((a) => ({ a, min: todayMin(a.id) }));
-  const total = data.logs.filter((l) => l.date === t).reduce((s, l) => s + l.minutes, 0);
-  const targeted = rows.filter((r) => r.a.dailyMinutes);
-  const targetSum = targeted.reduce((s, r) => s + r.a.dailyMinutes, 0);
-  const reached = targeted.reduce((s, r) => s + Math.min(r.min, r.a.dailyMinutes), 0);
-  const pct = targetSum ? Math.round((reached / targetSum) * 100) : null;
-  const run = streak(data.logs, null, t);
+  const people = medPeople(session.household, me.uid);
+  const doses = dosesForDay(house.medications, house.medLogs, t, now);
   const todays = tasksForDay(data.tasks, t);
-  // Not due today: repeating tasks (other weekdays) and one-off tasks dated in the future.
-  const later = data.tasks.filter((x) => !todays.includes(x) && (x.repeat === 'daily' || x.repeat === 'days' || x.date > t));
+  const events = occurrences(tagScopes(house.events, data.events), t, t);
   const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
   const openTodos = house.todos.filter((x) => !x.done).length;
-  const [who, setWho] = useState('all');
-  const people = medPeople(session.household, me.uid);
-  const now = hhmm();
-  const doses = dosesForDay(house.medications, house.medLogs, t, now);
-  const doseOwner = (d) => personById(people, d.med.forId, me.uid).id;
-  const filterPeople = people.filter((p) => doses.some((d) => doseOwner(d) === p.id));
-  const shown = who === 'all' ? doses : doses.filter((d) => doseOwner(d) === who);
-  const next = nextDose(shown, now);
+  const openMed = () => { ortakStart.sub = 'ilac'; goTab('ortak'); };
+
+  const items = [
+    ...todays.map((task) => ({
+      id: `t${task.id}`, time: task.remindTime || null, title: task.title, sub: taskWhen(task),
+      done: taskDone(task, t), tick: () => toggleTask(uid, task, t, !taskDone(task, t)), open: () => nav.go({ n: 'task', id: task.id }),
+    })),
+    ...doses.map((d) => {
+      const who = personById(people, d.med.forId, me.uid).name;
+      const st = d.log?.status;
+      const doer = d.log ? personById(people, d.log.doneBy, me.uid).name : '';
+      const at = d.log ? hhmm(new Date(d.log.doneAt?.toMillis?.() ?? Date.now())) : '';
+      return {
+        id: `d${d.id}`, time: d.time, title: `${who} · ${d.med.name}`, missed: d.missed && !d.log,
+        sub: d.log ? `${st === 'alindi' ? 'Alındı' : 'Kaçtı'} · ${doer} · ${at}` : d.missed ? 'Kaçtı' : [d.med.dose, mealText(d.med.meal)].filter(Boolean).join(' · ') || null,
+        done: Boolean(d.log),
+        tick: () => (d.log ? (confirm('İşaret geri alınsın mı?') && unmarkDose(session.hid, d.id)) : markDose(session.hid, me.uid, d, 'alindi')),
+        cross: d.log || d.missed ? null : () => markDose(session.hid, me.uid, d, 'atlandi'),
+        open: openMed,
+      };
+    }),
+    ...events.map((e) => ({ id: `e${e.scope}${e.id}`, time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
+  ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const untimed = items.filter((i) => !i.time);
+  const timed = items.filter((i) => i.time);
+
+  const rows = data.activities.map((a) => ({ a, min: minutesByDay(data.logs, a.id)[t] || 0 }));
+  const total = data.logs.filter((l) => l.date === t).reduce((s, l) => s + l.minutes, 0);
+  const run = streak(data.logs, null, t);
 
   return (
     <main class="screen">
@@ -55,29 +64,32 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
-      {active.length === 0 ? (
+      <div class="card vsum">
+        <div class="row" style="justify-content:space-between"><span class="title-sm muted">Süre</span><span class="streak-badge">{run} gün seri</span></div>
+        <div class="num" style="font-size:28px;margin:4px 0 8px">{fmtDur(total)}</div>
+        <div class="seg-bar" role="img" aria-label="Aktivitelere göre bugünkü süre">
+          {rows.filter((r) => r.min > 0).map((r) => <i key={r.a.id} style={`flex:${r.min} 1 0;background:var(--act-${r.a.color})`} />)}
+          {total === 0 && <i class="seg-rest" style="flex:1 1 0;background:var(--track)" />}
+        </div>
+      </div>
+
+      {rows.length === 0 ? (
         <div class="card empty">
           <div class="title-sm">İlk aktiviteni ekle</div>
           <div class="sub">Süreni burada takip edeceksin.</div>
           <button class="btn" style="margin-top:12px" onClick={() => nav.go({ n: 'activity' })}><IconPlus />Aktivite ekle</button>
         </div>
       ) : (
-        <>
-          <Summary theme={theme} rows={rows} total={total} pct={pct} run={run} targetSum={targetSum} />
-          <div class="tiles">
-            {rows.map(({ a, min }) => {
-              const tgt = a.dailyMinutes;
-              return (
-                <button key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'log', activityId: a.id })}
-                  aria-label={`${a.name}: bugün ${min} dakika. Süre ekle`}>
-                  <span class="tile-name">{a.name}</span>
-                  <span class="tile-val num">{min}<small> dk</small></span>
-                  {tgt ? <><Progress pct={(min / tgt) * 100} color="var(--tile-bar)" /><span class="tile-sub">{min >= tgt ? 'tamam' : `hedef ${tgt} dk`}</span></> : <span class="tile-sub">hedefsiz</span>}
-                </button>
-              );
-            })}
-          </div>
-        </>
+        <div class="vtiles" aria-label="Aktiviteler">
+          {rows.map(({ a, min }) => (
+            <button key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'log', activityId: a.id })}
+              aria-label={`${a.name}: bugün ${min} dakika. Süre ekle`}>
+              <span class="tile-name">{a.name}</span>
+              <span class="tile-val num">{min}<small> dk</small></span>
+              {a.dailyMinutes ? <><Progress pct={(min / a.dailyMinutes) * 100} color="var(--tile-bar)" /><span class="tile-sub">{min >= a.dailyMinutes ? 'tamam' : `hedef ${a.dailyMinutes} dk`}</span></> : <span class="tile-sub">hedefsiz</span>}
+            </button>
+          ))}
+        </div>
       )}
 
       {weekly && (
@@ -90,7 +102,6 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
           )}
         </Card>
       )}
-
       {note && (
         <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
           <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
@@ -98,50 +109,18 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </Card>
       )}
 
-      <Card label="GÜNLÜK GÖREVLER">
-        {todays.length === 0 && <div class="sub" style="padding:8px 0">Bugün için görev yok. Görev eklemek için Kişisel sayfasını kullan.</div>}
-        {/* Tasks that are not due today (other weekdays, future dates) stay reachable so they can be edited or deleted. */}
-        {todays.map((task) => {
-          const done = taskDone(task, t);
-          return (
-            <div class="list-row" key={task.id}>
-              <button class={done ? 'check on' : 'check'} role="checkbox" aria-checked={done} aria-label={`${task.title} tamamlandı`}
-                onClick={() => toggleTask(uid, task, t, !done)}>{done && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</button>
-              <button class="task-title grow" onClick={() => nav.go({ n: 'task', id: task.id })}>
-                <span class={done ? 'title-sm struck' : 'title-sm'}>{task.title}</span>
-                {task.repeat === 'daily' && <span class="sub">Her gün</span>}
-                {task.repeat === 'days' && <span class="sub">{taskWhen(task)}</span>}
-                {(!task.repeat || task.repeat === 'none') && task.date < t && !done && <span class="sub">Geçmiş tarihli</span>}
-              </button>
-            </div>
-          );
-        })}
-        {later.length > 0 && (
-          <>
-            <div class="label" style="margin:14px 0 2px;padding:0">DİĞER GÜNLER</div>
-            {later.map((task) => (
-              <button class="list-row task-later" key={task.id} onClick={() => nav.go({ n: 'task', id: task.id })} aria-label={`${task.title}, ${taskWhen(task)}, düzenle`}>
-                <span class="title-sm grow" style="text-align:left">{task.title}</span>
-                <span class="sub">{taskWhen(task)}</span>
-                <IconNext />
-              </button>
-            ))}
-          </>
-        )}
-      </Card>
-
-      {doses.length > 0 && (
-        <Card label="İLAÇLAR" class="list-card-pad med-card" right={<button class="chip small" onClick={() => { ortakStart.sub = 'ilac'; goTab('ortak'); }}>Yönet</button>}>
-          {filterPeople.length > 1 && (
-            <div class="scroll-chips filter" role="radiogroup" aria-label="Kişi filtresi">
-              {[{ id: 'all', name: 'Hepsi' }, ...filterPeople].map((p) => (
-                <button key={p.id} type="button" role="radio" aria-checked={who === p.id} class={who === p.id ? 'chip small on' : 'chip small'} onClick={() => setWho(p.id)}>{p.name}</button>
-              ))}
-            </div>
-          )}
-          {shown.map((d) => <DoseRow key={d.id} dose={d} people={people} uid={me.uid} hid={session.hid} next={next?.id === d.id} now={now} />)}
-        </Card>
-      )}
+      {untimed.length > 0 && <Card label="GÜN BOYU">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
+      <div class="label">AKIŞ</div>
+      <div class="tl">
+        {timed.length === 0 && <div class="sub">Bugün için saatli iş yok.</div>}
+        {timed.map((it) => (
+          <div class={`tl-i ${it.done ? 'done' : ''} ${!it.done && it.time < now ? 'past' : ''}`} key={it.id}>
+            <span class="tl-time num">{it.time}</span>
+            <span class="tl-dot" />
+            <div class="card tl-card"><Row it={{ ...it, time: null }} /></div>
+          </div>
+        ))}
+      </div>
 
       <Card label="YAKLAŞAN" class="list-card-pad">
         {upcoming.length === 0 && <div class="sub" style="padding:8px 0">Yaklaşan kayıt yok.</div>}
@@ -162,62 +141,18 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   );
 }
 
-function Summary({ theme, rows, total, pct, run, targetSum }) {
-  const segs = rows.filter((r) => r.min > 0);
-  const remain = Math.max(0, targetSum - total);
-  const bar = (
-    <div class="seg-bar" role="img" aria-label="Aktivitelere göre bugünkü süre">
-      {segs.map((r) => <i key={r.a.id} style={`flex:${r.min} 1 0;background:var(--act-${r.a.color})`} />)}
-      {remain > 0 && <i class="seg-rest" style={`flex:${remain} 1 0`} />}
-      {segs.length === 0 && remain === 0 && <i class="seg-rest" style="flex:1 1 0" />}
-    </div>
-  );
-  const goalText = pct == null ? 'Günlük süre hedefi belirlemedin' : `Günlük hedefin %${pct}'i tamam`;
-
-  if (theme === 'yorunge') {
-    const ringed = rows.filter((r) => r.a.dailyMinutes).slice(0, 4);
-    const step = 13, r0 = 54;
-    return (
-      <div class="card summary-y">
-        <svg width="124" height="124" viewBox="0 0 124 124" role="img" aria-label="Bugünkü hedef halkaları" style="flex:none">
-          <g fill="none" stroke-width="9" stroke-linecap="round" transform="rotate(-90 62 62)">
-            {ringed.length === 0 && <circle cx="62" cy="62" r={r0} stroke="var(--line)" />}
-            {ringed.map((r, i) => <circle key={`t${r.a.id}`} cx="62" cy="62" r={r0 - i * step} stroke="var(--line)" />)}
-            {ringed.map((r, i) => {
-              const rad = r0 - i * step, C = 2 * Math.PI * rad, f = Math.min(1, r.min / r.a.dailyMinutes);
-              return f > 0 ? <circle key={r.a.id} cx="62" cy="62" r={rad} stroke={`var(--act-${r.a.color})`} stroke-dasharray={`${C * f} ${C}`} /> : null;
-            })}
-          </g>
-        </svg>
-        <div>
-          <div class="label" style="margin:0;padding:0">BUGÜN</div>
-          <div class="num sum-big">{fmtDur(total).replace(' sa ', 'sa ').replace(' dk', 'dk')}</div>
-          <div class="sub" style="margin-top:6px">{pct == null ? 'Hedef yok' : `Hedefin %${pct}'i`} · {run} gün seri</div>
-        </div>
-      </div>
-    );
-  }
-  if (theme === 'teknik') {
-    return (
-      <div class="card summary-t">
-        <div class="row" style="justify-content:space-between;font-size:12px;font-weight:700"><span>BUGÜN</span><span class="serial">SERİ {run}</span></div>
-        <div class="row" style="align-items:flex-end;gap:12px">
-          <span class="huge">{total}</span>
-          <span style="padding-bottom:2px;font-size:12px;font-weight:700;line-height:1.5">DK<br /><span class="muted">= {fmtDur(total).toUpperCase()}</span></span>
-        </div>
-        {bar}
-        <div class="sub" style="margin-top:6px">{goalText}</div>
-      </div>
-    );
-  }
+function Row({ it }) {
   return (
-    <div class="summary-m">
-      <div class="row" style="justify-content:space-between">
-        <span style="font-size:14px;font-weight:700">Bugün</span>
-        <span class="streak-badge">{run} gün seri</span>
-      </div>
-      <div class="sum-huge">{fmtDur(total)}</div>
-      <div>{bar}<div style="margin-top:6px;font-size:12px;font-weight:600">{goalText}</div></div>
+    <div class={`vrow ${it.done ? 'done' : ''} ${it.missed ? 'missed' : ''}`}>
+      {it.tick
+        ? <button class={it.done ? 'check on' : 'check'} role="checkbox" aria-checked={it.done} aria-label={it.title} onClick={it.tick}>{it.done && <Tick />}</button>
+        : <span class="vdot" aria-hidden="true" />}
+      <button class="vmain grow" onClick={it.open}>
+        <span class={it.done ? 'title-sm struck' : 'title-sm'}>{it.title}</span>
+        {it.sub && <span class="sub">{it.sub}</span>}
+      </button>
+      {it.time && <span class="num vtime">{it.time}</span>}
+      {it.cross && <button class="iconbtn" aria-label={`${it.title} kaçtı`} onClick={it.cross}><Cross /></button>}
     </div>
   );
 }

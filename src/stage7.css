@@ -1,43 +1,21 @@
-/* Design previews for Bugün / Kişisel (dev demo only). */
-.vbar { position: sticky; top: 0; z-index: 20; display: flex; gap: 6px; align-items: center; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--line); overflow-x: auto; }
-.vbar .chip { min-height: 36px; padding: 0 14px; flex: none; }
-.vbar-l { flex: none; font-size: 12px; font-weight: 700; color: var(--muted); margin-right: 4px; }
+/* Bugün (timeline) and Kişisel (tabs). */
 
-/* shared rows */
+/* rows shared by the timeline and the all-day card */
 .vrow { display: flex; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid var(--line); }
 .vrow:first-child { border-top: 0; }
 .vmain { text-align: left; background: transparent; border: 0; padding: 6px 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: inherit; font: inherit; }
 .vtime { flex: none; font-size: 14px; color: var(--muted); }
 .vdot { flex: none; width: 12px; height: 12px; margin: 0 8px; border-radius: 50%; border: 2px solid var(--muted); box-sizing: border-box; }
 .vrow.missed .title-sm { opacity: .6; }
-.vdone { margin-top: 6px; border-top: 1px solid var(--line); }
-.vdone summary { min-height: 44px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; }
 
-/* activity chips (A, B) */
-.vact { flex: none; min-height: 52px; padding: 0 16px; display: inline-flex; align-items: center; gap: 10px; background: var(--card); border: var(--card-border); border-radius: var(--r-ctl); color: var(--text); font: inherit; scroll-snap-align: start; }
-.vact-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
-.vact small { font-size: 11px; color: var(--muted); }
-:root[data-theme='mozaik'] .vact { background: var(--c); color: #121212; }
-:root[data-theme='mozaik'] .vact-dot { background: #121212; }
-:root[data-theme='mozaik'] .vact small { color: rgba(18,18,18,.7); }
-:root[data-theme='mozaik'] .vact[data-c="6"] { color: #fff; }
-:root[data-theme='mozaik'] .vact[data-c="6"] .vact-dot { background: #fff; }
-:root[data-theme='mozaik'] .vact[data-c="6"] small { color: rgba(255,255,255,.75); }
+/* activity tiles: a fixed width, so only a few show at once and the rest are reached by swiping sideways */
+.vtiles { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; margin-right: -16px; padding-right: 16px; }
+.vtiles::-webkit-scrollbar { display: none; }
+.vtiles .tile { flex: none; width: 136px; scroll-snap-align: start; }
 
-/* A: hero */
-.vhero { padding: 20px; border-radius: var(--r-lg, var(--r)); background: var(--sum-bg, var(--btn-bg)); color: var(--btn-fg); display: flex; flex-direction: column; gap: 6px; border: var(--btn-border, 0); }
-:root[data-theme='mozaik'] .vhero { color: #fff; }
-.vhero-title { font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.3px; overflow-wrap: anywhere; }
-.vhero-sub { font-size: 15px; font-weight: 600; opacity: .85; }
-.vhero-btn { margin-top: 10px; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-size: 16px; font-weight: 800; background: var(--card); color: var(--text); border: 0; border-radius: var(--r-ctl); }
-.vhero-prog { margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; }
-.vhero-prog .bar { flex: 1; }
-.vhero-prog .bar i { background: currentColor; }
-.vhero-prog .bar { background: rgba(255,255,255,.25); }
-
-/* B: timeline */
+/* timeline */
 .vsum { display: flex; flex-direction: column; }
-.tl { display: flex; flex-direction: column; gap: 10px; position: relative; padding-left: 0; }
+.tl { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .tl-i { display: grid; grid-template-columns: 46px 14px 1fr; align-items: center; column-gap: 8px; }
 .tl-time { font-size: 14px; font-weight: 700; text-align: right; color: var(--muted); }
 .tl-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--text); position: relative; z-index: 1; }
@@ -47,19 +25,6 @@
 .tl-card { padding: 4px 14px; }
 .tl-card .vrow { min-height: 48px; border: 0; }
 
-/* C: counters as tabs */
-.vstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.vstat { min-height: 84px; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left; background: var(--card); border: var(--card-border); border-radius: var(--r); color: var(--text); font: inherit; }
-.vstat-n { font-size: 20px; font-weight: 800; letter-spacing: -.5px; white-space: nowrap; }
-.vstat.on { background: var(--chip-on-bg); color: var(--chip-on-fg); border: var(--chip-on-border); }
-.vstat.on .sub { color: inherit; opacity: .8; }
-
-/* Kişisel variants */
+/* Kişisel rows */
 .vact-row { width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px 0; background: transparent; border: 0; border-top: 1px solid var(--line); text-align: left; color: inherit; font: inherit; cursor: pointer; }
 .vact-row:first-child { border-top: 0; }
-.vplain { display: flex; flex-direction: column; gap: 26px; }
-.vplain section { display: flex; flex-direction: column; }
-.vplain h2 { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
-.vplain h2 .num { font-size: 18px; font-weight: 700; }
-.vplus { width: 44px; height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--btn-bg); color: var(--btn-fg); border: var(--btn-border); border-radius: var(--r-ctl); }
-.vlink { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; }
