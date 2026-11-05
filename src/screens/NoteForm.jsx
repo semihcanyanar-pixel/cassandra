@@ -3,6 +3,7 @@ import { Page, Card, Chips, actColor } from '../components/ui.jsx';
 import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText } from '../lib/notes.js';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote } from '../data.js';
+import { IconPlus } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
 
@@ -32,13 +33,21 @@ const Lbl = ({ children }) => <span class="fl">{children}</span>;
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
   const existing = id ? (initialCategory === 'kisisel' ? data.notes : house.notes).find((n) => n.id === id) : null;
-  const [category, setCategory] = useState(normalizeCategory(existing?.category || initialCategory));
-  const [title, setTitle] = useState(existing?.title || '');
-  const [blocks, setBlocks] = useState(() => { const b = toBlocks(existing); return b.length ? b : [normBlock({})]; });
-  const [color, setColor] = useState(existing?.color ?? 0);
+  // A half-written note is kept as a draft on this phone, so leaving by accident (or an app reload) does not lose it.
+  const dkey = `cassandra.draft.${ctx.uid}.${id || 'yeni'}`;
+  const draft = useRef(undefined);
+  if (draft.current === undefined) { try { draft.current = JSON.parse(localStorage.getItem(dkey) || 'null'); } catch { draft.current = null; } }
+  const d0 = draft.current;
+  const base = { title: existing?.title || '', color: existing?.color ?? 0, blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
+  const [restored, setRestored] = useState(Boolean(d0));
+  const [category, setCategory] = useState(d0 && !existing ? normalizeCategory(d0.category) : base.category);
+  const [title, setTitle] = useState(d0 ? d0.title : base.title);
+  const [blocks, setBlocks] = useState(() => { const b = d0 ? (d0.blocks || []).map(normBlock) : base.blocks; return b.length ? b : [normBlock({})]; });
+  const [color, setColor] = useState(d0 ? d0.color : base.color);
   const [error, setError] = useState('');
   const [cur, setCur] = useState(0); // the line being edited
-  const [files, setFiles] = useState(existing?.files || []);
+  const [files, setFiles] = useState(d0 ? d0.files || [] : base.files);
+  const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const originals = useRef(new Set((existing?.files || []).map((f) => f.id)));
   const removedOriginals = useRef([]);
@@ -117,29 +126,59 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
         setError(e.code === 'too-large' ? 'Dosya 20 MB’tan büyük olamaz.' : e.code === 'type' ? 'Yalnızca resim ve PDF eklenebilir.' : 'Dosya yüklenemedi, tekrar dene.');
       }
     }
-    setBusy(false);
+    setBusy(false); setAddOpen(false);
   }
   const removeFile = (f) => {
     setFiles((cur) => cur.filter((x) => x.id !== f.id));
     if (originals.current.has(f.id)) removedOriginals.current.push(f.id); else deleteFile(f.id); // new this session: gone right away
   };
-  // Leaving without saving: files uploaded in this session would be orphans, so delete them.
-  const close = () => { files.filter((f) => !originals.current.has(f.id)).forEach((f) => deleteFile(f.id)); nav.back(); };
+  const sig = (t, c, b, f) => JSON.stringify([t.trim(), c, cleanBlocks(b), f.map((x) => x.id)]);
+  const dirty = sig(title, color, blocks, files) !== sig(base.title, base.color, base.blocks, base.files);
+  useEffect(() => {
+    try {
+      if (dirty) localStorage.setItem(dkey, JSON.stringify({ title, color, blocks, files, category }));
+      else localStorage.removeItem(dkey);
+    } catch { /* storage unavailable: no draft */ }
+  });
+  const clearDraft = () => { try { localStorage.removeItem(dkey); } catch { /* ignore */ } };
+  // Back to the saved version (drops the draft and the files uploaded since).
+  const discardDraft = () => {
+    files.filter((f) => !originals.current.has(f.id)).forEach((f) => deleteFile(f.id));
+    removedOriginals.current = [];
+    setTitle(base.title); setColor(base.color); setFiles(base.files); setCategory(base.category);
+    setBlocks(base.blocks.length ? base.blocks : [normBlock({})]);
+    setRestored(false); clearDraft();
+  };
+  // Leaving without saving asks first; files uploaded in this session would be orphans, so they are deleted.
+  const close = () => {
+    if (dirty && !confirm('Kaydedilmemiş değişiklikler silinsin mi?')) return;
+    files.filter((f) => !originals.current.has(f.id)).forEach((f) => deleteFile(f.id));
+    clearDraft();
+    nav.back();
+  };
 
   function submit(e) {
     e.preventDefault();
     const clean = cleanBlocks(blocks);
     if (!title.trim() && clean.length === 0 && files.length === 0) { setError('Boş not kaydedilemez.'); return; }
+    clearDraft();
     saveNote(ctx, category, id, { title: title.trim(), color, blocks: clean, body: '', items: null, files });
     removedOriginals.current.forEach(deleteFile);
     nav.back();
   }
-  const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); deleteNote(ctx, category, id); nav.back(); } };
+  const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); clearDraft(); deleteNote(ctx, category, id); nav.back(); } };
   const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
 
   return (
     <form onSubmit={submit}>
       <Page title={existing ? 'Notu düzenle' : 'Yeni not'} onClose={close} footer={<button class="btn wide" type="submit" disabled={busy}>Kaydet</button>}>
+        {restored && (
+          <Card>
+            <div class="title-sm">Yarım kalan not geri yüklendi</div>
+            <div class="sub" style="margin-top:4px">En son yazdıkların taslak olarak saklanmıştı.</div>
+            <button type="button" class="chip" style="margin-top:10px" onClick={() => { if (confirm('Taslak silinsin mi?')) discardDraft(); }}>Taslağı at</button>
+          </Card>
+        )}
         <Card label="KATEGORİ">
           {existing ? (
             <div class="title-sm">{NOTE_CATEGORIES.find((c) => c.value === category)?.label}</div>
@@ -191,15 +230,15 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               </div>
             ))}
           </div>
-          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan seçili kısım biçimlenir. Seçim yoksa tüm satır biçimlenir.</div>
         </Card>
 
         {filesEnabled && (
           <Card label="EKLER">
-            <div class="row" style="gap:10px;flex-wrap:wrap">
+            <button type="button" class={addOpen ? 'chip on' : 'chip'} style="min-width:48px" aria-label="Ek ekle" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)}><IconPlus /></button>
+            {addOpen && <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
               <label class="chip filebtn">Resim ekle<input class="vh" type="file" accept="image/*" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
               <label class="chip filebtn">PDF ekle<input class="vh" type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
-            </div>
+            </div>}
             {files.length > 0 && <div style="margin-top:12px"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
             {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
             <div class="sub" style="margin-top:8px">Dosya boyutu en çok 20 MB olmalıdır.</div>
