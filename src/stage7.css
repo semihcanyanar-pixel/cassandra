@@ -93,3 +93,7 @@ button.hg-row { cursor: pointer; }
 .vtiles .tile .tile-did { font-size: 17px; }
 .vtiles .tile .tile-sub { font-size: 11px; }
 .vtiles .tile .tile-check { margin: -10px -10px -6px 0; }
+
+/* Bugün: timeline heading and the plain "İlaçları göster" text link next to it */
+.flow-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
+.flow-meds { align-self: center; font-size: 14px; font-weight: 600; color: var(--muted); padding: 0; text-align: right; }

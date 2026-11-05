@@ -147,9 +147,9 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
 
       {untimed.length > 0 && <Card label="GÜN BOYU">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
       <div class="row" style="justify-content:space-between;align-items:center">
-        <div class="label" style="margin:0">AKIŞ</div>
+        <h2 class="flow-title">Akış</h2>
         {hasMeds && (
-          <button type="button" class="chip small" aria-pressed={showMeds} onClick={toggleMeds}>
+          <button type="button" class="vlink flow-meds" aria-pressed={showMeds} onClick={toggleMeds}>
             {showMeds ? 'İlaçları gizle' : `İlaçları göster${pendingMeds ? ` (${pendingMeds} bekliyor)` : ''}`}
           </button>
         )}
