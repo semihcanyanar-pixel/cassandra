@@ -23,7 +23,7 @@ export function Settings({ session, onBack }) {
         <span class={`avatar static p${me.slot ?? 0}`}>{me.initial}</span>
         <div class="grow">
           <div style="font-size:17px;font-weight:700">{me.name}</div>
-          <div class="sub">Ortak alan: {household.members.length} kişi</div>
+          <div class="sub">Evimiz: {household.members.length} kişi</div>
         </div>
       </div>
 

@@ -23,7 +23,7 @@ export function personOf(session, id) {
   return { uid: id, name: 'Eşi', initial: 'E', slot: 1 };
 }
 
-// Lets other screens open Ortak on a given sub-tab (read once on mount).
+// The sub-tab Ortak shows; other screens may set it before opening Ortak, and it is kept while you come back from a form.
 export const ortakStart = { sub: 'ev' };
 
 export function Avatar({ person, small }) {
@@ -34,7 +34,8 @@ export function Avatar({ person, small }) {
 export function Ortak({ session, house, nav, onSettings }) {
   const { me } = session;
   const hid = session.hid;
-  const [sub, setSub] = useState(() => { const s = ortakStart.sub; ortakStart.sub = 'ev'; return s; });
+  const [sub, setSubState] = useState(ortakStart.sub);
+  const setSub = (v) => { ortakStart.sub = v; setSubState(v); }; // remembered, so coming back from a form lands on the same sub-tab
   const [filter, setFilter] = useState('all');
   const [addCat, setAddCat] = useState('market');
   const [text, setText] = useState('');
@@ -66,7 +67,7 @@ export function Ortak({ session, house, nav, onSettings }) {
   return (
     <main class={sub === 'ilac' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
-        <h1 style="font-size:40px">Ortak</h1>
+        <h1 style="font-size:40px">Evimiz</h1>
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
