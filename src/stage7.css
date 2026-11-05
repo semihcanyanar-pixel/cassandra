@@ -83,3 +83,13 @@ button.hg-row { cursor: pointer; }
 .list-row.tight { gap: 6px; }
 .list-row.tight .iconbtn { width: 40px; height: 40px; min-width: 40px; flex: none; }
 .list-row .fr-pill { font-size: 11px; padding: 4px 8px; }
+
+/* Bugün activity tiles: small rectangles */
+.vtiles .tile { width: 132px; min-height: 0; padding: 10px 12px; gap: 4px; border-radius: 14px; }
+.vtiles .tile .tile-top { align-items: center; }
+.vtiles .tile .tile-name { font-size: 14px; padding-top: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vtiles .tile .tile-val { font-size: 24px; line-height: 1.1; }
+.vtiles .tile .tile-val small { font-size: 12px; }
+.vtiles .tile .tile-did { font-size: 17px; }
+.vtiles .tile .tile-sub { font-size: 11px; }
+.vtiles .tile .tile-check { margin: -10px -10px -6px 0; }

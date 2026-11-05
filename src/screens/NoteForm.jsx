@@ -134,8 +134,8 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     setFiles((cur) => cur.filter((x) => x.id !== f.id));
     if (originals.current.has(f.id)) removedOriginals.current.push(f.id); else deleteFile(f.id); // new this session: gone right away
   };
-  const sig = (t, c, b, f, p) => JSON.stringify([t.trim(), c, cleanBlocks(b), f.map((x) => x.id), p]);
-  const dirty = sig(title, color, blocks, files, pinned) !== sig(base.title, base.color, base.blocks, base.files, base.pinned);
+  const sig = (t, c, b, f, p, cat) => JSON.stringify([t.trim(), c, cleanBlocks(b), f.map((x) => x.id), p, cat]);
+  const dirty = sig(title, color, blocks, files, pinned, category) !== sig(base.title, base.color, base.blocks, base.files, base.pinned, base.category);
   useEffect(() => {
     try {
       if (dirty) localStorage.setItem(dkey, JSON.stringify({ title, color, pinned, blocks, files, category }));
@@ -163,12 +163,16 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     e.preventDefault();
     const clean = cleanBlocks(blocks);
     if (!title.trim() && clean.length === 0 && files.length === 0) { setError('Boş not kaydedilemez.'); return; }
+    const moved = Boolean(existing) && category !== base.category; // the category was changed: the note moves between personal and shared
+    if (moved && !confirm(category === 'kisisel' ? 'Bu not kişisel olacak, eşin artık göremeyecek. Devam edilsin mi?' : 'Bu not aileye taşınacak, eşin de görecek ve düzenleyebilecek. Devam edilsin mi?')) return;
     clearDraft();
-    saveNote(ctx, category, id, { title: title.trim(), color, pinned, blocks: clean, body: '', items: null, files });
+    const payload = { title: title.trim(), color, pinned, blocks: clean, body: '', items: null, files };
+    if (moved) { saveNote(ctx, category, null, payload); deleteNote(ctx, base.category, id); } // new note in the other place, then remove the old one
+    else saveNote(ctx, category, id, payload);
     removedOriginals.current.forEach(deleteFile);
     nav.back();
   }
-  const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); clearDraft(); deleteNote(ctx, category, id); nav.back(); } };
+  const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); clearDraft(); deleteNote(ctx, base.category, id); nav.back(); } };
   const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
 
   return (
@@ -182,11 +186,8 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           </Card>
         )}
         <Card label="KATEGORİ">
-          {existing ? (
-            <div class="title-sm">{NOTE_CATEGORIES.find((c) => c.value === category)?.label}</div>
-          ) : (
-            <Chips options={NOTE_CATEGORIES} value={category} onChange={files.length ? () => {} : setCategory} label="Kategori" />
-          )}
+          <Chips options={NOTE_CATEGORIES} value={category} onChange={files.length ? () => {} : setCategory} label="Kategori" />
+          {files.length > 0 && <div class="sub" style="margin-top:8px">Eki olan notun kategorisi değiştirilemez, çünkü dosyalara erişim kategoriye bağlıdır.</div>}
           <div class="sub" style="margin-top:8px">
             {noteScope(category) === 'personal' ? 'Yalnızca sen görürsün, eşin göremez.' : 'Eşin de görür ve düzenleyebilir.'}
           </div>

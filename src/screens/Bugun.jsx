@@ -86,6 +86,23 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
+      {weekly && (
+        <Card label="HAFTALIK DEĞERLENDİRME">
+          <div class="title-sm" style="font-weight:600;line-height:1.5">{weekly.text}</div>
+          {(weekly.tips || []).length > 0 && (
+            <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
+              {weekly.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
+            </ul>
+          )}
+        </Card>
+      )}
+      {note && (
+        <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
+          <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
+          {note.quote && <div class="sub" style="margin-top:10px;font-size:14px;line-height:1.5;font-style:italic">{note.quote}</div>}
+        </Card>
+      )}
+
       <div class="card vsum">
         <div class="row" style="justify-content:space-between"><span class="title-sm muted">Bugün yapılan</span><span class="streak-badge">{run} gün seri</span></div>
         <div class="num" style="font-size:28px;margin:4px 0 8px">{doneCount}/{rows.length}<small style="font-size:15px;font-weight:700"> aktivite</small></div>
@@ -119,23 +136,6 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
             );
           })}
         </div>
-      )}
-
-      {weekly && (
-        <Card label="HAFTALIK DEĞERLENDİRME">
-          <div class="title-sm" style="font-weight:600;line-height:1.5">{weekly.text}</div>
-          {(weekly.tips || []).length > 0 && (
-            <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-              {weekly.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
-            </ul>
-          )}
-        </Card>
-      )}
-      {note && (
-        <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
-          <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
-          {note.quote && <div class="sub" style="margin-top:10px;font-size:14px;line-height:1.5;font-style:italic">{note.quote}</div>}
-        </Card>
       )}
 
       {untimed.length > 0 && <Card label="GÜN BOYU">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}

@@ -32,7 +32,7 @@
     /* Splash: same teal-to-deep-blue gradient as the app icon. Letters blink, then fall one by one, then the cycle repeats. */
     .splash { position: fixed; inset: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
       background: linear-gradient(180deg, #0c97a6 0%, #00708a 48%, #052f45 100%); font-family: 'Cinzel', 'Times New Roman', serif; }
-    .splash img { width: 168px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); animation: splash-pulse 2.4s ease-in-out infinite; }
+    .splash img { width: 150px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); animation: splash-pulse 2.4s ease-in-out infinite; }
     .splash .brand { text-align: center; }
     .splash .t1 { font-size: 31px; font-weight: 600; letter-spacing: 8px; margin-right: -8px; color: #f6ead3; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
     .splash .t2 { margin-top: 10px; font-size: 11.5px; font-weight: 500; letter-spacing: 6px; margin-right: -6px; color: #e2ad7c; }
@@ -55,7 +55,7 @@
 </head>
 <body>
   <div id="app"><div class="splash" role="status" aria-label="Yükleniyor">
-      <img src="./logo-mark.png" alt="" width="168" height="142">
+      <img src="./logo-mark.png" alt="" width="150" height="150">
       <div class="brand">
         <div class="t1" aria-hidden="true"><i style="--i:0;--r:-25deg">C</i><i style="--i:1;--r:12deg">A</i><i style="--i:2;--r:-1deg">S</i><i style="--i:3;--r:-14deg">S</i><i style="--i:4;--r:23deg">A</i><i style="--i:5;--r:10deg">N</i><i style="--i:6;--r:-3deg">D</i><i style="--i:7;--r:-16deg">R</i><i style="--i:8;--r:21deg">A</i></div>
         <div class="t2" aria-hidden="true"><i style="--i:9;--r:-25deg">F</i><i style="--i:10;--r:12deg">A</i><i style="--i:11;--r:-1deg">M</i><i style="--i:12;--r:-14deg">I</i><i style="--i:13;--r:23deg">L</i><i style="--i:14;--r:10deg">Y</i><i class="sp"></i><i style="--i:16;--r:-16deg">A</i><i style="--i:17;--r:21deg">S</i><i style="--i:18;--r:8deg">S</i><i style="--i:19;--r:-5deg">I</i><i style="--i:20;--r:-18deg">S</i><i style="--i:21;--r:19deg">T</i><i style="--i:22;--r:6deg">A</i><i style="--i:23;--r:-7deg">N</i><i style="--i:24;--r:-20deg">T</i></div>

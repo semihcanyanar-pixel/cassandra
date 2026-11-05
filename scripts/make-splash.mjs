@@ -7,7 +7,7 @@ const letters = (text, offset) => [...text].map((ch, i) => (ch === ' '
   : `<i style="--i:${i + offset};--r:${((i * 37) % 50) - 25}deg">${ch}</i>`)).join('');
 
 const markup = (cls = 'class') => `<div ${cls}="splash" role="status" aria-label="Yükleniyor">
-      <img src="./logo-mark.png" alt="" width="168" height="142">
+      <img src="./logo-mark.png" alt="" width="150" height="150">
       <div ${cls}="brand">
         <div ${cls}="t1" aria-hidden="true">${letters('CASSANDRA', 0)}</div>
         <div ${cls}="t2" aria-hidden="true">${letters('FAMILY ASSISTANT', 9)}</div>
@@ -23,7 +23,7 @@ const css = `    @font-face { font-family: 'Cinzel'; font-weight: 600; font-disp
     /* Splash: same teal-to-deep-blue gradient as the app icon. Letters blink, then fall one by one, then the cycle repeats. */
     .splash { position: fixed; inset: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
       background: linear-gradient(180deg, #0c97a6 0%, #00708a 48%, #052f45 100%); font-family: 'Cinzel', 'Times New Roman', serif; }
-    .splash img { width: 168px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); animation: splash-pulse 2.4s ease-in-out infinite; }
+    .splash img { width: 150px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); animation: splash-pulse 2.4s ease-in-out infinite; }
     .splash .brand { text-align: center; }
     .splash .t1 { font-size: 31px; font-weight: 600; letter-spacing: 8px; margin-right: -8px; color: #f6ead3; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
     .splash .t2 { margin-top: 10px; font-size: 11.5px; font-weight: 500; letter-spacing: 6px; margin-right: -6px; color: #e2ad7c; }
