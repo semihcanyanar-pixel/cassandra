@@ -26,3 +26,5 @@
 .avatar.p1 { background: var(--p1-bg); color: var(--p1-fg); }
 .avatar.p2 { background: var(--p2-bg); color: var(--p2-fg); }
 :root[data-theme='teknik'] .avatar.p1, :root[data-theme='teknik'] .avatar.p2 { border: 2px solid #0A0A0A; }
+
+.dose-actions .btn, .dose-actions .chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }

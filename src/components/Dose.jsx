@@ -31,14 +31,14 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
         <div class="dose-state">
           <span class={log.status === 'alindi' ? 'given' : 'given skip'}>
             {log.status === 'alindi' && <Tick />}
-            {log.status === 'alindi' ? 'Verildi' : 'Atlandı'} · {doer.name} · {doneTime}
+            {log.status === 'alindi' ? 'Alındı' : 'Atlandı'} · {doer.name} · {doneTime}
           </span>
           <button class="chip small" onClick={undo}>Geri al</button>
         </div>
       ) : (
         <div class="dose-actions">
-          <button class="btn" onClick={() => markDose(hid, uid, dose, 'alindi')}>Verildi</button>
-          <button class="chip" onClick={() => markDose(hid, uid, dose, 'atlandi')}>Atla</button>
+          <button class="btn" onClick={() => markDose(hid, uid, dose, 'alindi')}><Tick />Alındı</button>
+          <button class="chip" onClick={() => markDose(hid, uid, dose, 'atlandi')}><Cross />Atla</button>
         </div>
       )}
     </div>
@@ -46,3 +46,7 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
 }
 
 export const MED_NOTE = "Bildirimleri Ayarlar > Bildirimler bölümünden açabilirsin. Önemli ilaçlar için telefon alarmını da kurmanı öneririm.";
+
+const Cross = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+);

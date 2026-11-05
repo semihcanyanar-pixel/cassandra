@@ -66,7 +66,7 @@ export function PushSection({ session }) {
             <button key={c.key} type="button" class={selected.has(c.key) ? 'chip on' : 'chip'} aria-pressed={selected.has(c.key)} onClick={() => toggle(c.key)}>{c.name}</button>
           ))}
         </div>
-        <div class="sub">Bir dozu biri “verildi” işaretlese bile, diğer telefon yenilenene kadar hatırlatma gelebilir. Önemli ilaçlar için telefon alarmını da kurun.</div>
+        <div class="sub">Bir dozu biri “alındı” işaretlese bile, diğer telefon yenilenene kadar hatırlatma gelebilir. Önemli ilaçlar için telefon alarmını da kurun.</div>
       </div>
     </>
   );
