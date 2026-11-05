@@ -5,5 +5,6 @@ import preact from '@preact/preset-vite';
 export default defineConfig({
   base: './',
   plugins: [preact()],
+  define: { __BUILD__: JSON.stringify(new Date().toISOString()) }, // shown in Ayarlar so the running version can be told apart
   test: { environment: 'node' },
 });

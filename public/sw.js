@@ -1,6 +1,6 @@
 // App-shell cache + web push.
 // Pages (navigations) are network-first so a new version shows up on the next open; hashed assets are stale-while-revalidate.
-const CACHE = 'cassandra-shell-v2';
+const CACHE = 'cassandra-shell-v3';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
   e.waitUntil(
@@ -13,7 +13,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req).then((res) => { if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())); return res; })
+      // 'no-cache' = always ask the server if the page changed (GitHub Pages allows 10 minutes of HTTP caching, which kept old versions around)
+      fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => { if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())); return res; })
         .catch(() => caches.match(req).then((hit) => hit || caches.match('./')))
     );
     return;

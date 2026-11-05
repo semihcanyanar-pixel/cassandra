@@ -9,6 +9,21 @@ import { PasswordSection } from './PasswordSection.jsx';
 import { buildBackup, backupCounts, saveBackup, parseBackup, restoreOps } from '../lib/backup.js';
 import { applyRestore } from '../data.js';
 
+// Build time of the running version, e.g. "5 Kas 12:40".
+const versionLabel = () => {
+  try { const d = new Date(__BUILD__); return `${d.getDate()} ${['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'][d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; } catch { return 'geliştirme'; }
+};
+// Forces the newest version: drops the service worker and its caches, then reloads from the network.
+async function refreshApp() {
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.();
+    await Promise.all((regs || []).map((r) => r.unregister()));
+    const keys = await caches?.keys?.();
+    await Promise.all((keys || []).map((k) => caches.delete(k)));
+  } catch { /* reload anyway */ }
+  location.reload();
+}
+
 export function Settings({ session, data, house, onBack }) {
   const [theme, setTheme] = useState(currentTheme());
   const [backupBusy, setBackupBusy] = useState(false);
@@ -84,6 +99,9 @@ export function Settings({ session, data, house, onBack }) {
       </div>
 
       <PasswordSection />
+
+      <div class="sub" style="text-align:center;margin-top:6px">Sürüm: {versionLabel()}</div>
+      <button class="chip" style="min-height:48px" onClick={refreshApp}>Uygulamayı yenile</button>
 
       <button class="chip" style="margin-top:6px;min-height:48px" onClick={() => signOut(auth)}>Çıkış yap</button>
     </main>

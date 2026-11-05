@@ -11,5 +11,5 @@ import { App } from './App.jsx';
 render(<App />, document.getElementById('app'));
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(() => {});
 }
