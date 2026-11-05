@@ -15,7 +15,7 @@ export const slotDocId = (dateISO, slotId) => `s-${dateISO}-${slotId}`;
 export function latestNote(insights, dateISO) {
   for (const s of [...SLOTS].reverse()) {
     const doc = insights.find((i) => i.id === slotDocId(dateISO, s.id));
-    if (doc?.text) return { slot: s, text: doc.text };
+    if (doc?.text) return { slot: s, text: doc.text, quote: doc.quote || '' };
   }
   return null;
 }

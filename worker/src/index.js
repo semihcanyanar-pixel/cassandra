@@ -167,11 +167,12 @@ async function handleSlot(env, req, uid) {
   const prompt = 'Sen sıcak, motive edici ama baskı yapmayan bir kişisel asistansın. Aşağıda bir kişinin bugünkü görevleri, aktivite süreleri (dakika, hedefe göre) ve gün serisi var.\n'
     + `${SLOT_GUIDE[slot]}\n`
     + 'Türkçe yaz, en çok 3 kısa cümle, "sen" diye hitap et. Veride olmayan görev ya da ilerleme uydurma; emoji kullanma; tıbbi ya da finansal tavsiye verme.\n'
-    + 'Yalnızca şu JSON biçiminde yanıt ver: {"mesaj": string}\n\n' + JSON.stringify({ gun_serisi: streak, gorevler: tasks, aktiviteler: acts });
+    + 'Ayrıca "motivasyon" alanına, kişinin motivasyonunu sürdürmesine yardım eden kısa bir söz, bilgi ya da ipucu yaz (alışkanlık oluşturma, süreklilik, küçük adımlar, dinlenme gibi), en çok 2 cümle; her seferinde farklı bir konu seç. Gerçek bir kişiye atfedilmiş alıntı verme, kaynak uydurma.\n'
+    + 'Yalnızca şu JSON biçiminde yanıt ver: {"mesaj": string, "motivasyon": string}\n\n' + JSON.stringify({ gun_serisi: streak, gorevler: tasks, aktiviteler: acts });
   const g = await gemini(env, prompt);
   if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail, detail: g.detail || '' }, 502);
   await recordUse(env, uid, 'slot');
-  return reply(env, req, { text: str(g.json.mesaj, 420) });
+  return reply(env, req, { text: str(g.json.mesaj, 420), quote: str(g.json.motivasyon, 300) });
 }
 
 export default {

@@ -89,6 +89,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       {note && (
         <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
           <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
+          {note.quote && <div class="sub" style="margin-top:10px;font-size:14px;line-height:1.5;font-style:italic">{note.quote}</div>}
         </Card>
       )}
 

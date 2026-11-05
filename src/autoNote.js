@@ -38,7 +38,7 @@ export function useAutoNote(uid, data) {
     if (!hasPlan(input) || !cooled(`cassandra.noteTry.${id}`)) return;
     tried.current = id;
     callWorker('/ai/slot', input, 30000)
-      .then((r) => { if (r.text) saveInsight(uid, id, { text: r.text }); })
+      .then((r) => { if (r.text) saveInsight(uid, id, { text: r.text, quote: r.quote || '' }); })
       .catch((e) => console.warn('auto note', e.message));
   }, [id, cached]); // eslint-disable-line react-hooks/exhaustive-deps
 
