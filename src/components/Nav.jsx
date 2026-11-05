@@ -4,7 +4,7 @@ export const TABS = [
   { key: 'bugun', label: 'Bugün', Icon: IconToday },
   { key: 'takvim', label: 'Takvim', Icon: IconCalendar },
   { key: 'notlar', label: 'Notlar', Icon: IconNotes },
-  { key: 'ortak', label: 'Evimiz', Icon: IconShared },
+  { key: 'ortak', label: 'Takip Listesi', Icon: IconShared },
   { key: 'kisisel', label: 'Kişisel', Icon: IconLock },
 ];
 

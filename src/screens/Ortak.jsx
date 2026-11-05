@@ -67,7 +67,7 @@ export function Ortak({ session, house, nav, onSettings }) {
   return (
     <main class={sub === 'ilac' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
-        <h1 style="font-size:40px">Evimiz</h1>
+        <h1 style="font-size:40px">Takip Listesi</h1>
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
