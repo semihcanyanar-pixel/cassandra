@@ -41,3 +41,21 @@ describe('buzdolabı', () => {
     expect(restoreOps(backup, { uid: 'u1', hid: 'h1', includeHousehold: true }).map((o) => o.path.join('/'))).toEqual(['households/h1/fridgeItems/f1']);
   });
 });
+
+import { fridgeItems, localMs } from '../src/lib/push.js';
+describe('buzdolabı bildirimi', () => {
+  it('son gün sabah 09:00; süresiz, geçmiş ve çok ileri tarihli olanlar yok', () => {
+    const items = [
+      { id: 'a', name: 'Süt', kind: 'urun', openedOn: '2026-11-03', shelfDays: 3 },     // last day 6 Nov
+      { id: 'b', name: 'Çorba', kind: 'yemek', openedOn: '2026-11-05', shelfDays: 3 },  // last day 8 Nov
+      { id: 'c', name: 'Reçel', kind: 'urun', openedOn: '2026-10-01', shelfDays: null },
+      { id: 'd', name: 'Eski', kind: 'urun', openedOn: '2026-10-20', shelfDays: 3 },     // already past
+      { id: 'e', name: 'Uzak', kind: 'urun', openedOn: '2026-11-05', shelfDays: 60 },
+    ];
+    const out = fridgeItems(items, T);
+    expect(out.map((o) => o.id)).toEqual(['f-a-2026-11-06', 'f-b-2026-11-08']);
+    expect(out[0]).toMatchObject({ t: localMs('2026-11-06', '09:00'), title: 'Süt · bugün son gün', body: 'Son tüketim günü' });
+    expect(out[1].body).toBe('Yemeğin son tüketim günü');
+    expect(fridgeItems(undefined, T)).toEqual([]);
+  });
+});

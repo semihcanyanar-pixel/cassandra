@@ -61,6 +61,18 @@ export function taskItems(tasks, todayISO, days = 7) {
   return out;
 }
 
+// Buzdolabı: a reminder at 09:00 on the LAST day an item can be eaten (opened/cooked date + shelfDays). Not a calendar event, push only.
+export function fridgeItems(items, todayISO, days = 14) {
+  const out = [];
+  for (const i of items || []) {
+    if (!i.shelfDays || !i.openedOn) continue;
+    const last = addDays(i.openedOn, i.shelfDays);
+    if (last < todayISO || last > addDays(todayISO, days)) continue;
+    out.push({ id: `f-${i.id}-${last}`, t: localMs(last, '09:00'), title: `${i.name} · bugün son gün`, body: i.kind === 'yemek' ? 'Yemeğin son tüketim günü' : 'Son tüketim günü' });
+  }
+  return out;
+}
+
 // Only future-ish items, soonest first, capped.
 export function buildSchedule(items, nowMs = Date.now(), max = 300) {
   return items.filter((i) => i.t > nowMs - 30 * 60_000).sort((a, b) => a.t - b.t).slice(0, max);
