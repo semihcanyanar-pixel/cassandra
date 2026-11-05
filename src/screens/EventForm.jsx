@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips, Switch } from '../components/ui.jsx';
-import { REPEATS, REMINDS } from '../lib/events.js';
+import { REPEATS, REMINDS, customDays, MAX_REMIND_DAYS } from '../lib/events.js';
 import { saveEvent, deleteEvent } from '../data.js';
 import { today } from '../lib/dates.js';
 
@@ -14,7 +14,8 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
   const [time, setTime] = useState(existing?.time || '09:00');
   const [scope, setScope] = useState(initialScope || 'aile');
   const [repeat, setRepeat] = useState(existing?.repeat || 'none');
-  const [remind, setRemind] = useState(existing?.remind || 'none');
+  const [remind, setRemind] = useState(customDays(existing?.remind) ? 'custom' : existing?.remind || 'none');
+  const [days, setDays] = useState(String(customDays(existing?.remind) || 3)); // custom: how many days before
   const [error, setError] = useState('');
 
   const remindOptions = REMINDS.filter((r) => hasTime || !r.needsTime).map(({ value, label }) => ({ value, label }));
@@ -24,7 +25,9 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
     e.preventDefault();
     if (!title.trim()) { setError('Kayda bir başlık yaz.'); return; }
     if (!date) { setError('Tarih seç.'); return; }
-    saveEvent(ctx, scope, id, { title: title.trim(), date, time: hasTime ? time : null, repeat, remind: effRemind });
+    const n = Math.round(Number(days));
+    if (effRemind === 'custom' && !(n >= 1 && n <= MAX_REMIND_DAYS)) { setError(`Kaç gün önce: 1–${MAX_REMIND_DAYS} arası bir sayı yaz.`); return; }
+    saveEvent(ctx, scope, id, { title: title.trim(), date, time: hasTime ? time : null, repeat, remind: effRemind === 'custom' ? `d:${n}` : effRemind });
     nav.back();
   }
   const remove = () => { if (confirm('Kayıt silinsin mi?')) { deleteEvent(ctx, scope, id); nav.back(); } };
@@ -51,6 +54,13 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
         <Card label="TEKRAR"><Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" /></Card>
         <Card label="HATIRLATMA">
           <Chips options={remindOptions} value={effRemind} onChange={setRemind} label="Hatırlatma" />
+          {effRemind === 'custom' && (
+            <div class="field" style="margin-top:10px">
+              <label for="hatirlat-gun">Kaç gün önce hatırlatılsın?</label>
+              <input id="hatirlat-gun" type="number" inputmode="numeric" min="1" max={MAX_REMIND_DAYS} value={days} onInput={(e) => { setDays(e.target.value); setError(''); }} />
+              <div class="sub" style="margin-top:6px">{hasTime ? `O gün ${time} saatinde` : 'Sabah 09:00’da'} bildirim gelir.</div>
+            </div>
+          )}
           <div class="sub" style="margin-top:8px">Bildirim için Ayarlar’dan bildirimleri aç.</div>
         </Card>
         {error && <div class="error" role="alert">{error}</div>}

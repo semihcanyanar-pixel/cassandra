@@ -12,8 +12,12 @@ export const REMINDS = [
   { value: '30m', label: '30 dk önce', needsTime: true },
   { value: '2h', label: '2 saat önce', needsTime: true },
   { value: '1d', label: '1 gün önce' },
+  { value: 'custom', label: 'Özel' }, // saved as 'd:N' = N days before
 ];
-export const remindLabel = (v) => (v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null);
+export const MAX_REMIND_DAYS = 365;
+// 'd:5' -> 5, anything else -> null
+export const customDays = (v) => { const m = /^d:([0-9]{1,3})$/.exec(v || ''); const n = m ? Number(m[1]) : null; return n >= 1 && n <= MAX_REMIND_DAYS ? n : null; };
+export const remindLabel = (v) => (customDays(v) ? `${customDays(v)} gün önce` : v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null);
 export const repeatLabel = (v) => (v && v !== 'none' ? REPEATS.find((r) => r.value === v)?.label : null);
 
 const daysInMonth = (y, m) => new Date(y, m + 1, 0).getDate(); // m: 0-11

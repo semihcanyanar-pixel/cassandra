@@ -80,7 +80,7 @@ async function deliver(env, vapid, rec, payload) {
 export async function sendTest(env, uid) {
   const rec = await load(env, uid);
   if (!rec.subs.length) return { sent: 0, devices: 0 };
-  const sent = await deliver(env, await getVapid(env), rec, { title: 'Cassandra', body: 'Bildirimler çalışıyor.', tag: 'test' });
+  const sent = await deliver(env, await getVapid(env), rec, { title: 'Cassandra', body: `Bildirimler çalışıyor. Gönderildi: ${new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' })}`, tag: `test-${Date.now()}` });
   await save(env, uid, rec);
   return { sent, devices: rec.subs.length };
 }

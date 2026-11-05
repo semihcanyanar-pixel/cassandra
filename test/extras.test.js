@@ -82,3 +82,30 @@ describe('yedekten geri yükleme', () => {
     expect(out).toEqual({ a: 'TS5.7', b: ['TS1.2'], c: { seconds: 1 }, d: 'x' });
   });
 });
+
+import { eventItems } from '../src/lib/push.js';
+import { remindLabel, customDays } from '../src/lib/events.js';
+describe('özel gün önce hatırlatma', () => {
+  const T0 = '2026-11-05';
+  it('d:N okunur, etiketi yazılır; geçersizler yok sayılır', () => {
+    expect(customDays('d:5')).toBe(5);
+    expect(customDays('d:0')).toBeNull();
+    expect(customDays('d:999')).toBeNull();
+    expect(customDays('1d')).toBeNull();
+    expect(remindLabel('d:10')).toBe('10 gün önce');
+    expect(remindLabel('1d')).toBe('1 gün önce');
+  });
+  it('saatli kayıtta aynı saatte, saatsizde 09:00 da N gün önce; uzak olsa da pencereye girer', () => {
+    const ev = [
+      { id: 'a', title: 'Randevu', date: '2026-11-12', time: '10:30', repeat: 'none', remind: 'd:5', scope: 'aile' },
+      { id: 'b', title: 'Doğum günü', date: '2026-11-25', time: null, repeat: 'none', remind: 'd:20', scope: 'aile' },
+    ];
+    const out = eventItems(ev, T0);
+    expect(out.map((o) => o.id).sort()).toEqual(['e-aile-a-2026-11-12-d:5', 'e-aile-b-2026-11-25-d:20']);
+    expect(out.find((o) => o.title === 'Randevu').t).toBe(localMs('2026-11-07', '10:30'));
+    expect(out.find((o) => o.title === 'Doğum günü').t).toBe(localMs('2026-11-05', '09:00'));
+  });
+  it('saatsiz kayıtta saat bazlı hatırlatma gönderilmez', () => {
+    expect(eventItems([{ id: 'c', title: 'x', date: '2026-11-08', time: null, repeat: 'none', remind: '30m' }], T0)).toEqual([]);
+  });
+});

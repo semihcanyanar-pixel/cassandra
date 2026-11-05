@@ -75,6 +75,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const toggleFlag = (f) => {
     const el = refs.current[cur];
     const sel = window.getSelection();
+    if (row[f]) { upd(cur, { [f]: false }); focusAfter.current = cur; return; } // a whole-line format is switched off by tapping its button again, selection or not
     if (el && sel && sel.rangeCount && !sel.isCollapsed && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) {
       document.execCommand({ b: 'bold', i: 'italic', s: 'strikeThrough' }[f]); // applied to the selection, shows right away
       upd(cur, { t: serialize(el) });
