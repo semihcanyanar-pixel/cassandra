@@ -39,7 +39,7 @@ function demoData() {
     logs,
     tasks: [
       { id: 't1', title: 'Vitamin al', repeat: 'daily', date: d(10), doneDates: [d(0)] },
-      { id: 't2', title: 'Faturayı öde', repeat: 'none', date: d(0), done: false },
+      { id: 't2', title: 'Faturayı öde', repeat: 'none', date: d(0), done: false, remindTime: '18:30' },
       { id: 't3', title: 'Spor çantasını hazırla', repeat: 'days', days: [0, 2, 4], date: d(10), doneDates: [] },
     ],
     events: [{ id: 'pe1', title: 'Berber', date: dayOffset(18), time: null, repeat: 'none', remind: 'none' }],

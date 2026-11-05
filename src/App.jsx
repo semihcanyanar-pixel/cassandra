@@ -23,6 +23,21 @@ import { usePushSchedule } from './push.js';
 import { useAutoRefresh } from './update.js';
 import { Nav } from './components/Nav.jsx';
 import { Notice } from './components/Notice.jsx';
+import { BugunV } from './screens/BugunV.jsx';
+import { KisiselV } from './screens/KisiselV.jsx';
+import { useVariant, setVariant, variantEnabled } from './variant.js';
+
+// Dev demo only: switch between the current design and alternatives A / B / C.
+function VariantBar({ value }) {
+  return (
+    <div class="vbar" role="radiogroup" aria-label="Tasarım">
+      <span class="vbar-l">TASARIM</span>
+      {[['', 'Mevcut'], ['a', 'A · Odak'], ['b', 'B · Akış'], ['c', 'C · Sade']].map(([v, l]) => (
+        <button key={v} type="button" role="radio" aria-checked={value === v} class={value === v ? 'chip on' : 'chip'} onClick={() => setVariant(v)}>{l}</button>
+      ))}
+    </div>
+  );
+}
 
 export function App() {
   const s = useSession();
@@ -47,6 +62,7 @@ function Main({ session }) {
   const data = useUserData(me.uid);
   const house = useHouseData(session.hid);
   const [tab, setTab] = useState('bugun');
+  const variant = useVariant();
   const [stack, setStack] = useState([]);
   const nav = {
     go: (r) => { setStack((s) => [...s, r]); window.scrollTo(0, 0); },
@@ -79,10 +95,12 @@ function Main({ session }) {
   }
 
   const onSettings = () => nav.go({ n: 'settings' });
+  const alt = (tab === 'bugun' || tab === 'kisisel') ? variant : ''; // design previews, dev demo only
   return (
     <div class="app">
-      {tab === 'bugun' && <Bugun session={session} me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />}
-      {tab === 'kisisel' && <Kisisel me={me} data={data} nav={nav} onSettings={onSettings} />}
+      {variantEnabled && (tab === 'bugun' || tab === 'kisisel') && <VariantBar value={variant} />}
+      {tab === 'bugun' && (alt ? <BugunV v={alt} session={session} me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} /> : <Bugun session={session} me={me} uid={uid} data={data} house={house} nav={nav} goTab={setTab} onSettings={onSettings} />)}
+      {tab === 'kisisel' && (alt ? <KisiselV v={alt} me={me} data={data} nav={nav} onSettings={onSettings} /> : <Kisisel me={me} data={data} nav={nav} onSettings={onSettings} />)}
       {tab === 'ortak' && <Ortak session={session} house={house} nav={nav} onSettings={onSettings} />}
       {tab === 'notlar' && <Notlar me={me} ctx={{ uid, hid: session.hid }} house={house} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'takvim' && <Takvim me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
