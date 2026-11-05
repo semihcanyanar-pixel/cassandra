@@ -59,3 +59,35 @@ describe('buzdolabı bildirimi', () => {
     expect(fridgeItems(undefined, T)).toEqual([]);
   });
 });
+
+import { dueText, dueState, sortTodos } from '../src/lib/due.js';
+import { todoItems } from '../src/lib/push.js';
+describe('ortak yapılacak son tarihi', () => {
+  it('metin ve durum', () => {
+    expect(dueText('2026-11-06', T)).toBe('Yarın son gün');
+    expect(dueText('2026-11-05', T)).toBe('Bugün son gün');
+    expect(dueText('2026-11-09', T)).toBe('4 gün kaldı');
+    expect(dueText('2026-11-03', T)).toBe('2 gün geçti');
+    expect(['late', 'soon', 'soon', 'ok']).toEqual([dueState('2026-11-04', T), dueState('2026-11-05', T), dueState('2026-11-06', T), dueState('2026-11-08', T)]);
+  });
+  it('tarihliler önce, tarihe göre; tarihsizlerin sırası korunur', () => {
+    const list = [{ id: 'a' }, { id: 'b', dueDate: '2026-11-09' }, { id: 'c' }, { id: 'd', dueDate: '2026-11-06' }];
+    expect(sortTodos(list).map((x) => x.id)).toEqual(['d', 'b', 'a', 'c']);
+  });
+  it('bildirim: bir gün önce 09:00; saat geçmişse ve son gün yarınsa bugün 19:00; yapılan ve tarihsizler yok', () => {
+    const early = localMs(T, '07:00'), late = localMs(T, '15:00');
+    const todos = [
+      { id: 'a', text: 'Fatura', dueDate: '2026-11-08' },
+      { id: 'b', text: 'Aşı', dueDate: '2026-11-06' },
+      { id: 'c', text: 'Bitti', dueDate: '2026-11-08', done: true },
+      { id: 'd', text: 'Tarihsiz' },
+      { id: 'e', text: 'Geçmiş', dueDate: '2026-11-01' },
+    ];
+    const a = todoItems(todos, T, early);
+    expect(a.map((x) => x.id)).toEqual(['o-a-2026-11-08', 'o-b-2026-11-06']);
+    expect(a[0].t).toBe(localMs('2026-11-07', '09:00'));
+    expect(a[1].t).toBe(localMs(T, '09:00'));
+    expect(a[0]).toMatchObject({ title: 'Fatura', body: 'Yarın son gün · ortak yapılacak' });
+    expect(todoItems(todos, T, late).find((x) => x.id === 'o-b-2026-11-06').t).toBe(localMs(T, '19:00'));
+  });
+});

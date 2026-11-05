@@ -79,3 +79,7 @@ button.hg-row { cursor: pointer; }
 /* Four segments (Takip Listesi): smaller labels, the count badge sits in the corner instead of beside the label */
 .seg[style*="--n:4"] .seg-b, .seg[style*="--n: 4"] .seg-b { position: relative; font-size: 13px; padding: 0 2px; }
 .seg[style*="--n:4"] .seg-badge, .seg[style*="--n: 4"] .seg-badge { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
+.list-row .grow { min-width: 0; overflow-wrap: break-word; }
+.list-row.tight { gap: 6px; }
+.list-row.tight .iconbtn { width: 40px; height: 40px; min-width: 40px; flex: none; }
+.list-row .fr-pill { font-size: 11px; padding: 4px 8px; }

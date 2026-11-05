@@ -73,6 +73,20 @@ export function fridgeItems(items, todayISO, days = 14) {
   return out;
 }
 
+// Shared to-do with a due date: a reminder the day before at 09:00 ("Yarın son gün"). If that moment has already passed
+// and the due date is tomorrow, the reminder goes out at 19:00 today instead.
+export function todoItems(todos, todayISO, nowMs = Date.now(), days = 14) {
+  const out = [];
+  for (const t of todos || []) {
+    if (t.done || !t.dueDate || t.dueDate < todayISO || t.dueDate > addDays(todayISO, days + 1)) continue;
+    const before = addDays(t.dueDate, -1);
+    let at = localMs(before, '09:00');
+    if (at < nowMs - 30 * 60_000 && t.dueDate === addDays(todayISO, 1)) at = localMs(todayISO, '19:00');
+    out.push({ id: `o-${t.id}-${t.dueDate}`, t: at, title: t.text, body: 'Yarın son gün · ortak yapılacak' });
+  }
+  return out;
+}
+
 // Only future-ish items, soonest first, capped.
 export function buildSchedule(items, nowMs = Date.now(), max = 300) {
   return items.filter((i) => i.t > nowMs - 30 * 60_000).sort((a, b) => a.t - b.t).slice(0, max);

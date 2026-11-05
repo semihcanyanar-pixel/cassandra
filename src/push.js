@@ -2,7 +2,7 @@ import { useEffect } from 'preact/hooks';
 import { callWorker, workerConfigured, WORKER_URL } from './worker.js';
 import { tagScopes } from './lib/events.js';
 import { medPeople } from './lib/meds.js';
-import { eventItems, medItems, taskItems, fridgeItems, buildSchedule } from './lib/push.js';
+import { eventItems, medItems, taskItems, fridgeItems, todoItems, buildSchedule } from './lib/push.js';
 import { today } from './lib/dates.js';
 
 const FLAG = 'cassandra.push';
@@ -50,13 +50,14 @@ export function buildPushPayload({ session, data, house }, nowMs = Date.now(), t
     ...medItems(house.medications, house.medLogs, people, reminderIds(profile, household, me.uid), t),
     ...taskItems(data.tasks || [], t),
     ...fridgeItems(house.fridge, t),
+    ...todoItems(house.todos, t, nowMs),
   ];
   return buildSchedule(items, nowMs);
 }
 
 // Keeps the Worker's reminder schedule in step with the data (debounced). Only on devices where notifications were enabled.
 export function usePushSchedule({ session, data, house }) {
-  const sig = JSON.stringify([house.events, data.events, house.medications, house.medLogs, data.tasks, house.fridge, session.profile?.medReminderFor]);
+  const sig = JSON.stringify([house.events, data.events, house.medications, house.medLogs, data.tasks, house.fridge, house.todos, session.profile?.medReminderFor]);
   useEffect(() => {
     if (!workerConfigured || !pushEnabledHere()) return undefined;
     const id = setTimeout(() => {

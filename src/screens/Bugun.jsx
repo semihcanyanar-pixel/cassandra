@@ -6,7 +6,9 @@ import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.
 import { fmtDur, habitList, habitStreak, activeDays, tasksForDay, taskDone } from '../lib/stats.js';
 import { occurrences, tagScopes } from '../lib/events.js';
 import { today, addDays, dayMonth, weekStart, DAY_SHORT } from '../lib/dates.js';
-import { toggleTask, markDose, unmarkDose, markActivityDone, deleteLog } from '../data.js';
+import { toggleTask, markDose, unmarkDose, markActivityDone, deleteLog, setFamilyTodoDone, deleteFridge } from '../data.js';
+import { dueLeft, dueText } from '../lib/due.js';
+import { leftDays, leftText } from '../lib/fridge.js';
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
@@ -23,7 +25,6 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const todays = tasksForDay(data.tasks, t);
   const events = occurrences(tagScopes(house.events, data.events), t, t);
   const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
-  const todoOpen = house.todos.filter((x) => !x.done);
   const openMed = () => { ortakStart.sub = 'ilac'; goTab('ortak'); };
 
   const items = [
@@ -45,6 +46,17 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         open: openMed,
       };
     }),
+    // shared to-dos whose due date is tomorrow, today or already past
+    ...house.todos.filter((x) => !x.done && x.dueDate && dueLeft(x.dueDate, t) <= 1).map((x) => ({
+      id: `o${x.id}`, time: null, title: x.text, sub: `${dueText(x.dueDate, t)} · ortak yapılacak`, done: false, urgent: true,
+      tick: () => setFamilyTodoDone(session.hid, x.id, true), open: () => { ortakStart.sub = 'todo'; goTab('ortak'); },
+    })),
+    // fridge items on their last day (tomorrow, today) or past it
+    ...house.fridge.filter((x) => x.shelfDays && leftDays(x, t) <= 1).map((x) => ({
+      id: `f${x.id}`, time: null, title: x.name, sub: `${leftText(x, t)} · buzdolabı`, done: false, urgent: true,
+      tick: () => { if (confirm(`“${x.name}” bitti, listeden kaldırılsın mı?`)) deleteFridge(session.hid, x.id); },
+      open: () => { ortakStart.sub = 'fridge'; goTab('ortak'); },
+    })),
     ...events.map((e) => ({ id: `e${e.scope}${e.id}`, time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
   ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   const untimed = items.filter((i) => !i.time);
@@ -148,17 +160,6 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
               {e.scope === 'kisisel' ? <span class="badge small"><IconLock small />Kişisel</span> : e.time && <span class="sub">{e.time}</span>}
             </button>
           ))}
-        </Card>
-      )}
-
-      {todoOpen.length > 0 && (
-        <Card label="ORTAK YAPILACAKLAR" class="list-card-pad">
-          {todoOpen.slice(0, 3).map((x) => (
-            <button key={x.id} class="up-row" onClick={() => { ortakStart.sub = 'todo'; goTab('ortak'); }}>
-              <span class="grow">{x.text}</span>
-            </button>
-          ))}
-          {todoOpen.length > 3 && <button class="up-row" onClick={() => { ortakStart.sub = 'todo'; goTab('ortak'); }}><span class="grow sub">+{todoOpen.length - 3} iş daha</span></button>}
         </Card>
       )}
     </main>

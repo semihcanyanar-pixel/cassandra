@@ -142,8 +142,8 @@ function demoHouse() {
       { id: 's4', text: 'Bebek bezi', category: 'aslan', done: false, addedBy: 'me', createdAt: null },
     ],
     todos: [
-      { id: 'f1', text: 'Aşı randevusu al', done: false, assignee: 'me', addedBy: 'other', createdAt: null },
-      { id: 'f2', text: 'Faturaları öde', done: false, assignee: null, addedBy: 'me', createdAt: null },
+      { id: 'f1', text: 'Aşı randevusu al', done: false, assignee: 'me', addedBy: 'other', dueDate: dayOffset(1), createdAt: null },
+      { id: 'f2', text: 'Faturaları öde', done: false, assignee: null, addedBy: 'me', dueDate: dayOffset(5), createdAt: null },
     ],
     events: [
       { id: 'fe1', title: 'Hastane randevusu', date: dayOffset(2), time: '10:30', repeat: 'none', remind: '1d', createdBy: 'me' },
@@ -201,11 +201,14 @@ export const deleteFridge = (hid, id) => fire(() => deleteDoc(href(hid, 'fridgeI
 
 export const addShopping = (hid, uid, { text, category }) => fire(() => addDoc(hcol(hid, 'shoppingItems'),
   { text, category, done: false, addedBy: uid, createdAt: serverTimestamp() }));
+export const updateShopping = (hid, id, data) => fire(() => updateDoc(href(hid, 'shoppingItems', id), data));
 export const setShoppingDone = (hid, id, done) => fire(() => updateDoc(href(hid, 'shoppingItems', id), { done }));
 export const deleteShopping = (hid, id) => fire(() => deleteDoc(href(hid, 'shoppingItems', id)));
 
-export const addFamilyTodo = (hid, uid, text) => fire(() => addDoc(hcol(hid, 'familyTodos'),
-  { text, done: false, assignee: null, addedBy: uid, createdAt: serverTimestamp() }));
+// dueDate: optional 'YYYY-MM-DD' ("şu tarihe kadar"); a reminder is sent the day before.
+export const addFamilyTodo = (hid, uid, text, dueDate = null) => fire(() => addDoc(hcol(hid, 'familyTodos'),
+  { text, done: false, assignee: null, dueDate: dueDate || null, addedBy: uid, createdAt: serverTimestamp() }));
+export const updateFamilyTodo = (hid, id, data) => fire(() => updateDoc(href(hid, 'familyTodos', id), data));
 export const setFamilyTodoDone = (hid, id, done) => fire(() => updateDoc(href(hid, 'familyTodos', id), { done }));
 export const setFamilyTodoAssignee = (hid, id, assignee) => fire(() => updateDoc(href(hid, 'familyTodos', id), { assignee }));
 export const deleteFamilyTodo = (hid, id) => fire(() => deleteDoc(href(hid, 'familyTodos', id)));

@@ -4,7 +4,8 @@ import { Ilaclar } from './Ilaclar.jsx';
 import { Buzdolabi } from './Buzdolabi.jsx';
 import { urgentCount } from '../lib/fridge.js';
 import { today } from '../lib/dates.js';
-import { IconPlus, IconTrash } from '../icons.jsx';
+import { IconPlus, IconTrash, IconEdit } from '../icons.jsx';
+import { dueText, dueState, sortTodos } from '../lib/due.js';
 import { SHOP_CATEGORIES, categoryLabel } from '../lib/notes.js';
 import {
   addShopping, setShoppingDone, deleteShopping, addFamilyTodo, setFamilyTodoDone, setFamilyTodoAssignee, deleteFamilyTodo,
@@ -42,6 +43,7 @@ export function Ortak({ session, house, nav, onSettings }) {
   const [filter, setFilter] = useState('all');
   const [addCat, setAddCat] = useState('market');
   const [text, setText] = useState('');
+  const [dueDate, setDueDate] = useState(''); // optional due date for a new to-do
 
   const partner = (session.household.members || []).find((u) => u !== me.uid);
   const countOpen = (c) => house.shopping.filter((i) => !i.done && (c === 'all' || i.category === c)).length;
@@ -51,13 +53,13 @@ export function Ortak({ session, house, nav, onSettings }) {
     const v = text.trim();
     if (!v) return;
     if (sub === 'ev') addShopping(hid, me.uid, { text: v, category: filter === 'all' ? addCat : filter });
-    else addFamilyTodo(hid, me.uid, v);
-    setText('');
+    else addFamilyTodo(hid, me.uid, v, dueDate || null);
+    setText(''); setDueDate('');
   }
 
   const shopList = house.shopping.filter((i) => filter === 'all' || i.category === filter);
   const open = shopList.filter((i) => !i.done), done = shopList.filter((i) => i.done);
-  const todoOpen = house.todos.filter((t) => !t.done), todoDone = house.todos.filter((t) => t.done);
+  const todoOpen = sortTodos(house.todos.filter((t) => !t.done)), todoDone = house.todos.filter((t) => t.done);
   const openShop = countOpen('all');
 
   const cycleAssignee = (t) => {
@@ -82,7 +84,7 @@ export function Ortak({ session, house, nav, onSettings }) {
           <div class="card list-card">
             {shopList.length === 0 && <div class="sub" style="padding:18px 0;text-align:center">Liste boş. Aşağıdan ekle.</div>}
             {[...open, ...done].map((i) => (
-              <div class="list-row" key={i.id}>
+              <div class="list-row tight" key={i.id}>
                 <button class={i.done ? 'check on' : 'check'} role="checkbox" aria-checked={i.done} aria-label={`${i.text} alındı`}
                   onClick={() => setShoppingDone(hid, i.id, !i.done)}>{i.done && <Tick />}</button>
                 <div class="grow">
@@ -90,6 +92,7 @@ export function Ortak({ session, house, nav, onSettings }) {
                   {filter === 'all' && <div class="sub">{categoryLabel(SHOP_CATEGORIES, i.category)}</div>}
                 </div>
                 <Avatar person={personOf(session, i.addedBy)} small />
+                <button class="iconbtn plain" aria-label={`${i.text} düzenle`} onClick={() => nav.go({ n: 'listitem', kind: 'shop', id: i.id })}><IconEdit /></button>
                 <button class="iconbtn plain" aria-label={`${i.text} sil`} onClick={() => deleteShopping(hid, i.id)}><IconTrash /></button>
               </div>
             ))}
@@ -106,16 +109,18 @@ export function Ortak({ session, house, nav, onSettings }) {
           {[...todoOpen, ...todoDone].map((t) => {
             const who = personOf(session, t.assignee);
             return (
-              <div class="list-row" key={t.id}>
+              <div class="list-row tight" key={t.id}>
                 <button class={t.done ? 'check on' : 'check'} role="checkbox" aria-checked={t.done} aria-label={`${t.text} tamamlandı`}
                   onClick={() => setFamilyTodoDone(hid, t.id, !t.done)}>{t.done && <Tick />}</button>
                 <div class="grow">
                   <div class={t.done ? 'title-sm struck' : 'title-sm'}>{t.text}</div>
                   {who && <div class="sub">{who.name}</div>}
+                  {t.dueDate && !t.done && <div style="margin-top:4px"><span class={`fr-pill ${dueState(t.dueDate, today())}`}>{dueText(t.dueDate, today())}</span></div>}
                 </div>
                 <button class="iconbtn plain" aria-label={`${t.text} atanan kişiyi değiştir`} onClick={() => cycleAssignee(t)}>
                   {who ? <Avatar person={who} small /> : <span class="avatar mini empty" aria-hidden="true">+</span>}
                 </button>
+                <button class="iconbtn plain" aria-label={`${t.text} düzenle`} onClick={() => nav.go({ n: 'listitem', kind: 'todo', id: t.id })}><IconEdit /></button>
                 <button class="iconbtn plain" aria-label={`${t.text} sil`} onClick={() => deleteFamilyTodo(hid, t.id)}><IconTrash /></button>
               </div>
             );
@@ -131,6 +136,12 @@ export function Ortak({ session, house, nav, onSettings }) {
                 class={addCat === c.value ? 'chip small on' : 'chip small'} onClick={() => setAddCat(c.value)}>{c.label}</button>
             ))}
           </div>
+        )}
+        {sub === 'todo' && (
+          <label class="row" style="gap:8px;font-size:13px;font-weight:700">
+            <span class="grow muted">Şu tarihe kadar (isteğe bağlı)</span>
+            <input class="addinput" style="flex:none;width:auto" type="date" min={today()} value={dueDate} aria-label="Son tarih" onInput={(e) => setDueDate(e.target.value)} />
+          </label>
         )}
         <div class="row" style="gap:8px">
           <input class="addinput" aria-label={sub === 'ev' ? 'Listeye ekle' : 'Yapılacak ekle'} placeholder={sub === 'ev' ? 'Listeye ekle' : 'Yapılacak ekle'}
