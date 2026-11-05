@@ -1,6 +1,6 @@
 /* Stage 3: Ortak lists and Notlar. */
 .avatar.mini { width: 28px; height: 28px; font-size: 12px; }
-.avatar.mini.empty { background: transparent; color: var(--muted); border: 2px dashed var(--muted); }
+.avatar.mini.empty { background: transparent; color: var(--muted); border: 0; font-size: 24px; font-weight: 500; }
 .iconbtn.plain { background: transparent; border: 0; color: var(--muted); }
 .count { margin-left: 6px; font-size: 12px; opacity: .8; }
 .chip.on .count { opacity: 1; }
