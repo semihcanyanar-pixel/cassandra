@@ -71,7 +71,6 @@ export function PasswordSection() {
           <label for="pw-cur">Mevcut şifre</label>
           <input id="pw-cur" type="password" autocomplete="current-password" required value={cur} onInput={(e) => { setCur(e.target.value); setError(''); }} />
         </div>
-        <button class="vlink" type="button" disabled={busy} onClick={forgot}>Şifremi unuttum</button>
         <div class="field">
           <label for="pw-new">Yeni şifre (en az 8 karakter)</label>
           <input id="pw-new" type="password" autocomplete="new-password" required minLength={8} value={next} onInput={(e) => { setNext(e.target.value); setError(''); }} />
@@ -86,6 +85,7 @@ export function PasswordSection() {
           <button class="btn grow" type="submit" disabled={busy}>{busy ? 'Bekle…' : 'Kaydet'}</button>
           <button class="chip" type="button" disabled={busy} onClick={reset}>Vazgeç</button>
         </div>
+        <button class="vlink" style="margin-top:4px" type="button" disabled={busy} onClick={forgot}>Şifremi unuttum</button>
       </form>
     </div>
   );
