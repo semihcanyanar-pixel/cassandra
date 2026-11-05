@@ -3,14 +3,14 @@ import { Page, Card, Chips, Switch, COLOR_COUNT, actColor } from '../components/
 import { saveActivity, deleteActivity } from '../data.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
-const DURS = [15, 30, 45, 60, 90].map((n) => ({ value: n, label: `${n} dk` }));
+const DURS = [15, 30, 60].map((n) => ({ value: n, label: `${n} dk` }));
 
 export function ActivityForm({ uid, data, id, nav }) {
   const existing = id ? data.activities.find((a) => a.id === id) : null;
   const [name, setName] = useState(existing?.name || '');
   const [days, setDays] = useState(existing?.weeklyDays || 3);
   const [hasTarget, setHasTarget] = useState(existing ? existing.dailyMinutes != null : false);
-  const [minutes, setMinutes] = useState(existing?.dailyMinutes || 45);
+  const [minutes, setMinutes] = useState(existing?.dailyMinutes || 30);
   const [color, setColor] = useState(existing?.color ?? data.activities.length % COLOR_COUNT);
   const [error, setError] = useState('');
 
