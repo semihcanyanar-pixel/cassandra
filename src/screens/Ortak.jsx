@@ -107,7 +107,7 @@ export function Ortak({ session, house, nav, onSettings }) {
                   onClick={() => setFamilyTodoDone(hid, t.id, !t.done)}>{t.done && <Tick />}</button>
                 <div class="grow">
                   <div class={t.done ? 'title-sm struck' : 'title-sm'}>{t.text}</div>
-                  <div class="sub">{who ? who.name : 'Atanmamış'}</div>
+                  {who && <div class="sub">{who.name}</div>}
                 </div>
                 <button class="iconbtn plain" aria-label={`${t.text} atanan kişiyi değiştir`} onClick={() => cycleAssignee(t)}>
                   {who ? <Avatar person={who} small /> : <span class="avatar mini empty" aria-hidden="true">+</span>}
