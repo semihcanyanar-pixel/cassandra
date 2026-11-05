@@ -29,3 +29,28 @@ describe('filterNotes', () => {
     expect(filterNotes(shared, mine, 'aile').every((n) => n.category === 'aile')).toBe(true);
   });
 });
+
+import { toBlocks, cleanBlocks, numberLabels } from '../src/lib/notes.js';
+const P = (o) => ({ t: '', k: 'p', d: false, l: 0, b: false, i: false, s: false, ...o });
+
+describe('not satırları (biçimli metin + yuvarlak tik)', () => {
+  it('eski not biçimlerini satırlara çevirir', () => {
+    expect(toBlocks({ body: 'a\nb' })).toEqual([P({ t: 'a' }), P({ t: 'b' })]);
+    expect(toBlocks({ items: [{ t: 'süt', done: true }] })).toEqual([P({ t: 'süt', k: 'cb', d: true })]);
+    expect(toBlocks({})).toEqual([]);
+  });
+  it('bir önceki sürümün c bayrağı yuvarlak satıra dönüşür; tik yalnızca yuvarlakta anlamlı', () => {
+    expect(toBlocks({ blocks: [{ t: 'x', c: false, d: true }, { t: 'y', c: true, d: true }] })).toEqual([P({ t: 'x' }), P({ t: 'y', k: 'cb', d: true })]);
+  });
+  it('yeni biçim okunur: tür, girinti ve biçim bayrakları', () => {
+    expect(toBlocks({ blocks: [{ t: 'Başlık', k: 'h', b: true, i: true, s: true, l: 9 }] })).toEqual([P({ t: 'Başlık', k: 'h', b: true, i: true, s: true, l: 2 })]);
+    expect(toBlocks({ blocks: [{ t: 'x', k: 'zzz' }] })[0].k).toBe('p');
+  });
+  it('kaydederken boş satırlar atılır, metin kırpılır', () => {
+    expect(cleanBlocks([P({ t: ' a ', k: 'cb' }), P({ t: '  ' }), P({ t: 'b', d: true })])).toEqual([P({ t: 'a', k: 'cb' }), P({ t: 'b' })]);
+  });
+  it('numaralı satırlar sırayla sayılır, araya başka satır girince yeniden başlar', () => {
+    const b = [P({ k: 'ol' }), P({ k: 'ol' }), P({ k: 'ol', l: 1 }), P({ k: 'ol', l: 1 }), P({ k: 'ol' }), P({ k: 'p' }), P({ k: 'ol' })];
+    expect(numberLabels(b)).toEqual(['1.', '2.', '1.', '2.', '3.', null, '1.']);
+  });
+});

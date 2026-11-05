@@ -1,33 +1,97 @@
-import { useState } from 'preact/hooks';
-import { Page, Card, Chips, COLOR_COUNT, actColor } from '../components/ui.jsx';
-import { IconPlus, IconTrash } from '../icons.jsx';
-import { NOTE_CATEGORIES, noteScope, normalizeCategory } from '../lib/notes.js';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { Page, Card, Chips, actColor } from '../components/ui.jsx';
+import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock } from '../lib/notes.js';
 import { saveNote, deleteNote } from '../data.js';
 
 const NOTE_COLORS = 4;
+
+const Ico = ({ d }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
+);
+const Tick = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+);
+
+// Line kinds the toolbar can switch to (tap again = back to plain text).
+const KIND_BUTTONS = [
+  { k: 'h', label: 'Başlık', icon: <b class="fi">H</b> },
+  { k: 's', label: 'Alt başlık', icon: <b class="fi sm">H</b> },
+  { k: 'ul', label: 'Madde', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="7" r="2" /><circle cx="5" cy="17" r="2" /><path d="M10 7h10M10 17h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none" /></svg> },
+  { k: 'ol', label: 'Numara', icon: <b class="fi sm">1.</b> },
+  { k: 'cb', label: 'Yuvarlak', icon: <span class="circ-icon" aria-hidden="true" /> },
+];
+const FLAG_BUTTONS = [
+  { f: 'b', label: 'Kalın', icon: <b class="fi">B</b> },
+  { f: 'i', label: 'İtalik', icon: <i class="fi">I</i> },
+  { f: 's', label: 'Üstü çizili', icon: <s class="fi">S</s> },
+];
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
   const existing = id ? (initialCategory === 'kisisel' ? data.notes : house.notes).find((n) => n.id === id) : null;
   const [category, setCategory] = useState(normalizeCategory(existing?.category || initialCategory));
   const [title, setTitle] = useState(existing?.title || '');
-  const [kind, setKind] = useState(existing?.items ? 'list' : 'text');
-  const [body, setBody] = useState(existing?.body || '');
-  const [items, setItems] = useState(existing?.items || [{ t: '', done: false }]);
+  const [blocks, setBlocks] = useState(() => { const b = toBlocks(existing); return b.length ? b : [normBlock({})]; });
   const [color, setColor] = useState(existing?.color ?? 0);
   const [error, setError] = useState('');
+  const [cur, setCur] = useState(0); // the line being edited
+  const refs = useRef([]);
+  const focusAfter = useRef(null);
 
-  const setItem = (i, patch) => setItems((cur) => cur.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const grow = (el) => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } };
+  useEffect(() => {
+    refs.current.forEach(grow);
+    if (focusAfter.current != null) { refs.current[focusAfter.current]?.focus(); focusAfter.current = null; }
+  });
+
+  const upd = (i, patch) => setBlocks((b) => b.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const row = blocks[cur] || blocks[0];
+  const labels = numberLabels(blocks);
+
+  const setKind = (k) => { upd(cur, { k: row.k === k ? 'p' : k, d: false }); focusAfter.current = cur; };
+  const toggleFlag = (f) => { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; };
+  const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
+  const move = (d) => {
+    const j = cur + d;
+    if (j < 0 || j >= blocks.length) return;
+    setBlocks((b) => { const c = b.slice(); [c[cur], c[j]] = [c[j], c[cur]]; return c; });
+    setCur(j); focusAfter.current = j;
+  };
+  const removeLine = () => {
+    if (blocks.length === 1) { upd(0, { t: '', k: 'p', d: false, b: false, i: false, s: false, l: 0 }); focusAfter.current = 0; return; }
+    setBlocks((b) => b.filter((_, j) => j !== cur));
+    const n = Math.max(0, cur - 1); setCur(n); focusAfter.current = n;
+  };
+
+  function onKeyDown(e, i) {
+    const r = blocks[i];
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (['ul', 'ol', 'cb'].includes(r.k) && !r.t.trim()) { upd(i, { k: 'p', d: false, l: 0 }); return; } // Enter on an empty list line ends the list
+      const pos = e.target.selectionStart ?? r.t.length;
+      const keep = ['ul', 'ol', 'cb'].includes(r.k); // lists continue; headings/text start a plain line
+      const next = normBlock({ t: r.t.slice(pos), k: keep ? r.k : 'p', l: r.l });
+      setBlocks((b) => [...b.slice(0, i), { ...r, t: r.t.slice(0, pos) }, next, ...b.slice(i + 1)]);
+      focusAfter.current = i + 1; setCur(i + 1);
+    } else if (e.key === 'Backspace' && (e.target.selectionStart ?? 0) === 0 && e.target.selectionEnd === 0) {
+      if (r.k !== 'p') { e.preventDefault(); upd(i, { k: 'p', d: false }); } // first Backspace removes the line style
+      else if (r.l > 0) { e.preventDefault(); upd(i, { l: r.l - 1 }); }
+      else if (i > 0) {
+        e.preventDefault();
+        setBlocks((b) => [...b.slice(0, i - 1), { ...b[i - 1], t: b[i - 1].t + r.t }, ...b.slice(i + 1)]);
+        focusAfter.current = i - 1; setCur(i - 1);
+      }
+    }
+  }
 
   function submit(e) {
     e.preventDefault();
-    const cleanItems = items.map((x) => ({ t: x.t.trim(), done: x.done })).filter((x) => x.t);
-    if (!title.trim() && !body.trim() && cleanItems.length === 0) { setError('Boş not kaydedilemez.'); return; }
-    const payload = { title: title.trim(), color };
-    if (kind === 'list') { payload.items = cleanItems; payload.body = ''; } else { payload.body = body.trim(); payload.items = null; }
-    saveNote(ctx, category, id, payload);
+    const clean = cleanBlocks(blocks);
+    if (!title.trim() && clean.length === 0) { setError('Boş not kaydedilemez.'); return; }
+    saveNote(ctx, category, id, { title: title.trim(), color, blocks: clean, body: '', items: null });
     nav.back();
   }
   const remove = () => { if (confirm('Not silinsin mi?')) { deleteNote(ctx, category, id); nav.back(); } };
+  const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
 
   return (
     <form onSubmit={submit}>
@@ -46,25 +110,46 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           <label class="label" for="baslik" style="padding:0;margin:0">BAŞLIK</label>
           <input id="baslik" class="big-input" value={title} maxLength={60} placeholder="İsteğe bağlı" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
         </Card>
-        <Card label="İÇERİK">
-          <Chips options={[{ value: 'text', label: 'Metin' }, { value: 'list', label: 'Liste' }]} value={kind} onChange={setKind} label="Not türü" />
-          {kind === 'text' ? (
-            <textarea class="note-area" aria-label="Not metni" rows={6} value={body} maxLength={2000} placeholder="Notunu yaz…" onInput={(e) => { setBody(e.target.value); setError(''); }} />
-          ) : (
-            <div style="margin-top:10px">
-              {items.map((x, i) => (
-                <div class="row" key={i} style="gap:4px">
-                  <button type="button" class={x.done ? 'check on' : 'check'} role="checkbox" aria-checked={x.done} aria-label="Madde tamamlandı" onClick={() => setItem(i, { done: !x.done })}>
-                    {x.done && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+
+        <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
+          {KIND_BUTTONS.map((x) => (
+            <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}</button>
+          ))}
+          <span class="fmt-sep" aria-hidden="true" />
+          {FLAG_BUTTONS.map((x) => (
+            <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}</button>
+          ))}
+          <span class="fmt-sep" aria-hidden="true" />
+          <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /></button>
+          <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /></button>
+          <span class="fmt-sep" aria-hidden="true" />
+          <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /></button>
+          <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /></button>
+          <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /></button>
+        </div>
+
+        <Card label="NOT">
+          <div class="lines">
+            {blocks.map((b, i) => (
+              <div class={`line k-${b.k}`} key={i} style={`margin-left:${b.l * 22}px`}>
+                {b.k === 'cb' && (
+                  <button type="button" class={b.d ? 'circ on' : 'circ'} role="checkbox" aria-checked={b.d} aria-label="Tamamlandı" onClick={() => upd(i, { d: !b.d })}>
+                    {b.d && <Tick />}
                   </button>
-                  <input class="item-input grow" aria-label={`Madde ${i + 1}`} value={x.t} maxLength={80} placeholder="Madde" onInput={(e) => { setItem(i, { t: e.target.value }); setError(''); }} />
-                  <button type="button" class="iconbtn plain" aria-label={`Madde ${i + 1} sil`} onClick={() => setItems((cur) => (cur.length > 1 ? cur.filter((_, j) => j !== i) : [{ t: '', done: false }]))}><IconTrash /></button>
-                </div>
-              ))}
-              <button type="button" class="chip" style="margin-top:6px" onClick={() => setItems((cur) => [...cur, { t: '', done: false }])}><IconPlus />Madde ekle</button>
-            </div>
-          )}
+                )}
+                {b.k === 'ul' && <span class="mark" aria-hidden="true">•</span>}
+                {b.k === 'ol' && <span class="mark num" aria-hidden="true">{labels[i]}</span>}
+                <textarea ref={(el) => { refs.current[i] = el; }} rows={1}
+                  class={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
+                  aria-label={`Satır ${i + 1}`} value={b.t} maxLength={500} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
+                  onFocus={() => setCur(i)} onKeyDown={(e) => onKeyDown(e, i)}
+                  onInput={(e) => { upd(i, { t: e.target.value.replace(/\n/g, ' ') }); setError(''); grow(e.target); }} />
+              </div>
+            ))}
+          </div>
+          <div class="sub" style="margin-top:8px">Araç çubuğu, imlecin olduğu satırı biçimlendirir. Enter yeni satır açar; boş madde ya da yuvarlak satırda Enter listeyi bitirir.</div>
         </Card>
+
         <Card label="RENK">
           <div class="swatch-row" role="radiogroup" aria-label="Not rengi" style="justify-content:flex-start">
             {Array.from({ length: NOTE_COLORS }, (_, i) => (

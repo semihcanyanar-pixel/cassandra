@@ -28,3 +28,30 @@ export function filterNotes(householdNotes, personalNotes, filter) {
   if (filter === 'aile') return shared;
   return [...shared, ...mine];
 }
+
+// A note is a list of lines. Each line: { t: text, k: kind, d: done (circle lines), l: indent 0..2, b: bold, i: italic, s: strikethrough }.
+// Kinds: p paragraph, h heading, s subheading, ul bullet, ol numbered, cb round checkbox (like iPhone Notes).
+// Older notes: `blocks` with { c } (checklist flag), `items` (all checklist) or `body` (plain text) are converted on read.
+export const KINDS = ['p', 'h', 's', 'ul', 'ol', 'cb'];
+export const normBlock = (b) => {
+  const k = KINDS.includes(b.k) ? b.k : b.c ? 'cb' : 'p';
+  return { t: b.t || '', k, d: k === 'cb' && Boolean(b.d), l: Math.min(2, Math.max(0, Number(b.l) || 0)), b: Boolean(b.b), i: Boolean(b.i), s: Boolean(b.s) };
+};
+export function toBlocks(note) {
+  if (Array.isArray(note?.blocks)) return note.blocks.map(normBlock);
+  if (Array.isArray(note?.items)) return note.items.map((i) => normBlock({ t: i.t, k: 'cb', d: i.done }));
+  if (note?.body) return note.body.split('\n').map((t) => normBlock({ t }));
+  return [];
+}
+export const cleanBlocks = (blocks) => blocks.map((b) => normBlock({ ...b, t: (b.t || '').trim() })).filter((b) => b.t);
+
+// Labels for numbered lines ("1.", "2." ...): the count restarts whenever the run of numbered lines at that indent is broken.
+export function numberLabels(blocks) {
+  const counters = [0, 0, 0];
+  return blocks.map((b) => {
+    if (b.k !== 'ol') { for (let l = b.l; l < 3; l++) counters[l] = 0; return null; }
+    counters[b.l] += 1;
+    for (let l = b.l + 1; l < 3; l++) counters[l] = 0;
+    return `${counters[b.l]}.`;
+  });
+}

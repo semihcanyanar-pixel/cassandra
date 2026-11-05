@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { IconLock, IconPlus } from '../icons.jsx';
-import { filterNotes, categoryLabel, NOTE_CATEGORIES } from '../lib/notes.js';
+import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, numberLabels } from '../lib/notes.js';
 
 const FILTERS = [{ value: 'all', label: 'Hepsi' }, ...NOTE_CATEGORIES];
 
@@ -40,22 +40,31 @@ export function Notlar({ me, house, data, nav, onSettings }) {
   );
 }
 
+const MAX_LINES = 8;
+
 function NoteCard({ n, onOpen }) {
   const personal = n.category === 'kisisel';
-  const lines = n.items ? n.items.slice(0, 6) : null;
+  const blocks = toBlocks(n).filter((b) => b.t);
+  const labels = numberLabels(blocks);
+  const shown = blocks.slice(0, MAX_LINES);
   return (
     <button class={`note ${personal ? 'personal' : ''}`} style={`--c:var(--act-${n.color ?? 0})`} onClick={onOpen}
       aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'}`}>
       <span class="note-tag">{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
       {n.title && <span class="note-title">{n.title}</span>}
-      {lines ? (
+      {shown.length > 0 && (
         <span class="note-lines">
-          {lines.map((l, i) => (
-            <span class={l.done ? 'note-line done' : 'note-line'} key={i}><i class="box" />{l.t}</span>
+          {shown.map((b, i) => (
+            <span class={`nl k-${b.k}`} key={i} style={`margin-left:${b.l * 12}px`}>
+              {b.k === 'cb' && <i class={b.d ? 'nc on' : 'nc'}>{b.d && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</i>}
+              {b.k === 'ul' && <i class="nm">•</i>}
+              {b.k === 'ol' && <i class="nm">{labels[i]}</i>}
+              <span class={`nt ${b.b ? 'b' : ''} ${b.i ? 'i' : ''} ${b.s || (b.k === 'cb' && b.d) ? 's' : ''}`}>{b.t}</span>
+            </span>
           ))}
-          {n.items.length > 6 && <span class="sub">+{n.items.length - 6} madde</span>}
+          {blocks.length > MAX_LINES && <span class="sub">+{blocks.length - MAX_LINES} satır</span>}
         </span>
-      ) : <span class="note-body">{n.body}</span>}
+      )}
     </button>
   );
 }
