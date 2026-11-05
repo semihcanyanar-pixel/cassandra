@@ -48,7 +48,7 @@ export const isUpcoming = (med, iso) => !med.archived && med.startDate > iso;
 export const logId = (medId, date, time) => `${medId}_${date}_${time}`;
 
 // All doses due on `iso` for the given medications, sorted by time. `log` is the medLogs doc or null (pending).
-export function dosesForDay(meds, logs, iso) {
+export function dosesForDay(meds, logs, iso, nowHHMM = null) {
   const byId = new Map(logs.filter((l) => l.date === iso).map((l) => [l.id, l]));
   const out = [];
   for (const med of meds) {
@@ -58,10 +58,17 @@ export function dosesForDay(meds, logs, iso) {
       out.push({ id, med, time, date: iso, log: byId.get(id) || null });
     }
   }
-  return out.sort((a, b) => a.time.localeCompare(b.time) || a.med.name.localeCompare(b.med.name, 'tr'));
+  const sorted = out.sort((a, b) => a.time.localeCompare(b.time) || a.med.name.localeCompare(b.med.name, 'tr'));
+  // A pending dose counts as missed (kaçtı) once the NEXT dose of the same medication is due. Derived, never stored.
+  if (nowHHMM) {
+    for (const d of sorted) {
+      d.missed = !d.log && sorted.some((o) => o.med.id === d.med.id && o.time > d.time && o.time <= nowHHMM);
+    }
+  }
+  return sorted;
 }
 
-export const doseState = (d) => (d.log ? d.log.status : 'bekliyor');
+export const doseState = (d) => (d.log ? d.log.status : d.missed ? 'kacti' : 'bekliyor');
 
 // First pending dose that is not yet past (time >= now). Null when nothing is left today.
 export function nextDose(doses, nowHHMM) {

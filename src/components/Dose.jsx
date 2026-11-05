@@ -13,7 +13,7 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
   const doer = log ? personById(people, log.doneBy, uid) : null;
   const doneTime = log ? hhmm(new Date(log.doneAt?.toMillis?.() ?? Date.now())) : null;
   const late = !log && dose.time < now;
-  const cls = ['dose', log?.status === 'alindi' ? 'taken' : '', log?.status === 'atlandi' ? 'skipped' : '', next ? 'next' : ''].join(' ');
+  const cls = ['dose', log?.status === 'alindi' ? 'taken' : '', log?.status === 'atlandi' || dose.missed ? 'skipped' : '', next ? 'next' : ''].join(' ');
   const undo = () => { if (confirm('İşaret geri alınsın mı?')) unmarkDose(hid, dose.id); };
 
   return (
@@ -24,21 +24,21 @@ export function DoseRow({ dose, people, uid, hid, next, now }) {
         <div class="grow">
           <div class="title-sm">{medLine(med, person.name)}</div>
           {next && <div class="sub">Sıradaki doz</div>}
-          {late && <div class="sub">Saati geçti</div>}
+          {dose.missed ? <div class="sub">Kaçtı</div> : late && <div class="sub">Saati geçti</div>}
         </div>
       </div>
       {log ? (
         <div class="dose-state">
           <span class={log.status === 'alindi' ? 'given' : 'given skip'}>
             {log.status === 'alindi' && <Tick />}
-            {log.status === 'alindi' ? 'Alındı' : 'Atlandı'} · {doer.name} · {doneTime}
+            {log.status === 'alindi' ? 'Alındı' : 'Kaçtı'} · {doer.name} · {doneTime}
           </span>
           <button class="chip small" onClick={undo}>Geri al</button>
         </div>
       ) : (
         <div class="dose-actions">
           <button class="btn" onClick={() => markDose(hid, uid, dose, 'alindi')}><Tick />Alındı</button>
-          <button class="chip" onClick={() => markDose(hid, uid, dose, 'atlandi')}><Cross />Atla</button>
+          {!dose.missed && <button class="chip" onClick={() => markDose(hid, uid, dose, 'atlandi')}><Cross />Kaçtı</button>}
         </div>
       )}
     </div>

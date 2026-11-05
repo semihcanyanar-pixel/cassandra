@@ -10,8 +10,8 @@ export function Ilaclar({ session, house, nav }) {
   const t = today();
   const people = medPeople(session.household, me.uid);
   const meds = house.medications;
-  const doses = dosesForDay(meds, house.medLogs, t);
   const now = hhmm();
+  const doses = dosesForDay(meds, house.medLogs, t, now);
   const next = nextDose(doses, now);
   const running = meds.filter((m) => isActiveOn(m, t));
   const upcoming = meds.filter((m) => isUpcoming(m, t));

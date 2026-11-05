@@ -72,3 +72,27 @@ describe('özet ve metin', () => {
     expect(p[1].name).toBe('Eşi');
   });
 });
+
+describe('kaçtı (otomatik)', () => {
+  const day = '2026-11-05';
+  it('bir sonraki doz saati gelince önceki işaretsiz doz kaçtı olur', () => {
+    const d = dosesForDay([med()], [], day, '14:05');
+    expect(d.map((x) => x.missed)).toEqual([true, false, false]); // 08:00 missed, 14:00 current, 20:00 future
+  });
+  it('henüz sonraki doz gelmediyse kaçtı değil', () => {
+    expect(dosesForDay([med()], [], day, '13:59').every((x) => !x.missed)).toBe(true);
+  });
+  it('işaretlenmiş doz kaçtı sayılmaz; son doz gece boyunca beklemede kalır', () => {
+    const l = { id: logId('m1', day, '08:00'), date: day, status: 'alindi' };
+    const d = dosesForDay([med()], [l], day, '23:00');
+    expect(d.map((x) => x.missed)).toEqual([false, true, false]);
+  });
+  it('her ilaç kendi dozlarına göre değerlendirilir', () => {
+    const other = med({ id: 'm2', name: 'B', times: ['09:00'] });
+    const d = dosesForDay([med(), other], [], day, '15:00');
+    expect(d.find((x) => x.med.id === 'm2').missed).toBe(false);
+  });
+  it('now verilmezse kaçtı hesaplanmaz', () => {
+    expect(dosesForDay([med()], [], day)[0].missed).toBeUndefined();
+  });
+});

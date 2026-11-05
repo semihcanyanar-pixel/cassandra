@@ -33,11 +33,11 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const openTodos = house.todos.filter((x) => !x.done).length;
   const [who, setWho] = useState('all');
   const people = medPeople(session.household, me.uid);
-  const doses = dosesForDay(house.medications, house.medLogs, t);
+  const now = hhmm();
+  const doses = dosesForDay(house.medications, house.medLogs, t, now);
   const doseOwner = (d) => personById(people, d.med.forId, me.uid).id;
   const filterPeople = people.filter((p) => doses.some((d) => doseOwner(d) === p.id));
   const shown = who === 'all' ? doses : doses.filter((d) => doseOwner(d) === who);
-  const now = hhmm();
   const next = nextDose(shown, now);
 
   return (
