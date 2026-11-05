@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, Card, Chips, actColor } from '../components/ui.jsx';
 import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock } from '../lib/notes.js';
 import { saveNote, deleteNote } from '../data.js';
+import { Attachments } from '../components/Attachments.jsx';
+import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
 
 const NOTE_COLORS = 4;
 
@@ -34,6 +36,11 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const [color, setColor] = useState(existing?.color ?? 0);
   const [error, setError] = useState('');
   const [cur, setCur] = useState(0); // the line being edited
+  const [files, setFiles] = useState(existing?.files || []);
+  const [busy, setBusy] = useState(false);
+  const originals = useRef(new Set((existing?.files || []).map((f) => f.id)));
+  const removedOriginals = useRef([]);
+  const scope = noteScope(category) === 'personal' ? 'personal' : 'family';
   const refs = useRef([]);
   const focusAfter = useRef(null);
 
@@ -83,24 +90,48 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     }
   }
 
+  async function addFiles(list) {
+    setBusy(true); setError('');
+    for (const f of [...list]) {
+      try {
+        const isPdf = f.type === 'application/pdf' || /.pdf$/i.test(f.name);
+        if (!isImage(f.type) && !isPdf) throw Object.assign(new Error('type'), { code: 'type' });
+        const file = isImage(f.type) ? await compressImage(f) : f;
+        if (file.size > MAX_FILE_BYTES) throw Object.assign(new Error('big'), { code: 'too-large' });
+        const meta = await uploadFile(file, scope);
+        setFiles((cur) => [...cur, meta]);
+      } catch (e) {
+        setError(e.code === 'too-large' ? 'Dosya 20 MB’tan büyük olamaz.' : e.code === 'type' ? 'Yalnızca resim ve PDF eklenebilir.' : 'Dosya yüklenemedi, tekrar dene.');
+      }
+    }
+    setBusy(false);
+  }
+  const removeFile = (f) => {
+    setFiles((cur) => cur.filter((x) => x.id !== f.id));
+    if (originals.current.has(f.id)) removedOriginals.current.push(f.id); else deleteFile(f.id); // new this session: gone right away
+  };
+  // Leaving without saving: files uploaded in this session would be orphans, so delete them.
+  const close = () => { files.filter((f) => !originals.current.has(f.id)).forEach((f) => deleteFile(f.id)); nav.back(); };
+
   function submit(e) {
     e.preventDefault();
     const clean = cleanBlocks(blocks);
-    if (!title.trim() && clean.length === 0) { setError('Boş not kaydedilemez.'); return; }
-    saveNote(ctx, category, id, { title: title.trim(), color, blocks: clean, body: '', items: null });
+    if (!title.trim() && clean.length === 0 && files.length === 0) { setError('Boş not kaydedilemez.'); return; }
+    saveNote(ctx, category, id, { title: title.trim(), color, blocks: clean, body: '', items: null, files });
+    removedOriginals.current.forEach(deleteFile);
     nav.back();
   }
-  const remove = () => { if (confirm('Not silinsin mi?')) { deleteNote(ctx, category, id); nav.back(); } };
+  const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); deleteNote(ctx, category, id); nav.back(); } };
   const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
 
   return (
     <form onSubmit={submit}>
-      <Page title={existing ? 'Notu düzenle' : 'Yeni not'} onClose={nav.back} footer={<button class="btn wide" type="submit">Kaydet</button>}>
+      <Page title={existing ? 'Notu düzenle' : 'Yeni not'} onClose={close} footer={<button class="btn wide" type="submit" disabled={busy}>Kaydet</button>}>
         <Card label="KATEGORİ">
           {existing ? (
             <div class="title-sm">{NOTE_CATEGORIES.find((c) => c.value === category)?.label}</div>
           ) : (
-            <Chips options={NOTE_CATEGORIES} value={category} onChange={setCategory} label="Kategori" />
+            <Chips options={NOTE_CATEGORIES} value={category} onChange={files.length ? () => {} : setCategory} label="Kategori" />
           )}
           <div class="sub" style="margin-top:8px">
             {noteScope(category) === 'personal' ? 'Yalnızca sen görürsün, eşin göremez.' : 'Eşin de görür ve düzenleyebilir.'}
@@ -150,6 +181,17 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           <div class="sub" style="margin-top:8px">Araç çubuğu, imlecin olduğu satırı biçimlendirir. Enter yeni satır açar; boş madde ya da yuvarlak satırda Enter listeyi bitirir.</div>
         </Card>
 
+        {filesEnabled && (
+          <Card label="EKLER">
+            <div class="row" style="gap:10px;flex-wrap:wrap">
+              <label class="chip filebtn">Resim ekle<input class="vh" type="file" accept="image/*" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
+              <label class="chip filebtn">PDF ekle<input class="vh" type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
+            </div>
+            {files.length > 0 && <div style="margin-top:12px"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
+            {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
+            <div class="sub" style="margin-top:8px">{scope === 'personal' ? 'Yalnızca sen açabilirsin.' : 'Eşin de açabilir.'} En çok 20 MB. Resimler yüklenirken küçültülür.</div>
+          </Card>
+        )}
         <Card label="RENK">
           <div class="swatch-row" role="radiogroup" aria-label="Not rengi" style="justify-content:flex-start">
             {Array.from({ length: NOTE_COLORS }, (_, i) => (

@@ -1,4 +1,5 @@
 import { verifyIdToken } from './jwt.js';
+import { uploadFile, readFile, removeFile, isFileId } from './files.js';
 import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue } from './push.js';
 
 // Gemini proxy + web push. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
@@ -9,8 +10,8 @@ const cors = (env, req) => {
   const ok = (env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).includes(origin);
   return {
     'Access-Control-Allow-Origin': ok ? origin : 'null',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Scope, X-Name',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     Vary: 'Origin',
   };
 };
@@ -31,6 +32,8 @@ async function recordUse(env, uid, kind) {
 
 const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 const num = (v) => (Number.isFinite(v) ? Math.round(v) : 0);
+
+const bearer = (req) => { const h = req.headers.get('Authorization') || ''; return h.startsWith('Bearer ') ? h.slice(7) : ''; };
 
 async function auth(env, req) {
   const h = req.headers.get('Authorization') || '';
@@ -183,6 +186,30 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(env, req) });
     if (req.method === 'GET' && url.pathname === '/push/key') return reply(env, req, { key: (await getVapid(env)).pub });
+    // Note attachments: POST /files (upload), GET|DELETE /files/{id}
+    if (url.pathname === '/files' || url.pathname.startsWith('/files/')) {
+      const uid = await auth(env, req);
+      if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
+      const token = bearer(req);
+      if (url.pathname === '/files' && req.method === 'POST') {
+        const r = await uploadFile(env, req, uid, token);
+        return reply(env, req, r.body, r.status);
+      }
+      const id = url.pathname.slice('/files/'.length);
+      if (!isFileId(id)) return reply(env, req, { error: 'not found' }, 404);
+      if (req.method === 'GET') {
+        const r = await readFile(env, id, uid, token);
+        if (r.status !== 200) return reply(env, req, { error: r.status === 404 ? 'not found' : 'forbidden' }, r.status);
+        return new Response(r.value, {
+          headers: { 'Content-Type': r.meta.type, 'Content-Disposition': 'inline', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, max-age=3600', ...cors(env, req) },
+        });
+      }
+      if (req.method === 'DELETE') {
+        const r = await removeFile(env, id, uid, token);
+        return reply(env, req, r.status === 200 ? { ok: true } : { error: 'forbidden' }, r.status);
+      }
+      return reply(env, req, { error: 'method' }, 405);
+    }
     const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test'];
     if (req.method === 'POST' && authed.includes(url.pathname)) {
       const uid = await auth(env, req);

@@ -52,6 +52,9 @@ function NoteCard({ n, onOpen }) {
       aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'}`}>
       <span class="note-tag">{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
       {n.title && <span class="note-title">{n.title}</span>}
+      {n.files?.length > 0 && (
+        <span class="note-att"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" /></svg>{n.files.length} ek</span>
+      )}
       {shown.length > 0 && (
         <span class="note-lines">
           {shown.map((b, i) => (
