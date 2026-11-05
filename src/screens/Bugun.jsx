@@ -136,7 +136,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         ))}
         <button class="up-row" onClick={() => goTab('ortak')}>
           <span class="up-date">Bugün</span>
-          <span class="grow">Ailenin yapılacakları</span>
+          <span class="grow">Yapılacaklar listesi</span>
           <span class="sub">{openTodos} açık</span>
         </button>
       </Card>

@@ -1,9 +1,11 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips } from '../components/ui.jsx';
-import { addLog } from '../data.js';
-import { today } from '../lib/dates.js';
+import { addLog, deleteLog } from '../data.js';
+import { IconTrash } from '../icons.jsx';
+import { today, dayMonth } from '../lib/dates.js';
+import { fmtDur } from '../lib/stats.js';
 
-const QUICK = [15, 30, 45, 60, 90].map((n) => ({ value: n, label: `${n} dk` }));
+const QUICK = [15, 30, 60].map((n) => ({ value: n, label: `${n} dk` }));
 
 export function LogForm({ uid, data, activityId, nav }) {
   const active = data.activities;
@@ -11,6 +13,10 @@ export function LogForm({ uid, data, activityId, nav }) {
   const [minutes, setMinutes] = useState('');
   const [date, setDate] = useState(today());
   const [error, setError] = useState('');
+
+  const created = (l) => l.createdAt?.toMillis?.() ?? 9e15;
+  const recent = data.logs.filter((l) => l.activityId === act)
+    .slice().sort((a, b) => (b.date + created(b)).localeCompare(a.date + created(a))).slice(0, 8);
 
   function submit(e) {
     e.preventDefault();
@@ -51,6 +57,18 @@ export function LogForm({ uid, data, activityId, nav }) {
           <div class="sub" style="margin-top:6px">Geçmişe dönük girebilirsin. Aynı gün birden fazla kayıt olabilir.</div>
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
+        <Card label="SON KAYITLAR">
+          {recent.length === 0 && <div class="sub" style="padding:6px 0">Bu aktivite için kayıt yok.</div>}
+          {recent.map((l) => (
+            <div class="list-row" key={l.id}>
+              <div class="grow"><div class="title-sm">{l.date === today() ? 'Bugün' : dayMonth(l.date)}</div></div>
+              <b>{fmtDur(l.minutes)}</b>
+              <button type="button" class="iconbtn" aria-label={`${l.date === today() ? 'Bugünkü' : dayMonth(l.date)} ${fmtDur(l.minutes)} kaydını sil`}
+                onClick={() => { if (confirm(`${fmtDur(l.minutes)} kaydı silinsin mi?`)) deleteLog(uid, l.id); }}><IconTrash /></button>
+            </div>
+          ))}
+          <div class="sub" style="margin-top:6px">Süreyi azaltmak için kaydı silip doğru süreyi yeniden ekle.</div>
+        </Card>
       </Page>
     </form>
   );
