@@ -1,6 +1,7 @@
 import { occurrences } from './events.js';
 import { addDays, fromISO } from './dates.js';
 import { dosesForDay, medLine } from './meds.js';
+import { tasksForDay, taskDone } from './stats.js';
 
 // Local date + "HH:MM" -> epoch ms (device time zone).
 export function localMs(iso, hhmm) {
@@ -39,6 +40,22 @@ export function medItems(meds, logs, people, wantIds, todayISO, days = 7) {
       if (d.log) continue;
       const person = people.find((p) => p.id === d.med.forId)?.name || '';
       out.push({ id: `m-${d.id}`, t: localMs(iso, d.time), title: `İlaç zamanı · ${d.time}`, body: medLine(d.med, person) });
+    }
+  }
+  return out;
+}
+
+// Task reminders (`remindTime` "HH:MM") for the next `days` days: repeating tasks on their days, one-off tasks on their date. Done tasks are skipped.
+export function taskItems(tasks, todayISO, days = 7) {
+  const out = [];
+  for (let i = 0; i <= days; i++) {
+    const iso = addDays(todayISO, i);
+    for (const t of tasks) {
+      if (!t.remindTime) continue;
+      const repeating = t.repeat === 'daily' || t.repeat === 'days';
+      if (!(repeating ? tasksForDay([t], iso).length > 0 : t.date === iso)) continue;
+      if (taskDone(t, iso)) continue;
+      out.push({ id: `t-${t.id}-${iso}`, t: localMs(iso, t.remindTime), title: t.title, body: 'Görev hatırlatması' });
     }
   }
   return out;

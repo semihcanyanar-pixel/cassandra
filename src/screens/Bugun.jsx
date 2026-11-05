@@ -68,7 +68,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
             {rows.map(({ a, min }) => {
               const tgt = a.dailyMinutes;
               return (
-                <button key={a.id} class="tile" style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'log', activityId: a.id })}
+                <button key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'log', activityId: a.id })}
                   aria-label={`${a.name}: bugün ${min} dakika. Süre ekle`}>
                   <span class="tile-name">{a.name}</span>
                   <span class="tile-val num">{min}<small> dk</small></span>

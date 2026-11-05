@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { Page, Card, Chips } from '../components/ui.jsx';
+import { Page, Card, Chips, Switch } from '../components/ui.jsx';
 import { saveTask, deleteTask } from '../data.js';
 import { today, DAY_SHORT, weekday } from '../lib/dates.js';
 
@@ -11,6 +11,7 @@ export function TaskForm({ uid, data, id, nav }) {
   const [repeat, setRepeat] = useState(existing?.repeat || 'none');
   const [days, setDays] = useState(existing?.days || [weekday(today())]);
   const [date, setDate] = useState(existing?.date || today());
+  const [remind, setRemind] = useState(existing?.remindTime || '');
   const [error, setError] = useState('');
 
   const toggleDay = (d) => setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort()));
@@ -19,7 +20,7 @@ export function TaskForm({ uid, data, id, nav }) {
     e.preventDefault();
     if (!title.trim()) { setError('Görev adı yaz.'); return; }
     if (repeat === 'days' && days.length === 0) { setError('En az bir gün seç.'); return; }
-    const payload = { title: title.trim(), repeat, date: date || today() };
+    const payload = { title: title.trim(), repeat, date: date || today(), remindTime: remind || null };
     payload.days = repeat === 'days' ? days : [];
     saveTask(uid, id, payload);
     nav.back();
@@ -46,6 +47,21 @@ export function TaskForm({ uid, data, id, nav }) {
         </Card>
         <Card label={repeat === 'none' ? 'TARİH' : 'BAŞLANGIÇ'}>
           <input class="date-input" type="date" value={date} aria-label="Tarih" onInput={(e) => setDate(e.target.value)} />
+        </Card>
+        <Card>
+          <div class="row">
+            <div class="grow">
+              <div class="label" style="margin:0;padding:0">HATIRLATMA</div>
+              <div class="sub">Belirlediğin saatte bildirim gelir (tik atılmadıysa)</div>
+            </div>
+            <Switch checked={Boolean(remind)} onChange={(on) => setRemind(on ? '09:00' : '')} label="Hatırlatma" />
+          </div>
+          {remind && (
+            <div style="margin-top:12px">
+              <input class="date-input" type="time" value={remind} aria-label="Hatırlatma saati" onInput={(e) => setRemind(e.target.value)} />
+              <div class="sub" style="margin-top:6px">Bildirimler Ayarlar’dan açık olmalı.</div>
+            </div>
+          )}
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
         {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Görevi sil</button>}

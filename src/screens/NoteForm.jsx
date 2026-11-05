@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { Page, Card, Chips, actColor } from '../components/ui.jsx';
+import { Page, Card, Chips, Switch, actColor } from '../components/ui.jsx';
 import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText } from '../lib/notes.js';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote } from '../data.js';
@@ -7,7 +7,7 @@ import { IconPlus } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
 
-const NOTE_COLORS = 4;
+const NOTE_COLORS = [0, 1, 2, 3, 6]; // 6 = black
 
 const Ico = ({ d }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
@@ -38,12 +38,13 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const draft = useRef(undefined);
   if (draft.current === undefined) { try { draft.current = JSON.parse(localStorage.getItem(dkey) || 'null'); } catch { draft.current = null; } }
   const d0 = draft.current;
-  const base = { title: existing?.title || '', color: existing?.color ?? 0, blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
+  const base = { title: existing?.title || '', color: existing?.color ?? 0, pinned: Boolean(existing?.pinned), blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
   const [restored, setRestored] = useState(Boolean(d0));
   const [category, setCategory] = useState(d0 && !existing ? normalizeCategory(d0.category) : base.category);
   const [title, setTitle] = useState(d0 ? d0.title : base.title);
   const [blocks, setBlocks] = useState(() => { const b = d0 ? (d0.blocks || []).map(normBlock) : base.blocks; return b.length ? b : [normBlock({})]; });
   const [color, setColor] = useState(d0 ? d0.color : base.color);
+  const [pinned, setPinned] = useState(d0 ? Boolean(d0.pinned) : base.pinned);
   const [error, setError] = useState('');
   const [cur, setCur] = useState(0); // the line being edited
   const [files, setFiles] = useState(d0 ? d0.files || [] : base.files);
@@ -132,11 +133,11 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     setFiles((cur) => cur.filter((x) => x.id !== f.id));
     if (originals.current.has(f.id)) removedOriginals.current.push(f.id); else deleteFile(f.id); // new this session: gone right away
   };
-  const sig = (t, c, b, f) => JSON.stringify([t.trim(), c, cleanBlocks(b), f.map((x) => x.id)]);
-  const dirty = sig(title, color, blocks, files) !== sig(base.title, base.color, base.blocks, base.files);
+  const sig = (t, c, b, f, p) => JSON.stringify([t.trim(), c, cleanBlocks(b), f.map((x) => x.id), p]);
+  const dirty = sig(title, color, blocks, files, pinned) !== sig(base.title, base.color, base.blocks, base.files, base.pinned);
   useEffect(() => {
     try {
-      if (dirty) localStorage.setItem(dkey, JSON.stringify({ title, color, blocks, files, category }));
+      if (dirty) localStorage.setItem(dkey, JSON.stringify({ title, color, pinned, blocks, files, category }));
       else localStorage.removeItem(dkey);
     } catch { /* storage unavailable: no draft */ }
   });
@@ -145,7 +146,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const discardDraft = () => {
     files.filter((f) => !originals.current.has(f.id)).forEach((f) => deleteFile(f.id));
     removedOriginals.current = [];
-    setTitle(base.title); setColor(base.color); setFiles(base.files); setCategory(base.category);
+    setTitle(base.title); setColor(base.color); setPinned(base.pinned); setFiles(base.files); setCategory(base.category);
     setBlocks(base.blocks.length ? base.blocks : [normBlock({})]);
     setRestored(false); clearDraft();
   };
@@ -162,7 +163,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     const clean = cleanBlocks(blocks);
     if (!title.trim() && clean.length === 0 && files.length === 0) { setError('Boş not kaydedilemez.'); return; }
     clearDraft();
-    saveNote(ctx, category, id, { title: title.trim(), color, blocks: clean, body: '', items: null, files });
+    saveNote(ctx, category, id, { title: title.trim(), color, pinned, blocks: clean, body: '', items: null, files });
     removedOriginals.current.forEach(deleteFile);
     nav.back();
   }
@@ -246,11 +247,20 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
         )}
         <Card label="RENK">
           <div class="swatch-row" role="radiogroup" aria-label="Not rengi" style="justify-content:flex-start">
-            {Array.from({ length: NOTE_COLORS }, (_, i) => (
-              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={`Renk ${i + 1}`} class="swatch" style={`background:${actColor(i)}`} onClick={() => setColor(i)}>
+            {NOTE_COLORS.map((i) => (
+              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={i === 6 ? 'Siyah' : `Renk ${i + 1}`} class="swatch" style={`background:${actColor(i)}`} onClick={() => setColor(i)}>
                 {color === i && <span class="swatch-dot" />}
               </button>
             ))}
+          </div>
+        </Card>
+        <Card>
+          <div class="row">
+            <div class="grow">
+              <div class="label" style="margin:0;padding:0">BAŞA SABİTLE</div>
+              <div class="sub">Notlar listesinde en üstte durur</div>
+            </div>
+            <Switch checked={pinned} onChange={setPinned} label="Başa sabitle" />
           </div>
         </Card>
         {error && <div class="error" role="alert">{error}</div>}

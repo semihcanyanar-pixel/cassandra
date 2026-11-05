@@ -63,7 +63,7 @@ function Main({ session }) {
   let body;
   if (route) {
     switch (route.n) {
-      case 'settings': body = <Settings session={session} onBack={nav.back} />; break;
+      case 'settings': body = <Settings session={session} data={data} house={house} onBack={nav.back} />; break;
       case 'activity': body = <ActivityForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       case 'log': body = <LogForm key={route.logId || 'yeni'} uid={uid} data={data} activityId={route.activityId} logId={route.logId} nav={nav} />; break;
       case 'report': body = <Report uid={uid} data={data} activityId={route.activityId} nav={nav} />; break;

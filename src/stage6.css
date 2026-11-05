@@ -84,6 +84,9 @@ div.line-input b { font-weight: 800; } div.line-input i { font-style: italic; } 
 .nl .nc { flex: none; width: 14px; height: 14px; margin-top: 1px; box-sizing: border-box; border: 2px solid currentColor; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
 .nl .nc.on { background: currentColor; }
 .nl .nc.on svg { color: var(--note-bg, #fff); }
+/* Black (colour 6): Mozaik paints whole cards with the colour, so the text turns white there. */
+:root[data-theme='mozaik'] .note[data-c="6"], :root[data-theme='mozaik'] .tile[data-c="6"] { color: #fff; --tile-bar: #fff; }
+:root[data-theme='mozaik'] .note[data-c="6"] .note-tag, :root[data-theme='mozaik'] .note[data-c="6"] .note-att { color: rgba(255,255,255,.8); }
 button.list-row.task-later { width: 100%; padding: 0; background: transparent; border: 0; border-top: 1px solid var(--line); color: inherit; font: inherit; cursor: pointer; }
 /* The card is a div: one transparent button covers it (open), checkbox rows sit above it (tick without opening). */
 .note { position: relative; }

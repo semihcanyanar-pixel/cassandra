@@ -61,7 +61,7 @@ export function ActivityForm({ uid, data, id, nav }) {
         <Card label="RENK">
           <div class="swatch-row" role="radiogroup" aria-label="Renk">
             {Array.from({ length: COLOR_COUNT }, (_, i) => (
-              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={`Renk ${i + 1}`}
+              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={i === 6 ? 'Siyah' : `Renk ${i + 1}`}
                 class="swatch" style={`background:${actColor(i)}`} onClick={() => setColor(i)}>
                 {color === i && <span class="swatch-dot" />}
               </button>

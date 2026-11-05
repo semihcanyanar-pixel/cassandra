@@ -5,10 +5,24 @@ import { THEMES, currentTheme } from '../theme.js';
 import { saveTheme } from '../session.js';
 import { IconBack, IconCheck } from '../icons.jsx';
 import { PushSection } from './PushSection.jsx';
+import { buildBackup, backupCounts, saveBackup } from '../lib/backup.js';
 
-export function Settings({ session, onBack }) {
+export function Settings({ session, data, house, onBack }) {
   const [theme, setTheme] = useState(currentTheme());
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMsg, setBackupMsg] = useState('');
   const { me, household } = session;
+
+  async function doBackup() {
+    setBackupBusy(true); setBackupMsg('');
+    try {
+      const b = buildBackup({ session, data, house });
+      const r = await saveBackup(b);
+      const n = backupCounts(b);
+      if (r !== 'cancelled') setBackupMsg(`${n.personal} kişisel, ${n.household} ortak kayıt ${r === 'shared' ? 'paylaşıldı' : 'indirildi'}.`);
+    } catch (e) { setBackupMsg('Yedek alınamadı, tekrar dene.'); }
+    setBackupBusy(false);
+  }
 
   function pick(key) { setTheme(key); saveTheme(me.uid, key); }
 
@@ -43,6 +57,13 @@ export function Settings({ session, onBack }) {
 
 
       <PushSection session={session} />
+
+      <div class="label">VERİLERİM</div>
+      <div class="card">
+        <div class="sub" style="line-height:1.45">Notların, aktivite sürelerin, görevlerin ve ortak verilerin tek bir dosyada. Telefon değişirse ya da bir şey silinirse elinde kopyası olur. Resim ve PDF ekleri dosyaya girmez.</div>
+        <button class="btn wide" style="margin-top:12px" disabled={backupBusy} onClick={doBackup}>Verimi indir</button>
+        {backupMsg && <div class="sub" style="margin-top:8px" role="status">{backupMsg}</div>}
+      </div>
 
       <button class="chip" style="margin-top:6px;min-height:48px" onClick={() => signOut(auth)}>Çıkış yap</button>
     </main>

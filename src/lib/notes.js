@@ -24,9 +24,10 @@ export const categoryLabel = (list, value) => list.find((c) => c.value === value
 export function filterNotes(householdNotes, personalNotes, filter) {
   const mine = personalNotes.map((n) => ({ ...n, category: 'kisisel' }));
   const shared = householdNotes.map((n) => ({ ...n, category: 'aile' }));
-  if (filter === 'kisisel') return mine;
-  if (filter === 'aile') return shared;
-  return [...shared, ...mine];
+  const pinnedFirst = (list) => list.slice().sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))); // stable: order inside each group is kept
+  if (filter === 'kisisel') return pinnedFirst(mine);
+  if (filter === 'aile') return pinnedFirst(shared);
+  return pinnedFirst([...shared, ...mine]);
 }
 
 // A note is a list of lines. Each line: { t: text, k: kind, d: done (circle lines), l: indent 0..2, b: bold, i: italic, s: strikethrough }.

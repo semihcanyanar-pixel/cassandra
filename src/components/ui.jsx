@@ -1,6 +1,6 @@
 import { IconClose } from '../icons.jsx';
 
-export const COLOR_COUNT = 6;
+export const COLOR_COUNT = 7; // 0-5 theme colours, 6 = black
 export const actColor = (i) => `var(--act-${i ?? 0})`;
 
 // Single-choice chip group (radiogroup).

@@ -52,9 +52,9 @@ function NoteCard({ n, ctx, onOpen }) {
   // Ticking a round checkbox on the card saves the note right away (no need to open it).
   const tick = (idx) => saveNote(ctx, n.category, n.id, { blocks: toggleCheck(all, idx) });
   return (
-    <div class={`note ${personal ? 'personal' : ''}`} style={`--c:var(--act-${n.color ?? 0})`}>
+    <div class={`note ${personal ? 'personal' : ''}`} data-c={n.color ?? 0} style={`--c:var(--act-${n.color ?? 0})`}>
       <button type="button" class="note-open" onClick={onOpen} aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'} — aç`} />
-      <span class="note-tag">{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
+      <span class="note-tag">{n.pinned && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-label="Sabit"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>}{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
       {n.title && <span class="note-title">{n.title}</span>}
       {n.files?.length > 0 && (
         <span class="note-att"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" /></svg>{n.files.length} ek</span>
