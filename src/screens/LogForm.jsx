@@ -15,6 +15,7 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
   const [minutes, setMinutes] = useState(editing ? String(editing.minutes) : '');
   const [date, setDate] = useState(editing?.date || today());
   const [error, setError] = useState('');
+  const fixed = Boolean(editing || activityId); // opened for one activity: show only its name, no picker
 
   const created = (l) => l.createdAt?.toMillis?.() ?? 9e15;
   const recent = data.logs.filter((l) => l.activityId === act)
@@ -46,7 +47,9 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
     <form onSubmit={submit}>
       <Page title={editing ? 'Kaydı düzenle' : 'Süre ekle'} onClose={nav.back} footer={<button class="btn wide" type="submit">Kaydet</button>}>
         <Card label="AKTİVİTE">
-          <Chips options={active.map((a) => ({ value: a.id, label: a.name }))} value={act} onChange={setAct} label="Aktivite" />
+          {fixed
+            ? <div class="title-sm">{active.find((a) => a.id === act)?.name || 'Silinmiş aktivite'}</div>
+            : <Chips options={active.map((a) => ({ value: a.id, label: a.name }))} value={act} onChange={setAct} label="Aktivite" />}
         </Card>
         <Card label="SÜRE">
           <Chips options={QUICK} value={Number(minutes)} onChange={(v) => { setMinutes(String(v)); setError(''); }} label="Hızlı süre" />
