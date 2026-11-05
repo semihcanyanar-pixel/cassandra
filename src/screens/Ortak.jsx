@@ -40,27 +40,26 @@ export function Ortak({ session, house, nav, onSettings }) {
   const hid = session.hid;
   const [sub, setSubState] = useState(ortakStart.sub);
   const setSub = (v) => { ortakStart.sub = v; setSubState(v); }; // remembered, so coming back from a form lands on the same sub-tab
-  const [filter, setFilter] = useState('all');
-  const [addCat, setAddCat] = useState('market');
+  const [filter, setFilter] = useState('market'); // the open shopping category: new items go straight into it
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState(''); // optional due date for a new to-do
 
   const partner = (session.household.members || []).find((u) => u !== me.uid);
-  const countOpen = (c) => house.shopping.filter((i) => !i.done && (c === 'all' || i.category === c)).length;
+  const countOpen = (c) => house.shopping.filter((i) => !i.done && i.category === c).length;
 
   function submit(e) {
     e.preventDefault();
     const v = text.trim();
     if (!v) return;
-    if (sub === 'ev') addShopping(hid, me.uid, { text: v, category: filter === 'all' ? addCat : filter });
+    if (sub === 'ev') addShopping(hid, me.uid, { text: v, category: filter });
     else addFamilyTodo(hid, me.uid, v, dueDate || null);
     setText(''); setDueDate('');
   }
 
-  const shopList = house.shopping.filter((i) => filter === 'all' || i.category === filter);
+  const shopList = house.shopping.filter((i) => i.category === filter);
   const open = shopList.filter((i) => !i.done), done = shopList.filter((i) => i.done);
   const todoOpen = sortTodos(house.todos.filter((t) => !t.done)), todoDone = house.todos.filter((t) => t.done);
-  const openShop = countOpen('all');
+  const openShop = house.shopping.filter((i) => !i.done).length;
 
   const cycleAssignee = (t) => {
     const order = [null, me.uid, partner].filter((v, i, a) => a.indexOf(v) === i);
@@ -80,7 +79,7 @@ export function Ortak({ session, house, nav, onSettings }) {
 
       {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'fridge' ? <Buzdolabi house={house} hid={hid} nav={nav} /> : sub === 'ev' ? (
         <>
-          <Seg items={[{ value: 'all', label: 'Hepsi' }, ...SHOP_CATEGORIES].map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
+          <Seg items={SHOP_CATEGORIES.map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
           <div class="card list-card">
             {shopList.length === 0 && <div class="sub" style="padding:18px 0;text-align:center">Liste boş. Aşağıdan ekle.</div>}
             {[...open, ...done].map((i) => (
@@ -89,7 +88,6 @@ export function Ortak({ session, house, nav, onSettings }) {
                   onClick={() => setShoppingDone(hid, i.id, !i.done)}>{i.done && <Tick />}</button>
                 <div class="grow">
                   <div class={i.done ? 'title-sm struck' : 'title-sm'}>{i.text}</div>
-                  {filter === 'all' && <div class="sub">{categoryLabel(SHOP_CATEGORIES, i.category)}</div>}
                 </div>
                 <Avatar person={personOf(session, i.addedBy)} small />
                 <button class="iconbtn plain" aria-label={`${i.text} düzenle`} onClick={() => nav.go({ n: 'listitem', kind: 'shop', id: i.id })}><IconEdit /></button>
@@ -129,14 +127,6 @@ export function Ortak({ session, house, nav, onSettings }) {
       )}
 
       {sub !== 'ilac' && sub !== 'fridge' && <form class="addbar" onSubmit={submit}>
-        {sub === 'ev' && filter === 'all' && (
-          <div class="chips" role="radiogroup" aria-label="Yeni öğenin kategorisi">
-            {SHOP_CATEGORIES.map((c) => (
-              <button key={c.value} type="button" role="radio" aria-checked={addCat === c.value}
-                class={addCat === c.value ? 'chip small on' : 'chip small'} onClick={() => setAddCat(c.value)}>{c.label}</button>
-            ))}
-          </div>
-        )}
         {sub === 'todo' && (
           <label class="row" style="gap:8px;font-size:13px;font-weight:700">
             <span class="grow muted">Şu tarihe kadar (isteğe bağlı)</span>
@@ -144,7 +134,7 @@ export function Ortak({ session, house, nav, onSettings }) {
           </label>
         )}
         <div class="row" style="gap:8px">
-          <input class="addinput" aria-label={sub === 'ev' ? 'Listeye ekle' : 'Yapılacak ekle'} placeholder={sub === 'ev' ? 'Listeye ekle' : 'Yapılacak ekle'}
+          <input class="addinput" aria-label={sub === 'ev' ? `${categoryLabel(SHOP_CATEGORIES, filter)} listesine ekle` : 'Yapılacak ekle'} placeholder={sub === 'ev' ? `${categoryLabel(SHOP_CATEGORIES, filter)} listesine ekle` : 'Yapılacak ekle'}
             value={text} maxLength={80} onInput={(e) => setText(e.target.value)} />
           <button class="btn" type="submit" aria-label="Ekle"><IconPlus /></button>
         </div>
