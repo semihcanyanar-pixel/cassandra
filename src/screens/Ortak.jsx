@@ -1,6 +1,9 @@
 import { useState } from 'preact/hooks';
 import { Seg } from '../components/Seg.jsx';
 import { Ilaclar } from './Ilaclar.jsx';
+import { Buzdolabi } from './Buzdolabi.jsx';
+import { urgentCount } from '../lib/fridge.js';
+import { today } from '../lib/dates.js';
 import { IconPlus, IconTrash } from '../icons.jsx';
 import { SHOP_CATEGORIES, categoryLabel } from '../lib/notes.js';
 import {
@@ -65,15 +68,15 @@ export function Ortak({ session, house, nav, onSettings }) {
   };
 
   return (
-    <main class={sub === 'ilac' ? 'screen' : 'screen has-addbar'}>
+    <main class={sub === 'ilac' || sub === 'fridge' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
         <h1 style="font-size:40px">Takip Listesi</h1>
         <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
       </div>
 
-      <Seg items={[{ value: 'ev', label: 'İhtiyaçlar', badge: openShop || null }, { value: 'todo', label: 'Yapılacaklar', badge: todoOpen.length || null }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
+      <Seg items={[{ value: 'ev', label: 'İhtiyaçlar', badge: openShop || null }, { value: 'todo', label: 'Yapılacaklar', badge: todoOpen.length || null }, { value: 'fridge', label: 'Buzdolabı', badge: urgentCount(house.fridge, today()) || null }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
 
-      {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'ev' ? (
+      {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'fridge' ? <Buzdolabi house={house} hid={hid} nav={nav} /> : sub === 'ev' ? (
         <>
           <Seg items={[{ value: 'all', label: 'Hepsi' }, ...SHOP_CATEGORIES].map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
           <div class="card list-card">
@@ -120,7 +123,7 @@ export function Ortak({ session, house, nav, onSettings }) {
         </div>
       )}
 
-      {sub !== 'ilac' && <form class="addbar" onSubmit={submit}>
+      {sub !== 'ilac' && sub !== 'fridge' && <form class="addbar" onSubmit={submit}>
         {sub === 'ev' && filter === 'all' && (
           <div class="chips" role="radiogroup" aria-label="Yeni öğenin kategorisi">
             {SHOP_CATEGORIES.map((c) => (

@@ -158,6 +158,13 @@ function demoHouse() {
       { id: `md1_${dayOffset(0)}_09:00`, medicationId: 'md1', forId: 'aslan', date: dayOffset(0), time: '09:00', status: 'alindi', doneBy: 'other', doneAt: null },
       { id: `md2_${dayOffset(0)}_08:00`, medicationId: 'md2', forId: 'me', date: dayOffset(0), time: '08:00', status: 'alindi', doneBy: 'me', doneAt: null },
     ],
+    fridge: [
+      { id: 'fr1', name: 'Süt', kind: 'urun', openedOn: dayOffset(-3), shelfDays: 4, addedBy: 'me' },
+      { id: 'fr2', name: 'Yoğurt', kind: 'urun', openedOn: dayOffset(-1), shelfDays: 5, addedBy: 'other' },
+      { id: 'fr3', name: 'Mercimek çorbası', kind: 'yemek', openedOn: dayOffset(-3), shelfDays: 3, addedBy: 'other' },
+      { id: 'fr4', name: 'Tavuklu pilav', kind: 'yemek', openedOn: dayOffset(-5), shelfDays: 3, addedBy: 'me' },
+      { id: 'fr5', name: 'Reçel', kind: 'urun', openedOn: dayOffset(-8), shelfDays: null, addedBy: 'me' },
+    ],
     notes: [
       { id: 'n1', category: 'aile', title: 'Dolap düzeni', body: 'Kışlıkları üst rafa kaldır', color: 0, addedBy: 'me', updatedAt: null },
       { id: 'n2', category: 'aile', title: 'Doktora sorulacaklar', items: [{ t: 'Ek gıda', done: false }, { t: 'Diş çıkarma', done: true }], color: 2, addedBy: 'other', updatedAt: null },
@@ -173,8 +180,10 @@ export function useHouseData(hid) {
   const events = useHouseCollection(hid, 'events');
   const medications = useHouseCollection(hid, 'medications');
   const medLogs = useHouseCollection(hid, 'medLogs');
+  const fridge = useHouseCollection(hid, 'fridgeItems');
   return {
-    ready: Boolean(shopping && todos && notes && events && medications && medLogs),
+    ready: Boolean(shopping && todos && notes && events && medications && medLogs && fridge),
+    fridge: fridge || [],
     medications: (medications || []).slice().sort((a, b) => created(a) - created(b)),
     medLogs: medLogs || [],
     shopping: (shopping || []).slice().sort((a, b) => created(a) - created(b)),
@@ -183,6 +192,12 @@ export function useHouseData(hid) {
     events: events || [],
   };
 }
+
+// Buzdolabı: opened products / cooked meals with their date (households/{hid}/fridgeItems).
+export const saveFridge = (hid, uid, id, data) => fire(() => id
+  ? updateDoc(href(hid, 'fridgeItems', id), data)
+  : addDoc(hcol(hid, 'fridgeItems'), { ...data, addedBy: uid, createdAt: serverTimestamp() }));
+export const deleteFridge = (hid, id) => fire(() => deleteDoc(href(hid, 'fridgeItems', id)));
 
 export const addShopping = (hid, uid, { text, category }) => fire(() => addDoc(hcol(hid, 'shoppingItems'),
   { text, category, done: false, addedBy: uid, createdAt: serverTimestamp() }));

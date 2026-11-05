@@ -66,3 +66,16 @@ button.hg-row { cursor: pointer; }
 .hg.dense .hg-c { width: 21px; height: 21px; border-width: 1.5px; }
 .hg.dense .hg-head span { font-size: 10px; }
 .vlink { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; padding: 0; }
+
+/* Buzdolabı */
+.fr-row { min-height: 60px; }
+.fr-main { text-align: left; background: transparent; border: 0; padding: 6px 0; min-height: 48px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: inherit; font: inherit; min-width: 0; }
+.fr-pill { flex: none; font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; background: var(--track); color: var(--text); white-space: nowrap; }
+.fr-pill.ok { background: var(--act-2); color: #121212; }
+.fr-pill.soon { background: var(--act-0); color: #121212; }
+.fr-pill.late { background: #E5484D; color: #fff; }
+:root[data-theme='teknik'] .fr-pill { border-radius: 0; }
+
+/* Four segments (Takip Listesi): smaller labels, the count badge sits in the corner instead of beside the label */
+.seg[style*="--n:4"] .seg-b, .seg[style*="--n: 4"] .seg-b { position: relative; font-size: 13px; padding: 0 2px; }
+.seg[style*="--n:4"] .seg-badge, .seg[style*="--n: 4"] .seg-badge { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }

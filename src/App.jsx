@@ -18,6 +18,7 @@ import { LogForm } from './screens/LogForm.jsx';
 import { Report } from './screens/Report.jsx';
 import { TaskForm } from './screens/TaskForm.jsx';
 import { Goals, GoalForm } from './screens/Goals.jsx';
+import { FridgeForm } from './screens/FridgeForm.jsx';
 import { Splash } from './components/Splash.jsx';
 import { usePushSchedule } from './push.js';
 import { useAutoRefresh } from './update.js';
@@ -71,6 +72,7 @@ function Main({ session }) {
       case 'note': body = <NoteForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} category={route.category} nav={nav} />; break;
       case 'event': body = <EventForm key={route.id || 'new'} ctx={{ uid, hid: session.hid }} data={data} house={house} id={route.id} scope={route.scope} date={route.date} nav={nav} />; break;
       case 'med': body = <MedForm key={route.id || 'new'} session={session} house={house} id={route.id} nav={nav} />; break;
+      case 'fridge': body = <FridgeForm key={route.id || 'new'} hid={session.hid} uid={uid} house={house} id={route.id} nav={nav} />; break;
       case 'goals': body = <Goals data={data} nav={nav} />; break;
       case 'goal': body = <GoalForm key={route.id || 'new'} uid={uid} data={data} id={route.id} nav={nav} />; break;
       default: body = null;

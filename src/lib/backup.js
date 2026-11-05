@@ -1,7 +1,7 @@
 // Full copy of the data this person can see, as one JSON file: their own (personal) data plus the household's shared data.
 // Attachments (images / PDFs) are listed in the notes but the files themselves are not part of the backup.
 const PERSONAL = ['activities', 'logs', 'tasks', 'goals', 'notes', 'events', 'insights'];
-const HOUSEHOLD = ['shopping', 'todos', 'notes', 'events', 'medications', 'medLogs'];
+const HOUSEHOLD = ['shopping', 'todos', 'notes', 'events', 'medications', 'medLogs', 'fridge'];
 
 export function buildBackup({ session, data, house }, now = new Date()) {
   const pick = (src, keys) => Object.fromEntries(keys.map((k) => [k, src?.[k] || []]));
@@ -41,7 +41,7 @@ export async function saveBackup(backup) {
 // ---- Restore -------------------------------------------------------------------------------------------------------
 // Collection names inside Firestore (backup key -> collection).
 export const PERSONAL_COLLECTIONS = { activities: 'activities', logs: 'logs', tasks: 'tasks', goals: 'goals', notes: 'notes', events: 'events', insights: 'insights' };
-export const HOUSEHOLD_COLLECTIONS = { shopping: 'shoppingItems', todos: 'familyTodos', notes: 'notes', events: 'events', medications: 'medications', medLogs: 'medLogs' };
+export const HOUSEHOLD_COLLECTIONS = { shopping: 'shoppingItems', todos: 'familyTodos', notes: 'notes', events: 'events', medications: 'medications', medLogs: 'medLogs', fridge: 'fridgeItems' };
 
 const goodId = (id) => typeof id === 'string' && id.length > 0 && id.length <= 200 && !id.includes('/') && id !== '.' && id !== '..' && !id.startsWith('__');
 const clean = (src, allowed) => Object.fromEntries(Object.keys(allowed).map((k) => [k, (Array.isArray(src?.[k]) ? src[k] : []).filter((d) => d && typeof d === 'object' && goodId(d.id))]));
