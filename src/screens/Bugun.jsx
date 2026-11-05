@@ -4,14 +4,17 @@ import { Card, Progress } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
 import { DoseRow } from '../components/Dose.jsx';
 import { medPeople, personById, dosesForDay, nextDose, hhmm } from '../lib/meds.js';
-import { IconPlus } from '../icons.jsx';
+import { IconPlus, IconNext } from '../icons.jsx';
 import { useTheme } from '../theme.js';
 import { fmtDur, minutesByDay, streak, tasksForDay, taskDone } from '../lib/stats.js';
 import { today } from '../lib/dates.js';
 import { toggleTask } from '../data.js';
 import { occurrences, tagScopes } from '../lib/events.js';
 import { IconLock } from '../icons.jsx';
-import { dayMonth, addDays } from '../lib/dates.js';
+import { dayMonth, addDays, DAY_SHORT } from '../lib/dates.js';
+
+// "Pzt · Çar · Cum" for weekday tasks, "Her gün", or the date of a one-off task.
+const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === 'days' ? (task.days || []).slice().sort().map((d) => DAY_SHORT[d]).join(' · ') : dayMonth(task.date));
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 
@@ -29,6 +32,8 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const pct = targetSum ? Math.round((reached / targetSum) * 100) : null;
   const run = streak(data.logs, null, t);
   const todays = tasksForDay(data.tasks, t);
+  // Not due today: repeating tasks (other weekdays) and one-off tasks dated in the future.
+  const later = data.tasks.filter((x) => !todays.includes(x) && (x.repeat === 'daily' || x.repeat === 'days' || x.date > t));
   const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
   const openTodos = house.todos.filter((x) => !x.done).length;
   const [who, setWho] = useState('all');
@@ -95,6 +100,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
 
       <Card label="GÜNLÜK GÖREVLER" right={<button class="chip small" onClick={() => nav.go({ n: 'task' })}><IconPlus />Ekle</button>}>
         {todays.length === 0 && <div class="sub" style="padding:8px 0">Bugün için görev yok.</div>}
+        {/* Tasks that are not due today (other weekdays, future dates) stay reachable so they can be edited or deleted. */}
         {todays.map((task) => {
           const done = taskDone(task, t);
           return (
@@ -104,12 +110,24 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
               <button class="task-title grow" onClick={() => nav.go({ n: 'task', id: task.id })}>
                 <span class={done ? 'title-sm struck' : 'title-sm'}>{task.title}</span>
                 {task.repeat === 'daily' && <span class="sub">Her gün</span>}
-                {task.repeat === 'days' && <span class="sub">Belirli günler</span>}
+                {task.repeat === 'days' && <span class="sub">{taskWhen(task)}</span>}
                 {(!task.repeat || task.repeat === 'none') && task.date < t && !done && <span class="sub">Geçmiş tarihli</span>}
               </button>
             </div>
           );
         })}
+        {later.length > 0 && (
+          <>
+            <div class="label" style="margin:14px 0 2px;padding:0">DİĞER GÜNLER</div>
+            {later.map((task) => (
+              <button class="list-row task-later" key={task.id} onClick={() => nav.go({ n: 'task', id: task.id })} aria-label={`${task.title}, ${taskWhen(task)}, düzenle`}>
+                <span class="title-sm grow" style="text-align:left">{task.title}</span>
+                <span class="sub">{taskWhen(task)}</span>
+                <IconNext />
+              </button>
+            ))}
+          </>
+        )}
       </Card>
 
       {doses.length > 0 && (

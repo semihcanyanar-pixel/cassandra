@@ -55,7 +55,7 @@ describe('not satırları (biçimli metin + yuvarlak tik)', () => {
   });
 });
 
-import { parseInline, plainText, toggleMark, toggleCheck } from '../src/lib/notes.js';
+import { parseInline, plainText, toggleMark, toggleCheck, toHtml } from '../src/lib/notes.js';
 const R = (text, o = {}) => ({ text, b: false, i: false, s: false, ...o });
 
 describe('kelime bazlı biçim', () => {
@@ -69,6 +69,10 @@ describe('kelime bazlı biçim', () => {
     expect(plainText('2 ** 3')).toBe('2 ** 3');
     expect(plainText('**açık')).toBe('**açık');
     expect(parseInline('**açık').every((r) => !r.b)).toBe(true);
+  });
+  it('düzenleme satırı için HTML üretir ve özel karakterleri kaçırır', () => {
+    expect(toHtml('a **b** <x> __c__')).toBe('a <b>b</b> &lt;x&gt; <i>c</i>');
+    expect(toHtml('**__x__**')).toBe('<b><i>x</i></b>');
   });
   it('seçimi sarar ve tekrar basınca çözer', () => {
     const a = toggleMark('merhaba dünya', 8, 13, 'b');

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, Card, Chips, actColor } from '../components/ui.jsx';
-import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, parseInline, toggleMark } from '../lib/notes.js';
+import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText } from '../lib/notes.js';
+import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote } from '../data.js';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
@@ -44,16 +45,14 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const scope = noteScope(category) === 'personal' ? 'personal' : 'family';
   const refs = useRef([]);
   const focusAfter = useRef(null);
-  const selAfter = useRef(null); // [start, end] to restore in the focused line after a word-level format change
+  const caretAfter = useRef(null); // plain-text caret offset to restore in the line that gets focus
 
-  const grow = (el) => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } };
   useEffect(() => {
-    refs.current.forEach(grow);
     if (focusAfter.current != null) {
       const el = refs.current[focusAfter.current];
       el?.focus();
-      if (el && selAfter.current) el.setSelectionRange(selAfter.current[0], selAfter.current[1]);
-      focusAfter.current = null; selAfter.current = null;
+      if (el && caretAfter.current != null) placeCaret(el, caretAfter.current);
+      focusAfter.current = null; caretAfter.current = null;
     }
   });
 
@@ -65,12 +64,11 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   // With text selected the format applies to the selection (word level); with just a cursor it applies to the whole line.
   const toggleFlag = (f) => {
     const el = refs.current[cur];
-    const a = el?.selectionStart ?? 0, z = el?.selectionEnd ?? 0;
-    if (el && a !== z) {
-      const r = toggleMark(row.t, a, z, f);
-      upd(cur, { t: r.t }); selAfter.current = [r.start, r.end];
-    } else upd(cur, { [f]: !row[f] });
-    focusAfter.current = cur;
+    const sel = window.getSelection();
+    if (el && sel && sel.rangeCount && !sel.isCollapsed && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) {
+      document.execCommand({ b: 'bold', i: 'italic', s: 'strikeThrough' }[f]); // applied to the selection, shows right away
+      upd(cur, { t: serialize(el) });
+    } else { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; }
   };
   const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
   const move = (d) => {
@@ -85,24 +83,23 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     const n = Math.max(0, cur - 1); setCur(n); focusAfter.current = n;
   };
 
-  function onKeyDown(e, i) {
+  function onEnter(el, i) {
     const r = blocks[i];
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (['ul', 'ol', 'cb'].includes(r.k) && !r.t.trim()) { upd(i, { k: 'p', d: false, l: 0 }); return; } // Enter on an empty list line ends the list
-      const pos = e.target.selectionStart ?? r.t.length;
-      const keep = ['ul', 'ol', 'cb'].includes(r.k); // lists continue; headings/text start a plain line
-      const next = normBlock({ t: r.t.slice(pos), k: keep ? r.k : 'p', l: r.l });
-      setBlocks((b) => [...b.slice(0, i), { ...r, t: r.t.slice(0, pos) }, next, ...b.slice(i + 1)]);
-      focusAfter.current = i + 1; setCur(i + 1);
-    } else if (e.key === 'Backspace' && (e.target.selectionStart ?? 0) === 0 && e.target.selectionEnd === 0) {
-      if (r.k !== 'p') { e.preventDefault(); upd(i, { k: 'p', d: false }); } // first Backspace removes the line style
-      else if (r.l > 0) { e.preventDefault(); upd(i, { l: r.l - 1 }); }
-      else if (i > 0) {
-        e.preventDefault();
-        setBlocks((b) => [...b.slice(0, i - 1), { ...b[i - 1], t: b[i - 1].t + r.t }, ...b.slice(i + 1)]);
-        focusAfter.current = i - 1; setCur(i - 1);
-      }
+    if (['ul', 'ol', 'cb'].includes(r.k) && !r.t.trim()) { upd(i, { k: 'p', d: false, l: 0 }); return; } // Enter on an empty list line ends the list
+    const [head, tail] = splitAtCaret(el) || [r.t, ''];
+    const keep = ['ul', 'ol', 'cb'].includes(r.k); // lists continue; headings/text start a plain line
+    const next = normBlock({ t: tail, k: keep ? r.k : 'p', l: r.l });
+    setBlocks((b) => [...b.slice(0, i), { ...r, t: head }, next, ...b.slice(i + 1)]);
+    focusAfter.current = i + 1; caretAfter.current = 0; setCur(i + 1);
+  }
+  function onBackspaceStart(i) {
+    const r = blocks[i];
+    if (r.k !== 'p') upd(i, { k: 'p', d: false }); // first Backspace removes the line style
+    else if (r.l > 0) upd(i, { l: r.l - 1 });
+    else if (i > 0) {
+      const prev = blocks[i - 1];
+      setBlocks((b) => [...b.slice(0, i - 1), { ...prev, t: prev.t + r.t }, ...b.slice(i + 1)]);
+      focusAfter.current = i - 1; caretAfter.current = plainText(prev.t).length; setCur(i - 1);
     }
   }
 
@@ -186,21 +183,15 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
                 )}
                 {b.k === 'ul' && <span class="mark" aria-hidden="true">•</span>}
                 {b.k === 'ol' && <span class="mark num" aria-hidden="true">{labels[i]}</span>}
-                {cur !== i && /(\*\*|__|~~)/.test(b.t) && (
-                  <div class={['line-input', 'line-view', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
-                    onClick={() => { focusAfter.current = i; setCur(i); }}>
-                    {parseInline(b.t).map((r, j) => <span key={j} class={`${r.b ? 'b' : ''} ${r.i ? 'i' : ''} ${r.s ? 's' : ''}`}>{r.text}</span>)}
-                  </div>
-                )}
-                <textarea ref={(el) => { refs.current[i] = el; }} rows={1} hidden={cur !== i && /(\*\*|__|~~)/.test(b.t)}
-                  class={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
-                  aria-label={`Satır ${i + 1}`} value={b.t} maxLength={500} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
-                  onFocus={() => setCur(i)} onKeyDown={(e) => onKeyDown(e, i)}
-                  onInput={(e) => { upd(i, { t: e.target.value.replace(/\n/g, ' ') }); setError(''); grow(e.target); }} />
+                <LineEditor key={`e${i}`} onRef={(el) => { refs.current[i] = el; }}
+                  className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
+                  label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
+                  onFocus={() => setCur(i)} onValue={(v) => { upd(i, { t: v }); setError(''); }}
+                  onEnter={(el) => onEnter(el, i)} onBackspaceStart={() => onBackspaceStart(i)} />
               </div>
             ))}
           </div>
-          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan ** __ ~~ işaretleri görünür, satır atlayınca seçim uygulanır.</div>
+          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan seçili kısım biçimlenir. Seçim yoksa tüm satır biçimlenir.</div>
         </Card>
 
         {filesEnabled && (

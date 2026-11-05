@@ -36,6 +36,7 @@ export function ActivityForm({ uid, data, id, nav }) {
           <label class="label" for="ad" style="padding:0;margin:0">ADI</label>
           <input id="ad" class="big-input" value={name} maxLength={40} placeholder="Örn. Kitap okuma" onInput={(e) => { setName(e.target.value); setError(''); }} />
         </Card>
+        {!existing && <div class="sub" style="padding:0 4px;line-height:1.45">Süresini kaydedeceğin alışkanlıklar için; rapor, hedef ve değerlendirme bunlardan üretilir. Yalnızca tik atılacak işler için Bugün ekranından günlük görev ekle.</div>}
         <Card label="HAFTADA KAÇ GÜN?" right={<span class="title-sm">{days} gün</span>}>
           <Chips options={DAYS} value={days} onChange={setDays} label="Haftada kaç gün" size="seven" />
         </Card>

@@ -68,6 +68,15 @@ export function parseInline(t) {
   });
   return runs;
 }
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Marker text -> HTML for the editable line (<b>, <i>, <s>).
+export const toHtml = (t) => parseInline(t).map((r) => {
+  let h = esc(r.text);
+  if (r.s) h = `<s>${h}</s>`;
+  if (r.i) h = `<i>${h}</i>`;
+  if (r.b) h = `<b>${h}</b>`;
+  return h;
+}).join('');
 // Text without the markers (for search / summaries).
 export const plainText = (t) => parseInline(t).map((r) => r.text).join('');
 
