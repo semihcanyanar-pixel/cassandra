@@ -109,3 +109,21 @@ describe('özel gün önce hatırlatma', () => {
     expect(eventItems([{ id: 'c', title: 'x', date: '2026-11-08', time: null, repeat: 'none', remind: '30m' }], T0)).toEqual([]);
   });
 });
+
+import { remindsOf, sortReminds, remindsLabel } from '../src/lib/events.js';
+describe('birden fazla hatırlatma', () => {
+  it('eski tekli alan da okunur; yeni liste sıralanır ve etiketlenir', () => {
+    expect(remindsOf({ remind: '1d' })).toEqual(['1d']);
+    expect(remindsOf({ remind: 'none' })).toEqual([]);
+    expect(remindsOf({ reminds: ['d:7', '1d'], remind: 'd:7' })).toEqual(['d:7', '1d']);
+    expect(sortReminds(['d:7', '2h', '1d', 'at', 'd:2'])).toEqual(['at', '2h', '1d', 'd:2', 'd:7']);
+    expect(remindsLabel(['1d', 'd:7'])).toBe('1 gün önce, 7 gün önce');
+  });
+  it('her hatırlatma ayrı bildirim olur', () => {
+    const ev = [{ id: 'a', title: 'Tatil', date: '2026-11-14', time: null, repeat: 'none', reminds: ['d:7', '1d'], scope: 'aile' }];
+    const out = eventItems(ev, '2026-11-05');
+    expect(out.map((o) => o.id).sort()).toEqual(['e-aile-a-2026-11-14-1d', 'e-aile-a-2026-11-14-d:7']);
+    expect(out.find((o) => o.id.endsWith('d:7')).t).toBe(localMs('2026-11-07', '09:00'));
+    expect(out.find((o) => o.id.endsWith('-1d')).t).toBe(localMs('2026-11-13', '09:00'));
+  });
+});

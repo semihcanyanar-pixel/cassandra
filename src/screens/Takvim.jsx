@@ -1,13 +1,13 @@
 import { useState } from 'preact/hooks';
 import { IconBack, IconNext, IconPlus, IconLock } from '../icons.jsx';
-import { occurrences, tagScopes, monthGrid, repeatLabel, remindLabel } from '../lib/events.js';
+import { occurrences, tagScopes, monthGrid, repeatLabel, remindsOf, sortReminds, remindsLabel } from '../lib/events.js';
 import { today, addDays, addMonths, monthStart, fromISO, dayMonth, DAY_LETTER } from '../lib/dates.js';
 
 const monthName = (iso) => new Intl.DateTimeFormat('tr-TR', { month: 'long' }).format(fromISO(iso));
 const dayHeading = (iso) => new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' }).format(fromISO(iso)).toLocaleUpperCase('tr-TR').replace(/^(\d+ \S+) (\S+)$/, '$1 · $2');
 
 export function eventMeta(e) {
-  return [e.time, repeatLabel(e.repeat), remindLabel(e.remind) ? `${remindLabel(e.remind)} hatırlat` : null].filter(Boolean).join(' · ');
+  return [e.time, repeatLabel(e.repeat), remindsOf(e).length ? `${remindsLabel(sortReminds(remindsOf(e)))} hatırlat` : null].filter(Boolean).join(' · ');
 }
 
 export function Takvim({ me, house, data, nav, onSettings }) {

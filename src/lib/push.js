@@ -1,4 +1,4 @@
-import { occurrences, customDays } from './events.js';
+import { occurrences, customDays, remindsOf } from './events.js';
 import { addDays, fromISO } from './dates.js';
 import { dosesForDay, medLine } from './meds.js';
 import { tasksForDay, taskDone } from './stats.js';
@@ -18,11 +18,10 @@ const dayWord = (iso, todayISO) => (iso === todayISO ? 'Bugün' : iso === addDay
 export function eventItems(events, todayISO, days = 14) {
   const out = [];
   // events with a long "N days before" reminder must be looked up further ahead, so their reminder still falls inside the window
-  const maxN = Math.max(1, ...(events || []).map((e) => customDays(e.remind) || 0));
+  const maxN = Math.max(1, ...(events || []).flatMap((e) => remindsOf(e).map((r) => customDays(r) || 0)));
   const horizon = localMs(addDays(todayISO, days + 1), '00:00');
   for (const e of occurrences(events, todayISO, addDays(todayISO, days + 1 + maxN))) {
-    const r = e.remind || 'none';
-    if (r === 'none') continue;
+    for (const r of remindsOf(e)) {
     const n = r === '1d' ? 1 : customDays(r); // days before, when the reminder is day based
     let t;
     if (n) t = e.time ? localMs(e.date, e.time) - n * 24 * 3600_000 : localMs(addDays(e.date, -n), '09:00');
@@ -31,6 +30,7 @@ export function eventItems(events, todayISO, days = 14) {
     if (t > horizon) continue;
     const when = e.time ? `${dayWord(e.date, todayISO) || e.date} ${e.time}` : (dayWord(e.date, todayISO) || e.date);
     out.push({ id: `e-${e.scope}-${e.id}-${e.date}-${r}`, t, title: e.title, body: r === 'at' ? 'Şimdi' : `Hatırlatma · ${when}` });
+    }
   }
   return out;
 }

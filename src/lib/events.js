@@ -17,6 +17,13 @@ export const REMINDS = [
 export const MAX_REMIND_DAYS = 365;
 // 'd:5' -> 5, anything else -> null
 export const customDays = (v) => { const m = /^d:([0-9]{1,3})$/.exec(v || ''); const n = m ? Number(m[1]) : null; return n >= 1 && n <= MAX_REMIND_DAYS ? n : null; };
+// All reminders of an event: the new `reminds` list, or the older single `remind` value.
+export const remindsOf = (e) => (Array.isArray(e?.reminds) ? e.reminds : e?.remind && e.remind !== 'none' ? [e.remind] : []);
+const ORDER = { at: 0, '30m': 1, '2h': 2 };
+// Sorted from the closest to the furthest ahead: at, 30m, 2h, then days ascending.
+export const sortReminds = (list) => list.slice().sort((a, b) => remindRank(a) - remindRank(b));
+const remindRank = (v) => (v in ORDER ? ORDER[v] : 10 + (v === '1d' ? 1 : customDays(v) || 999));
+export const remindsLabel = (list) => list.map((v) => remindLabel(v)).filter(Boolean).join(', ');
 export const remindLabel = (v) => (customDays(v) ? `${customDays(v)} gün önce` : v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null);
 export const repeatLabel = (v) => (v && v !== 'none' ? REPEATS.find((r) => r.value === v)?.label : null);
 
