@@ -3,7 +3,8 @@ import { InsightCard } from './InsightCard.jsx';
 import { Card, Progress } from '../components/ui.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { IconLock, IconPlus, IconNext } from '../icons.jsx';
-import { fmtDur, goalProgress, activeDays, taskDone } from '../lib/stats.js';
+import { HabitGrid } from '../components/HabitViews.jsx';
+import { goalProgress, activeDays, taskDone, habitList, makeBuckets, countIn } from '../lib/stats.js';
 import { today, weekStart, addDays, DAY_SHORT, dayMonth } from '../lib/dates.js';
 
 const when = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === 'days' ? (task.days || []).slice().sort().map((d) => DAY_SHORT[d]).join(' · ') : dayMonth(task.date));
@@ -12,12 +13,11 @@ const when = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === '
 export function Kisisel({ me, data, nav, onSettings }) {
   const [tab, setTab] = useState('akt');
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
-  const weekLogs = data.logs.filter((l) => l.date >= ws && l.date <= we);
-  const byDay = (d, id) => weekLogs.filter((l) => l.date === d && (!id || l.activityId === id)).reduce((s, l) => s + l.minutes, 0);
-  const weekTotal = weekLogs.reduce((s, l) => s + l.minutes, 0);
-  const maxDay = Math.max(30, ...days.map((d) => byDay(d)));
-  const colorOf = (id) => data.activities.find((a) => a.id === id)?.color ?? 0;
+  const habits = habitList(data);
+  const buckets = makeBuckets('day', 0, t);
+  // days done this week against the weekly targets (a habit never counts above its target)
+  const doneDays = habits.reduce((n, h) => n + Math.min(h.weekly, countIn(h, ws, we)), 0);
+  const planned = habits.reduce((n, h) => n + h.weekly, 0);
 
   return (
     <main class="screen">
@@ -32,22 +32,12 @@ export function Kisisel({ me, data, nav, onSettings }) {
       <button class="card tap" onClick={() => nav.go({ n: 'report' })} aria-label="Bu hafta, raporu aç">
         <div class="row" style="justify-content:space-between;align-items:baseline">
           <span class="title-sm muted">Bu hafta</span>
-          <span class="num" style="font-size:20px">{fmtDur(weekTotal)}</span>
+          <span class="num" style="font-size:20px">{doneDays}/{planned} gün</span>
         </div>
-        <div class="week-bars">
-          {days.map((d, i) => {
-            const parts = [...new Set(weekLogs.filter((l) => l.date === d).map((l) => l.activityId))];
-            return (
-              <div key={d} class="week-col">
-                <div class="week-stack" style="height:60px">
-                  {parts.length === 0 && <div class="wk" style="height:4px;background:var(--track)" />}
-                  {parts.map((id) => <div key={id} class="wk" style={`height:${Math.max(4, (byDay(d, id) / maxDay) * 54)}px;background:var(--act-${colorOf(id)})`} />)}
-                </div>
-                <span class="sub">{DAY_SHORT[i]}</span>
-              </div>
-            );
-          })}
-        </div>
+        {habits.length === 0
+          ? <div class="sub" style="padding:10px 0">Henüz takip edilen bir şey yok.</div>
+          : <div style="margin-top:8px"><HabitGrid habits={habits.slice(0, 5)} buckets={buckets} mode="day" today={t} compact /></div>}
+        {habits.length > 5 && <div class="sub" style="margin-top:4px">+{habits.length - 5} tane daha, raporda</div>}
         <div class="sub" style="margin-top:6px;display:flex;align-items:center;gap:4px">Rapor ve grafikler <IconNext /></div>
       </button>
 

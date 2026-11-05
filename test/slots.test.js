@@ -25,7 +25,7 @@ describe('günün notu saatleri', () => {
     const i = buildSlotInput(data, '2026-11-05', 15);
     expect(i.slot).toBe('ogle');
     expect(i.tasks).toEqual([{ title: 'Vitamin', done: true }, { title: 'Fatura', done: false }]);
-    expect(i.activities).toEqual([{ name: 'Spor', todayMin: 20, dailyTargetMin: 60 }]);
+    expect(i.activities).toEqual([{ name: 'Spor', todayDone: true, todayMin: 20, dailyTargetMin: 60 }]);
     expect(hasPlan(i)).toBe(true);
     expect(hasPlan({ tasks: [], activities: [] })).toBe(false);
   });

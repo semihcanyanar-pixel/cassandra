@@ -12,7 +12,7 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
   const active = data.activities;
   const editing = logId ? data.logs.find((l) => l.id === logId) : null;
   const [act, setAct] = useState(editing?.activityId || activityId || active[0]?.id || null);
-  const [minutes, setMinutes] = useState(editing ? String(editing.minutes) : '');
+  const [minutes, setMinutes] = useState(editing?.minutes ? String(editing.minutes) : '');
   const [date, setDate] = useState(editing?.date || today());
   const [error, setError] = useState('');
   const fixed = Boolean(editing || activityId); // opened for one activity: show only its name, no picker
@@ -23,9 +23,10 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
 
   function submit(e) {
     e.preventDefault();
-    const m = Math.round(Number(minutes));
+    const blank = String(minutes).trim() === '';
+    const m = blank ? null : Math.round(Number(minutes)); // minutes are optional: no minutes = just "done"
     if (!act) { setError('Önce bir aktivite seç.'); return; }
-    if (!(m >= 1 && m <= 1440)) { setError('Süre 1–1440 dakika olmalı.'); return; }
+    if (!blank && !(m >= 1 && m <= 1440)) { setError('Süre 1–1440 dakika olmalı. Süre girmeden de kaydedebilirsin.'); return; }
     if (!date || date > today()) { setError('Gelecek bir tarih girilemez.'); return; }
     if (editing) updateLog(uid, editing.id, { activityId: act, date, minutes: m });
     else addLog(uid, { activityId: act, date, minutes: m });
@@ -51,10 +52,10 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
             ? <div class="title-sm">{active.find((a) => a.id === act)?.name || 'Silinmiş aktivite'}</div>
             : <Chips options={active.map((a) => ({ value: a.id, label: a.name }))} value={act} onChange={setAct} label="Aktivite" />}
         </Card>
-        <Card label="SÜRE">
+        <Card label="SÜRE (İSTEĞE BAĞLI)">
           <Chips options={QUICK} value={Number(minutes)} onChange={(v) => { setMinutes(String(v)); setError(''); }} label="Hızlı süre" />
           <div class="field" style="margin-top:10px">
-            <label for="dk">Toplam dakika</label>
+            <label for="dk">Toplam dakika (boş bırakırsan yalnızca "yapıldı" işaretlenir)</label>
             <input id="dk" type="number" inputmode="numeric" min="1" max="1440" value={minutes} placeholder="Örn. 50" onInput={(e) => { setMinutes(e.target.value); setError(''); }} />
           </div>
         </Card>
@@ -68,11 +69,11 @@ export function LogForm({ uid, data, activityId, logId, nav }) {
           {recent.map((l) => (
             <div class="list-row" key={l.id}>
               <div class="grow"><div class="title-sm">{l.date === today() ? 'Bugün' : dayMonth(l.date)}</div></div>
-              <b>{fmtDur(l.minutes)}</b>
-              <button type="button" class="iconbtn" aria-label={`${l.date === today() ? 'Bugünkü' : dayMonth(l.date)} ${fmtDur(l.minutes)} kaydını düzenle`}
+              <b>{l.minutes ? fmtDur(l.minutes) : 'Yapıldı'}</b>
+              <button type="button" class="iconbtn" aria-label={`${l.date === today() ? 'Bugünkü' : dayMonth(l.date)} ${(l.minutes ? fmtDur(l.minutes) : 'Yapıldı')} kaydını düzenle`}
                 onClick={() => nav.replace({ n: 'log', logId: l.id })}><IconEdit /></button>
-              <button type="button" class="iconbtn" aria-label={`${l.date === today() ? 'Bugünkü' : dayMonth(l.date)} ${fmtDur(l.minutes)} kaydını sil`}
-                onClick={() => { if (confirm(`${fmtDur(l.minutes)} kaydı silinsin mi?`)) deleteLog(uid, l.id); }}><IconTrash /></button>
+              <button type="button" class="iconbtn" aria-label={`${l.date === today() ? 'Bugünkü' : dayMonth(l.date)} ${(l.minutes ? fmtDur(l.minutes) : 'Yapıldı')} kaydını sil`}
+                onClick={() => { if (confirm(`${(l.minutes ? fmtDur(l.minutes) : 'Yapıldı')} kaydı silinsin mi?`)) deleteLog(uid, l.id); }}><IconTrash /></button>
             </div>
           ))}
         </Card>

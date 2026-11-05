@@ -3,10 +3,10 @@ import { Card, Progress } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
 import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
-import { fmtDur, minutesByDay, streak, tasksForDay, taskDone } from '../lib/stats.js';
+import { fmtDur, habitList, habitStreak, activeDays, tasksForDay, taskDone } from '../lib/stats.js';
 import { occurrences, tagScopes } from '../lib/events.js';
-import { today, addDays, dayMonth, DAY_SHORT } from '../lib/dates.js';
-import { toggleTask, markDose, unmarkDose } from '../data.js';
+import { today, addDays, dayMonth, weekStart, DAY_SHORT } from '../lib/dates.js';
+import { toggleTask, markDose, unmarkDose, markActivityDone, deleteLog } from '../data.js';
 
 const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
@@ -50,9 +50,19 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const untimed = items.filter((i) => !i.time);
   const timed = items.filter((i) => i.time);
 
-  const rows = data.activities.map((a) => ({ a, min: minutesByDay(data.logs, a.id)[t] || 0 }));
-  const total = data.logs.filter((l) => l.date === t).reduce((s, l) => s + l.minutes, 0);
-  const run = streak(data.logs, null, t);
+  const ws = weekStart(t);
+  const rows = data.activities.map((a) => {
+    const logs = data.logs.filter((l) => l.activityId === a.id && l.date === t);
+    return { a, logs, done: logs.length > 0, min: logs.reduce((s, l) => s + (l.minutes || 0), 0), week: activeDays(data.logs, a.id, ws, addDays(ws, 6)) };
+  });
+  const total = rows.reduce((s, r) => s + r.min, 0);
+  const doneCount = rows.filter((r) => r.done).length;
+  const run = habitStreak(habitList(data), null, t);
+  // One tap marks the activity done today (no minutes). Tapping again removes that mark, unless minutes were logged: then the log form opens.
+  const toggleDone = ({ a, logs, done }) => {
+    if (!done) { markActivityDone(uid, a.id, t); return; }
+    if (logs.every((l) => !l.minutes)) { if (confirm(`${a.name} için bugünkü işaret kaldırılsın mı?`)) logs.forEach((l) => deleteLog(uid, l.id)); } else nav.go({ n: 'log', activityId: a.id });
+  };
 
   return (
     <main class="screen">
@@ -65,12 +75,13 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       </div>
 
       <div class="card vsum">
-        <div class="row" style="justify-content:space-between"><span class="title-sm muted">Süre</span><span class="streak-badge">{run} gün seri</span></div>
-        <div class="num" style="font-size:28px;margin:4px 0 8px">{fmtDur(total)}</div>
-        <div class="seg-bar" role="img" aria-label="Aktivitelere göre bugünkü süre">
-          {rows.filter((r) => r.min > 0).map((r) => <i key={r.a.id} style={`flex:${r.min} 1 0;background:var(--act-${r.a.color})`} />)}
-          {total === 0 && <i class="seg-rest" style="flex:1 1 0;background:var(--track)" />}
+        <div class="row" style="justify-content:space-between"><span class="title-sm muted">Bugün yapılan</span><span class="streak-badge">{run} gün seri</span></div>
+        <div class="num" style="font-size:28px;margin:4px 0 8px">{doneCount}/{rows.length}<small style="font-size:15px;font-weight:700"> aktivite</small></div>
+        <div class="seg-bar" role="img" aria-label={`${rows.length} aktiviteden ${doneCount} tanesi yapıldı`}>
+          {rows.map((r) => <i key={r.a.id} style={`flex:1 1 0;background:${r.done ? `var(--act-${r.a.color})` : 'var(--track)'}`} />)}
+          {rows.length === 0 && <i class="seg-rest" style="flex:1 1 0;background:var(--track)" />}
         </div>
+        {total > 0 && <div class="sub" style="margin-top:8px">Kayıtlı süre: {fmtDur(total)}</div>}
       </div>
 
       {rows.length === 0 ? (
@@ -81,14 +92,20 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </div>
       ) : (
         <div class="vtiles" aria-label="Aktiviteler">
-          {rows.map(({ a, min }) => (
-            <button key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'log', activityId: a.id })}
-              aria-label={`${a.name}: bugün ${min} dakika. Süre ekle`}>
-              <span class="tile-name">{a.name}</span>
-              <span class="tile-val num">{min}<small> dk</small></span>
-              {a.dailyMinutes ? <><Progress pct={(min / a.dailyMinutes) * 100} color="var(--tile-bar)" /><span class="tile-sub">{min >= a.dailyMinutes ? 'tamam' : `hedef ${a.dailyMinutes} dk`}</span></> : <span class="tile-sub">hedefsiz</span>}
-            </button>
-          ))}
+          {rows.map((r) => {
+            const { a, min, done } = r;
+            return (
+              <div key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`}>
+                <button type="button" class="tile-open" onClick={() => nav.go({ n: 'log', activityId: a.id })} aria-label={`${a.name}: süre ekle ya da düzenle`} />
+                <span class="tile-top">
+                  <span class="tile-name">{a.name}</span>
+                  <button type="button" class={done ? 'tile-check on' : 'tile-check'} role="checkbox" aria-checked={done} aria-label={`${a.name} bugün yapıldı`} onClick={() => toggleDone(r)}>{done && <Tick />}</button>
+                </span>
+                <span class="tile-val num">{min ? <>{min}<small> dk</small></> : done ? <span class="tile-did">Yaptım</span> : <span class="tile-did">—</span>}</span>
+                {a.dailyMinutes && min ? <><Progress pct={(min / a.dailyMinutes) * 100} color="var(--tile-bar)" /><span class="tile-sub">{min >= a.dailyMinutes ? 'hedef tamam' : `hedef ${a.dailyMinutes} dk`}</span></> : <span class="tile-sub">bu hafta {r.week}/{a.weeklyDays} gün</span>}
+              </div>
+            );
+          })}
         </div>
       )}
 

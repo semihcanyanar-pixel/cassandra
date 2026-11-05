@@ -101,8 +101,11 @@ async function gemini(env, prompt) {
 function cleanWeekly(body) {
   return (Array.isArray(body?.activities) ? body.activities : []).slice(0, 12).map((a) => ({
     ad: str(a?.name, 40),
-    haftalik_hedef_dk: Number.isFinite(a?.weeklyTargetMin) ? Math.round(a.weeklyTargetMin) : null,
-    son_4_hafta_dk: (Array.isArray(a?.weeks) ? a.weeks : []).slice(0, 4).map(num),
+    tur: a?.kind === 'görev' ? 'görev' : 'aktivite',
+    haftalik_hedef_gun: Number.isFinite(a?.weeklyTargetDays) ? Math.min(7, Math.max(1, Math.round(a.weeklyTargetDays))) : null,
+    son_4_hafta_yapilan_gun: (Array.isArray(a?.weeks) ? a.weeks : []).slice(0, 4).map((n) => Math.min(7, num(n))),
+    // optional extra: only when the person logged minutes for this activity
+    son_4_hafta_dk: Array.isArray(a?.weekMinutes) ? a.weekMinutes.slice(0, 4).map(num) : undefined,
   })).filter((a) => a.ad);
 }
 
@@ -110,7 +113,8 @@ async function handleWeekly(env, req, uid) {
   const acts = cleanWeekly(await req.json().catch(() => null));
   if (!acts.length) return reply(env, req, { error: 'no data' }, 400);
   if (!(await rateLimit(env, uid, 'ai'))) return reply(env, req, { error: 'rate' }, 429);
-  const prompt = 'Aşağıda bir kişinin aktivitelerinin son 4 haftalık toplam süreleri (dakika; dizinin son elemanı içinde bulunulan hafta, henüz bitmemiş olabilir) ve varsa haftalık hedefleri var.\n'
+  const prompt = 'Aşağıda bir kişinin alışkanlıklarının (aktivite ya da tekrarlı görev) son 4 haftada haftada kaç GÜN yapıldığı (dizinin son elemanı içinde bulunulan hafta, henüz bitmemiş olabilir) ve haftalık hedef gün sayıları var. '
+    + 'Değerlendirmeyi yapılan gün sayısına ve hedefe göre, süreklilik üzerinden yap; süre bilgisi (son_4_hafta_dk) yalnızca varsa ve ikincil bir ayrıntı olarak anılabilir, süre girilmemiş olması bir eksiklik değildir.\n'
     + 'Türkçe, sıcak ve kısa (en çok 3 cümle) bir yorum yaz ve en çok iki somut öneri ver. Tıbbi ya da finansal tavsiye verme. Veride olmayan şeyi uydurma.\n'
     + `Yalnızca şu JSON biçiminde yanıt ver: {"yorum": string, "oneriler": [string]}\n\n${JSON.stringify(acts)}`;
   const g = await gemini(env, prompt);
@@ -123,9 +127,11 @@ async function handleWeekly(env, req, uid) {
 function cleanDaily(body) {
   const acts = (Array.isArray(body?.activities) ? body.activities : []).slice(0, 12).map((a) => ({
     ad: str(a?.name, 40),
-    bugun_dk: num(a?.todayMin),
-    gunluk_hedef_dk: Number.isFinite(a?.dailyTargetMin) ? Math.round(a.dailyTargetMin) : null,
-    son_7_gun_dk: (Array.isArray(a?.last7) ? a.last7 : []).slice(0, 7).map(num),
+    tur: a?.kind === 'görev' ? 'görev' : 'aktivite',
+    bugun_yapildi: Boolean(a?.todayDone),
+    son_7_gun_yapildi: (Array.isArray(a?.last7) ? a.last7 : []).slice(0, 7).map((n) => (num(n) > 0 ? 1 : 0)),
+    haftalik_hedef_gun: Number.isFinite(a?.weeklyTargetDays) ? Math.min(7, Math.max(1, Math.round(a.weeklyTargetDays))) : null,
+    bugun_dk: a?.todayMin ? num(a.todayMin) : undefined, // optional: only when minutes were logged
   })).filter((a) => a.ad);
   const hour = Number.isFinite(body?.hour) ? Math.min(23, Math.max(0, Math.round(body.hour))) : null;
   const streak = Number.isFinite(body?.streak) ? Math.max(0, Math.round(body.streak)) : 0;
@@ -136,7 +142,8 @@ function cleanDaily(body) {
 async function handleDaily(env, req, uid) {
   const { acts, hour, streak } = cleanDaily(await req.json().catch(() => null));
   if (!(await rateLimit(env, uid, 'ai'))) return reply(env, req, { error: 'rate' }, 429);
-  const prompt = 'Aşağıda bir kişinin bugünkü aktivite süreleri (dakika), günlük hedefleri, son 7 günün süreleri (sonuncusu bugün) ve gün serisi var; liste boş olabilir (henüz kayıt yok). '
+  const prompt = 'Aşağıda bir kişinin alışkanlıklarının (aktivite ya da tekrarlı görev) bugün yapılıp yapılmadığı, son 7 günde hangi günlerin yapıldığı (1 = yapıldı, sonuncusu bugün), haftalık hedef gün sayıları ve gün serisi var; liste boş olabilir. '
+    + 'Değerlendirmeyi yapılıp yapılmamaya ve sürekliliğe göre yap; süre (bugun_dk) yalnızca varsa anılabilir, süre girilmemiş olması bir eksiklik değildir. '
     + `Şu an günün saati ${hour ?? 'bilinmiyor'} (gün henüz bitmemiş olabilir).\n`
     + 'İki şey yaz, Türkçe ve sıcak bir dille: (1) "degerlendirme": bugünün kısa değerlendirmesi, en çok 2 cümle, veride olmayan şeyi uydurma; kayıt yoksa nazikçe bugün için küçük bir başlangıç öner. '
     + '(2) "motivasyon": kişinin motivasyonunu sürdürmesine yardım eden kısa bir söz, bilgi ya da ipucu (alışkanlık oluşturma, süreklilik, dinlenme gibi), en çok 2 cümle. Gerçek bir kişiye atfedilmiş alıntı verme, kaynak uydurma. Tıbbi ya da finansal tavsiye verme. '
@@ -157,7 +164,8 @@ function cleanSlot(body) {
   const slot = SLOT_GUIDE[body?.slot] ? body.slot : null;
   const tasks = (Array.isArray(body?.tasks) ? body.tasks : []).slice(0, 15).map((t) => ({ gorev: str(t?.title, 60), yapildi: Boolean(t?.done) })).filter((t) => t.gorev);
   const acts = (Array.isArray(body?.activities) ? body.activities : []).slice(0, 12).map((a) => ({
-    aktivite: str(a?.name, 40), bugun_dk: num(a?.todayMin), gunluk_hedef_dk: Number.isFinite(a?.dailyTargetMin) ? Math.round(a.dailyTargetMin) : null,
+    aktivite: str(a?.name, 40), bugun_yapildi: Boolean(a?.todayDone), bugun_dk: a?.todayMin ? num(a.todayMin) : undefined,
+    gunluk_hedef_dk: Number.isFinite(a?.dailyTargetMin) ? Math.round(a.dailyTargetMin) : null,
   })).filter((a) => a.aktivite);
   return { slot, tasks, acts, streak: Number.isFinite(body?.streak) ? Math.max(0, Math.round(body.streak)) : 0 };
 }
@@ -167,7 +175,7 @@ async function handleSlot(env, req, uid) {
   const { slot, tasks, acts, streak } = cleanSlot(await req.json().catch(() => null));
   if (!slot || (!tasks.length && !acts.length)) return reply(env, req, { error: 'no data' }, 400);
   if (!(await rateLimit(env, uid, 'slot'))) return reply(env, req, { error: 'rate' }, 429);
-  const prompt = 'Sen sıcak, motive edici ama baskı yapmayan bir kişisel asistansın. Aşağıda bir kişinin bugünkü görevleri, aktivite süreleri (dakika, hedefe göre) ve gün serisi var.\n'
+  const prompt = 'Sen sıcak, motive edici ama baskı yapmayan bir kişisel asistansın. Aşağıda bir kişinin bugünkü görevleri, bugün yapıp yapmadığı aktiviteler (süre varsa ikincil bir ayrıntıdır, süre girilmemesi eksiklik değildir) ve gün serisi var.\n'
     + `${SLOT_GUIDE[slot]}\n`
     + 'Türkçe yaz, en çok 3 kısa cümle, "sen" diye hitap et. Veride olmayan görev ya da ilerleme uydurma; emoji kullanma; tıbbi ya da finansal tavsiye verme.\n'
     + 'Ayrıca "motivasyon" alanına, kişinin motivasyonunu sürdürmesine yardım eden kısa bir söz, bilgi ya da ipucu yaz (alışkanlık oluşturma, süreklilik, küçük adımlar, dinlenme gibi), en çok 2 cümle; her seferinde farklı bir konu seç. Gerçek bir kişiye atfedilmiş alıntı verme, kaynak uydurma.\n'

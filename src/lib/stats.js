@@ -1,6 +1,7 @@
 import { addDays, addMonths, weekStart, monthStart, weekday, DAY_SHORT, monthShort, fromISO, diffDays } from './dates.js';
 
 export function fmtDur(min) {
+  min = min || 0; // a log without minutes ("done" only) counts as 0
   const h = Math.floor(min / 60), m = min % 60;
   if (!h) return `${m} dk`;
   if (!m) return `${h} sa`;
@@ -16,27 +17,50 @@ export function minutesByDay(logs, activityId = null) {
   return map;
 }
 
-// Consecutive days with at least one log. If today has none yet, count back from yesterday.
-export function streak(logs, activityId, todayISO) {
-  const m = minutesByDay(logs, activityId);
-  let d = m[todayISO] > 0 ? todayISO : addDays(todayISO, -1);
+// A day counts as "done" when the activity has any log that day, with or without minutes.
+export function doneDays(logs, activityId = null) {
+  const set = new Set();
+  for (const l of logs) if (!activityId || l.activityId === activityId) set.add(l.date);
+  return set;
+}
+
+function runFrom(set, todayISO) {
+  let d = set.has(todayISO) ? todayISO : addDays(todayISO, -1);
   let n = 0;
-  while (m[d] > 0) { n++; d = addDays(d, -1); }
+  while (set.has(d)) { n++; d = addDays(d, -1); }
+  return n;
+}
+// Consecutive done days. If today has none yet, count back from yesterday.
+export const streak = (logs, activityId, todayISO) => runFrom(doneDays(logs, activityId), todayISO);
+
+export function activeDays(logs, activityId, from, to) {
+  let n = 0;
+  for (const d of doneDays(logs, activityId)) if (d >= from && d <= to) n++;
   return n;
 }
 
-export function activeDays(logs, activityId, from, to) {
-  const m = minutesByDay(logs, activityId);
+// "Habits" = what is tracked as done / not done: every activity plus every repeating task (daily or chosen weekdays).
+// { id, kind: 'aktivite' | 'görev', name, color (palette index or null for tasks), weekly (target days per week), done: Set of ISO dates }
+export function habitList(data) {
+  const acts = (data.activities || []).map((a) => ({ id: a.id, kind: 'aktivite', name: a.name, color: a.color ?? 0, weekly: a.weeklyDays || 1, done: doneDays(data.logs, a.id), dailyMinutes: a.dailyMinutes || null }));
+  const tasks = (data.tasks || []).filter((t) => t.repeat === 'daily' || t.repeat === 'days').map((t) => ({
+    id: t.id, kind: 'görev', name: t.title, color: null, weekly: t.repeat === 'daily' ? 7 : Math.max(1, (t.days || []).length), done: new Set(t.doneDates || []), dailyMinutes: null,
+  }));
+  return [...acts, ...tasks];
+}
+export const habitStreak = (habits, id, todayISO) => runFrom(id ? (habits.find((h) => h.id === id)?.done || new Set()) : new Set(habits.flatMap((h) => [...h.done])), todayISO);
+export function countIn(h, from, to) {
   let n = 0;
-  for (const d in m) if (m[d] > 0 && d >= from && d <= to) n++;
+  for (const d of h.done) if (d >= from && d <= to) n++;
   return n;
 }
 
 export const MODES = { day: 'Günlük', week: 'Haftalık', month: 'Aylık' };
 const SIZE = { day: 7, week: 8, month: 6 };
 
-// offset 0 = latest window, -1 = one window earlier, ...
-export function buildSeries(logs, { activityId = null, mode, offset = 0, today }) {
+// Period slices shared by every chart. offset 0 = latest window, -1 = one window earlier, ...
+// day: the 7 days of a week; week: 8 weeks; month: 6 months.
+export function makeBuckets(mode, offset, today) {
   const n = SIZE[mode];
   const buckets = [];
   for (let i = 0; i < n; i++) {
@@ -51,15 +75,28 @@ export function buildSeries(logs, { activityId = null, mode, offset = 0, today }
       start = addMonths(monthStart(today), offset * n - (n - 1) + i); end = addDays(addMonths(start, 1), -1);
       label = monthShort(start);
     }
-    buckets.push({ start, end, label, total: 0, parts: {} });
+    buckets.push({ start, end, label });
   }
+  return buckets;
+}
+
+// Days a habit was done in a slice, and how many it should have been (weekly target scaled to the slice length).
+export function habitBucket(h, b) {
+  const len = diffDays(b.end, b.start) + 1;
+  return { count: countIn(h, b.start, b.end), target: len === 1 ? null : Math.max(1, Math.round((h.weekly * len) / 7)), len };
+}
+
+// offset 0 = latest window, -1 = one window earlier, ...
+export function buildSeries(logs, { activityId = null, mode, offset = 0, today }) {
+  const n = SIZE[mode];
+  const buckets = makeBuckets(mode, offset, today).map((b) => ({ ...b, total: 0, parts: {} }));
   const first = buckets[0].start, last = buckets[n - 1].end;
   for (const l of logs) {
     if (activityId && l.activityId !== activityId) continue;
     if (l.date < first || l.date > last) continue;
     const b = buckets.find((x) => l.date >= x.start && l.date <= x.end);
-    b.total += l.minutes;
-    b.parts[l.activityId] = (b.parts[l.activityId] || 0) + l.minutes;
+    b.total += l.minutes || 0;
+    b.parts[l.activityId] = (b.parts[l.activityId] || 0) + (l.minutes || 0);
   }
   const total = buckets.reduce((s, b) => s + b.total, 0);
   const days = diffDays(last, first) + 1;

@@ -23,11 +23,11 @@ export function latestNote(insights, dateISO) {
 // Today's tasks and activity progress, as sent to the Worker.
 export function buildSlotInput(data, dateISO, hour) {
   const tasks = tasksForDay(data.tasks, dateISO).map((t) => ({ title: t.title, done: taskDone(t, dateISO) }));
-  const activities = data.activities.map((a) => ({
-    name: a.name,
-    todayMin: data.logs.filter((l) => l.activityId === a.id && l.date === dateISO).reduce((s, l) => s + l.minutes, 0),
-    dailyTargetMin: a.dailyMinutes || null,
-  }));
+  const activities = data.activities.map((a) => {
+    const logs = data.logs.filter((l) => l.activityId === a.id && l.date === dateISO);
+    const min = logs.reduce((s, l) => s + (l.minutes || 0), 0);
+    return { name: a.name, todayDone: logs.length > 0, todayMin: min || null, dailyTargetMin: a.dailyMinutes || null };
+  });
   return { slot: currentSlot(hour)?.id, hour, tasks, activities, streak: streak(data.logs, null, dateISO) };
 }
 

@@ -28,3 +28,40 @@
 /* Kişisel rows */
 .vact-row { width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px 0; background: transparent; border: 0; border-top: 1px solid var(--line); text-align: left; color: inherit; font: inherit; cursor: pointer; }
 .vact-row:first-child { border-top: 0; }
+
+/* Done / not-done grid (Rapor, Kişisel) */
+.hg { display: flex; flex-direction: column; }
+.hg-head, .hg-row { display: grid; grid-template-columns: minmax(84px, 1.4fr) repeat(var(--n), minmax(0, 1fr)); align-items: center; column-gap: 4px; }
+.hg-head span { font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; padding-bottom: 6px; white-space: nowrap; }
+.hg-head span.now { color: var(--text); }
+.hg-row { width: 100%; min-height: 52px; padding: 4px 0; background: transparent; border: 0; border-top: 1px solid var(--line); text-align: left; color: inherit; font: inherit; }
+button.hg-row { cursor: pointer; }
+.hg-name { min-width: 0; padding-right: 6px; display: flex; flex-direction: column; }
+.hg-name > span { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hg-name small { font-size: 11px; font-weight: 600; color: var(--muted); }
+.hg-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hg-cell em { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--muted); line-height: 1; }
+.hg-cell.future { opacity: .35; }
+.hg-c { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); box-sizing: border-box; display: block;
+  background: linear-gradient(to top, var(--c) var(--p, 0%), transparent var(--p, 0%)); }
+:root[data-theme='teknik'] .hg-c { border-radius: 0; }
+.hg.compact .hg-row { min-height: 40px; }
+.hg.compact .hg-c { width: 20px; height: 20px; }
+.chart-target { stroke: var(--text); stroke-width: 2; stroke-dasharray: 3 3; opacity: .7; }
+
+/* Bugün activity tile: the whole tile opens the log form, the circle marks "done today" with one tap */
+.tile { position: relative; }
+.tile-open { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; border-radius: inherit; cursor: pointer; }
+.tile-top { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; pointer-events: none; }
+.tile-top .tile-name { padding-top: 2px; }
+.tile-check { pointer-events: auto; flex: none; width: 44px; height: 44px; margin: -8px -8px 0 0; padding: 0; background: transparent; border: 0; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
+.tile-check::before { content: ''; position: absolute; width: 26px; height: 26px; border: 2px solid currentColor; border-radius: 50%; box-sizing: border-box; }
+.tile-check.on::before { background: var(--text); border-color: var(--text); }
+.tile-check svg { position: relative; color: var(--card); }
+:root[data-theme='teknik'] .tile-check::before { border-radius: 0; }
+:root[data-theme='mozaik'] .tile[data-c="6"] .tile-check.on::before { background: #fff; border-color: #fff; }
+:root[data-theme='mozaik'] .tile[data-c="6"] .tile-check svg { color: #121212; }
+.tile-did { font-size: 22px; font-weight: 800; }
+.hg.dense .hg-head, .hg.dense .hg-row { grid-template-columns: minmax(70px, 1.1fr) repeat(var(--n), minmax(0, 1fr)); column-gap: 2px; }
+.hg.dense .hg-c { width: 21px; height: 21px; border-width: 1.5px; }
+.hg.dense .hg-head span { font-size: 10px; }
