@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
 import { Card, Progress } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
@@ -19,6 +20,9 @@ const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat =
 // Bugün: summary, activity tiles (swipe sideways), then the day as a timeline of tasks, doses and events.
 export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings }) {
   const t = today(), now = hhmm();
+  // Medication doses can be hidden from the timeline, so many doses do not bury the other items. The choice is remembered on this phone.
+  const [showMeds, setShowMeds] = useState(() => { try { return localStorage.getItem('cassandra.showMeds') === '1'; } catch { return false; } });
+  const toggleMeds = () => setShowMeds((v) => { try { localStorage.setItem('cassandra.showMeds', v ? '0' : '1'); } catch { /* ignore */ } return !v; });
   const { note, weekly } = useAutoNote(uid, data);
   const people = medPeople(session.household, me.uid);
   const doses = dosesForDay(house.medications, house.medLogs, t, now);
@@ -38,7 +42,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       const doer = d.log ? personById(people, d.log.doneBy, me.uid).name : '';
       const at = d.log ? hhmm(new Date(d.log.doneAt?.toMillis?.() ?? Date.now())) : '';
       return {
-        id: `d${d.id}`, time: d.time, title: `${who} · ${d.med.name}`, missed: d.missed && !d.log,
+        id: `d${d.id}`, med: true, time: d.time, title: `${who} · ${d.med.name}`, missed: d.missed && !d.log,
         sub: d.log ? `${st === 'alindi' ? 'Alındı' : 'Kaçtı'} · ${doer} · ${at}` : d.missed ? 'Kaçtı' : [d.med.dose, mealText(d.med.meal)].filter(Boolean).join(' · ') || null,
         done: Boolean(d.log),
         tick: () => (d.log ? (confirm('İşaret geri alınsın mı?') && unmarkDose(session.hid, d.id)) : markDose(session.hid, me.uid, d, 'alindi')),
@@ -59,8 +63,11 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
     })),
     ...events.map((e) => ({ id: `e${e.scope}${e.id}`, time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
   ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  const untimed = items.filter((i) => !i.time);
-  const timed = items.filter((i) => i.time);
+  const pendingMeds = items.filter((i) => i.med && !i.done).length;
+  const shownItems = showMeds ? items : items.filter((i) => !i.med);
+  const untimed = shownItems.filter((i) => !i.time);
+  const timed = shownItems.filter((i) => i.time);
+  const hasMeds = items.some((i) => i.med);
 
   const ws = weekStart(t);
   const rows = data.activities.map((a) => {
@@ -139,7 +146,14 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       )}
 
       {untimed.length > 0 && <Card label="GÜN BOYU">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
-      <div class="label">AKIŞ</div>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="label" style="margin:0">AKIŞ</div>
+        {hasMeds && (
+          <button type="button" class="chip small" aria-pressed={showMeds} onClick={toggleMeds}>
+            {showMeds ? 'İlaçları gizle' : `İlaçları göster${pendingMeds ? ` (${pendingMeds} bekliyor)` : ''}`}
+          </button>
+        )}
+      </div>
       <div class="tl">
         {timed.length === 0 && <div class="sub">Bugün için saatli iş yok.</div>}
         {timed.map((it) => (
