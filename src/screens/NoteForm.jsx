@@ -200,7 +200,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               </div>
             ))}
           </div>
-          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan yalnızca seçili kısım biçimlenir (satırda ** __ ~~ işaretleri görünür, satırdan çıkınca biçimli görünür). Seçim yoksa tüm satır biçimlenir. Enter yeni satır açar; boş madde ya da yuvarlak satırda Enter listeyi bitirir.</div>
+          <div class="sub" style="margin-top:8px">Metni seçip Kalın, İtalik ya da Çizgi'ye dokunursan ** __ ~~ işaretleri görünür, satır atlayınca seçim uygulanır.</div>
         </Card>
 
         {filesEnabled && (
@@ -211,7 +211,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
             </div>
             {files.length > 0 && <div style="margin-top:12px"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
             {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
-            <div class="sub" style="margin-top:8px">{scope === 'personal' ? 'Yalnızca sen açabilirsin.' : 'Eşin de açabilir.'} En çok 20 MB. Resimler yüklenirken küçültülür.</div>
+            <div class="sub" style="margin-top:8px">Dosya boyutu en çok 20 MB olmalıdır.</div>
           </Card>
         )}
         <Card label="RENK">
