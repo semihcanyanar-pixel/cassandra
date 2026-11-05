@@ -7,7 +7,7 @@ const letters = (text, offset) => [...text].map((ch, i) => (ch === ' '
   : `<i style="--i:${i + offset};--r:${((i * 37) % 50) - 25}deg">${ch}</i>`)).join('');
 
 const markup = (cls = 'class') => `<div ${cls}="splash" role="status" aria-label="Yükleniyor">
-      <img src="./icon-192.png" alt="" width="92" height="92">
+      <img src="./logo-mark.png" alt="" width="168" height="142">
       <div ${cls}="brand">
         <div ${cls}="t1" aria-hidden="true">${letters('CASSANDRA', 0)}</div>
         <div ${cls}="t2" aria-hidden="true">${letters('FAMILY ASSISTANT', 9)}</div>
@@ -15,16 +15,18 @@ const markup = (cls = 'class') => `<div ${cls}="splash" role="status" aria-label
       <div ${cls}="bar"><i></i></div>
     </div>`;
 
-const css = `    html[data-theme='yorunge'] body { background: #0B0F1A; }
+const css = `    @font-face { font-family: 'Cinzel'; font-weight: 600; font-display: block; src: url(./fonts/cinzel-600.woff2) format('woff2'); }
+    @font-face { font-family: 'Cinzel'; font-weight: 500; font-display: block; src: url(./fonts/cinzel-500.woff2) format('woff2'); }
+    html[data-theme='yorunge'] body { background: #0B0F1A; }
     html[data-theme='teknik'] body { background: #FAFAFA; }
     html[data-theme='mozaik'] body { background: #E8ECF3; }
     /* Splash: same teal-to-deep-blue gradient as the app icon. Letters blink, then fall one by one, then the cycle repeats. */
     .splash { position: fixed; inset: 0; z-index: 50; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
-      background: linear-gradient(180deg, #0c97a6 0%, #00708a 48%, #052f45 100%); font-family: 'Archivo', system-ui, sans-serif; }
-    .splash img { width: 92px; height: 92px; border-radius: 23px; box-shadow: 0 12px 36px rgba(0,0,0,.35); animation: splash-pulse 2.4s ease-in-out infinite; }
+      background: linear-gradient(180deg, #0c97a6 0%, #00708a 48%, #052f45 100%); font-family: 'Cinzel', 'Times New Roman', serif; }
+    .splash img { width: 168px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.35)); animation: splash-pulse 2.4s ease-in-out infinite; }
     .splash .brand { text-align: center; }
-    .splash .t1 { font-size: 34px; font-weight: 800; letter-spacing: 5px; color: #f6ead3; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
-    .splash .t2 { margin-top: 6px; font-size: 13px; font-weight: 700; letter-spacing: 4px; color: #d9a06f; }
+    .splash .t1 { font-size: 31px; font-weight: 600; letter-spacing: 8px; margin-right: -8px; color: #f6ead3; text-shadow: 0 2px 12px rgba(0,0,0,.25); }
+    .splash .t2 { margin-top: 10px; font-size: 11.5px; font-weight: 500; letter-spacing: 6px; margin-right: -6px; color: #e2ad7c; }
     .splash .t1, .splash .t2 { animation: splash-blink 3s linear infinite; white-space: nowrap; }
     .splash .brand i { display: inline-block; font-style: normal; animation: splash-drop 3s ease-in infinite; animation-delay: calc(var(--i) * 70ms); }
     .splash .brand i.sp { width: .5em; }
