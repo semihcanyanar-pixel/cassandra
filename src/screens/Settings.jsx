@@ -5,6 +5,7 @@ import { THEMES, currentTheme } from '../theme.js';
 import { saveTheme } from '../session.js';
 import { IconBack, IconCheck } from '../icons.jsx';
 import { PushSection } from './PushSection.jsx';
+import { PasswordSection } from './PasswordSection.jsx';
 import { buildBackup, backupCounts, saveBackup, parseBackup, restoreOps } from '../lib/backup.js';
 import { applyRestore } from '../data.js';
 
@@ -77,10 +78,12 @@ export function Settings({ session, data, house, onBack }) {
       <div class="label">VERİLERİM</div>
       <div class="card">
         <div class="sub" style="line-height:1.45">Notların, aktivite sürelerin, görevlerin ve ortak verilerin tek bir dosyada. Telefon değişirse ya da bir şey silinirse elinde kopyası olur. Resim ve PDF ekleri dosyaya girmez.</div>
-        <button class="btn wide" style="margin-top:12px" disabled={backupBusy} onClick={doBackup}>Verimi indir</button>
+        <button class="btn wide" style="margin-top:12px" disabled={backupBusy} onClick={doBackup}>Yedekle</button>
         <label class="chip filebtn" style="margin-top:10px;display:flex;justify-content:center">Yedekten geri yükle<input class="vh" type="file" accept="application/json,.json" disabled={backupBusy} onChange={(e) => { doRestore(e.target.files[0]); e.target.value = ''; }} /></label>
         {backupMsg && <div class="sub" style="margin-top:8px" role="status">{backupMsg}</div>}
       </div>
+
+      <PasswordSection />
 
       <button class="chip" style="margin-top:6px;min-height:48px" onClick={() => signOut(auth)}>Çıkış yap</button>
     </main>
