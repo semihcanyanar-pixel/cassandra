@@ -28,6 +28,12 @@ const EyeIcon = ({ off }) => <Ic><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 
 const CORNERS_KEY = 'cassandra.notes.corners';
 const readCorners = () => { try { return localStorage.getItem(CORNERS_KEY) === 'square' ? 'square' : 'round'; } catch { return 'round'; } };
 const TOOL_HINT = { pin: 'Sabitlemek ya da sabitlemeyi kaldırmak için bir nota dokun.', eye: 'Gizlemek ya da göstermek için bir nota dokun.' };
+// The page-aligned frame of the notes area: left edge of the page content, top, and the canvas width (page width + 10).
+const frameOf = (container) => {
+  const cr = container.getBoundingClientRect();
+  const isCanvas = container.classList.contains('note-canvas');
+  return { left: isCanvas ? cr.left + 5 : cr.left, top: cr.top, cw: (isCanvas ? cr.width - 10 : cr.width) + 10 };
+};
 const HOLD_MS = 380; // press and hold a card this long (manual layout) to pick it up
 
 export function Notlar({ me, ctx, house, data, nav, onSettings }) {
@@ -44,6 +50,24 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs);
   const anyHidden = notes.some((n) => n.hidden);
   const flow = useRef(null);
+  // Manual layout becomes a free canvas as soon as a card has been moved: every card has its own place { x: fraction of the width, y: px },
+  // kept in MY layout (one set per filter view). Cards without a place yet (new notes) go to the bottom.
+  const posMap = prefs.pos?.[filter] || {};
+  const canvas = layout === 'manual' && notes.some((n) => posMap[noteKey(n)]);
+  const [autoPos, setAutoPos] = useState({});
+  const [canvasH, setCanvasH] = useState(0);
+  useLayoutEffect(() => {
+    if (!canvas || !flow.current) return;
+    const els = [...flow.current.querySelectorAll('.note')];
+    let bottom = 0;
+    for (const el of els) if (posMap[el.dataset.key]) bottom = Math.max(bottom, el.offsetTop + el.offsetHeight);
+    const next = {};
+    let y = bottom ? bottom + 10 : 0;
+    for (const el of els) { if (posMap[el.dataset.key]) continue; next[el.dataset.key] = { x: 0, y }; y += el.offsetHeight + 10; }
+    if (JSON.stringify(next) !== JSON.stringify(autoPos)) setAutoPos(next);
+    const h = Math.max(0, ...els.map((el) => el.offsetTop + el.offsetHeight)) + 24;
+    if (Math.abs(h - canvasH) > 1) setCanvasH(h);
+  });
   // Auto layout: two columns in reading order (top to bottom, left then right), split where the heights balance best.
   const colsRef = useRef(null);
   const [split, setSplit] = useState(null);
@@ -66,6 +90,8 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const latest = useRef({});
   latest.current = {
     uid: ctx.uid,
+    filter,
+    canvas,
     visible: notes.map(noteKey),
     full: arrangeNotes(filterNotes(house.notes, data.notes, 'all'), prefs).map(noteKey),
   };
@@ -91,10 +117,11 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     const container = e.currentTarget;
     const card = e.target.closest?.('.note');
     if (!card || card.dataset.pinned === '1' || e.target.closest('.rz') || !container) return;
-    const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, ins: null, others: [], timer: 0, raf: 0, row: container.getBoundingClientRect().width, side: layout === 'manual' };
+    const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, ins: null, others: [], timer: 0, raf: 0, row: container.getBoundingClientRect().width, side: layout === 'manual', free: layout === 'manual', r0: null };
     drag.current = d;
     const place = () => {
       d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0) - 36}px) scale(1.03)`; // lifted a little above the finger so the drop bar stays visible
+      if (d.free) return; // free canvas: no insertion bar, the card simply lands where it is
       // the nearest other card (distance 0 when the finger is over it), then before / after it
       let best = null, bd = Infinity;
       for (const el of d.others) {
@@ -134,7 +161,14 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
       d.card.style.transform = '';
       setDragKey(null); setIns(null);
       blockTap.current = Date.now() + 450;
-      if (drop && d.ins) {
+      if (drop && d.free && d.r0) {
+        const fr = frameOf(container), cw = fr.cw;
+        const wf = (d.r0.width + 10) / cw;
+        const left = d.r0.left + (d.px - d.x0), top = d.r0.top + (d.py - d.y0) - 36; // where the card is on screen (it is lifted 36px above the finger)
+        const x = Math.round(Math.min(Math.max(0, 1 - wf), Math.max(0, (left - fr.left) / cw)) * 1000) / 1000;
+        const y = Math.max(0, Math.round(top - fr.top));
+        setNotePrefs(latest.current.uid, { pos: { [latest.current.filter]: { [d.key]: { x, y } } } });
+      } else if (drop && d.ins) {
         const vis = latest.current.visible.filter((k) => k !== d.key);
         const at = vis.indexOf(d.ins.key);
         if (at >= 0) { vis.splice(d.ins.mark[0] === 'b' ? at : at + 1, 0, d.key); setNotePrefs(latest.current.uid, { order: mergeOrder(latest.current.full, vis) }); }
@@ -145,7 +179,17 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', cancel);
     d.timer = setTimeout(() => {
       d.active = true;
-      d.others = [...container.querySelectorAll('.note:not([data-pinned="1"])')].filter((el) => el !== card);
+      d.r0 = card.getBoundingClientRect();
+      if (d.free) {
+        if (!latest.current.canvas) { // first move on this view: every card keeps exactly where it is now, then the canvas takes over
+          const fr = frameOf(container), map = {};
+          for (const el of container.querySelectorAll('.note')) {
+            const r = el.getBoundingClientRect();
+            map[el.dataset.key] = { x: Math.round(((r.left - fr.left) / fr.cw) * 1000) / 1000, y: Math.max(0, Math.round(r.top - fr.top)) };
+          }
+          setNotePrefs(latest.current.uid, { pos: { [latest.current.filter]: map } });
+        }
+      } else d.others = [...container.querySelectorAll('.note:not([data-pinned="1"])')].filter((el) => el !== card);
       setDragKey(d.key);
       navigator.vibrate?.(12);
       d.raf = requestAnimationFrame(loop);
@@ -154,7 +198,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
   const card = (n, manual) => {
     const key = noteKey(n);
-    return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs)}
+    return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} canvas={manual && canvas} pos={manual ? posMap[key] || autoPos[key] || null : null} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs)}
       dragging={dragKey === key} ins={ins?.key === key && dragKey !== key ? ins.mark : null} onOpen={() => tap(n)} />;
   };
 
@@ -186,7 +230,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
       <div class={`${corners === 'square' ? 'notes-square' : ''} ${tool ? 'tooling' : ''} ${dragKey ? 'dragging-any' : ''}`}>
         {layout === 'manual' ? (
-          <div class="note-flow" ref={flow} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
+          <div class={canvas ? 'note-canvas' : 'note-flow'} ref={flow} style={canvas ? `height:${canvasH}px` : ''} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
         ) : (
           <div class="note-cols" ref={colsRef} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
             <div class="note-col">{notes.slice(0, firstCol).map((n) => card(n, false))}</div>
@@ -202,8 +246,10 @@ const MAX_LINES = 40; // the card only renders this many lines; CSS cuts it to a
 const MIN_W = 0.28, MIN_H = 64, MAX_H = 1200;
 // Width as a fraction of the row; the gap share is subtracted so two cards of 0.5 (or 0.4 + 0.6) fill a row with a 10px gap.
 const widthCss = (w) => `calc(${(w * 100).toFixed(2)}% - ${((1 - w) * 10).toFixed(2)}px)`;
+// On the free canvas (10px wider than the page, cards inset 5px on each side) a card is simply w of the canvas minus its 10px of inset.
+const canvasW = (w) => `calc(${(w * 100).toFixed(2)}% - 10px)`;
 
-function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, ins }) {
+function NoteCard({ n, k, ctx, onOpen, manual, canvas, pos, pinned, size0, dragging, ins }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
   const blocks = all.map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
@@ -229,10 +275,12 @@ function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, ins }) {
   };
   const onMove = (e) => {
     const d = drag.current; if (!d) return;
-    const w = d.mode === 'b' ? d.w : Math.min(d.row, Math.max(d.row * MIN_W, d.w + e.clientX - d.x));
+    const maxW = canvas ? d.row * (1 - (pos?.x ?? 0)) - 10 : d.row; // on the canvas a card may not grow past the right edge
+    const minW = canvas ? d.row * MIN_W - 10 : d.row * MIN_W;
+    const w = d.mode === 'b' ? d.w : Math.min(maxW, Math.max(minW, d.w + e.clientX - d.x));
     const h = d.mode === 'r' ? d.h : Math.min(MAX_H, Math.max(MIN_H, d.h + e.clientY - d.y));
-    d.out = { w: Math.round((w / d.row) * 1000) / 1000, h: Math.round(h) };
-    root.current.style.width = widthCss(d.out.w); root.current.style.height = `${d.out.h}px`;
+    d.out = { w: Math.round(((canvas ? w + 10 : w) / d.row) * 1000) / 1000, h: Math.round(h) };
+    root.current.style.width = canvas ? canvasW(d.out.w) : widthCss(d.out.w); root.current.style.height = `${d.out.h}px`;
     root.current.classList.add('sized');
   };
   const onUp = () => {
@@ -240,7 +288,10 @@ function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, ins }) {
     if (d?.out) { setLocal(d.out); setNotePrefs(ctx.uid, { sizes: { [k]: d.out } }); }
   };
   const grip = (mode) => ({ onPointerDown: onDown(mode), onPointerMove: onMove, onPointerUp: onUp, onPointerCancel: onUp });
-  const style = `--c:${actColor(n.color)};${manual ? `width:${widthCss(size?.w ?? 0.5)};${size?.h ? `height:${size.h}px;` : ''}` : ''}`;
+  const geom = !manual ? '' : canvas
+    ? `position:absolute;left:calc(${((pos?.x ?? 0) * 100).toFixed(2)}% + 5px);top:${pos?.y ?? 0}px;width:${canvasW(size?.w ?? 0.5)};${size?.h ? `height:${size.h}px;` : ''}${pos ? '' : 'visibility:hidden;'}`
+    : `width:${widthCss(size?.w ?? 0.5)};${size?.h ? `height:${size.h}px;` : ''}`;
+  const style = `--c:${actColor(n.color)};${geom}`;
 
   return (
     <div ref={root} data-key={k} data-pinned={pinned ? '1' : '0'} class={`note ${personal ? 'personal' : ''} ${manual ? 'manual' : ''} ${size ? 'sized' : ''} ${n.hidden ? 'veiled' : ''} ${dragging ? 'dragging' : ''} ${ins ? `ins-${ins}` : ''}`} data-c={inkKey(n.color)} style={style}>
