@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateVapid, encryptPayload, b64u, unb64u, sendPush } from '../worker/src/webpush.js';
-import { subscribe, setSchedule, runDue, validSub, sendTest } from '../worker/src/push.js';
-import { eventItems, medItems, buildSchedule, localMs } from '../src/lib/push.js';
+import { subscribe, setSchedule, runDue, validSub, sendTest, notifyOthers } from '../worker/src/push.js';
+import { eventItems, medItems, weekItems, buildSchedule, localMs } from '../src/lib/push.js';
+import { parseGo } from '../src/lib/deeplink.js';
 
 const enc = new TextEncoder();
 const hkdf = async (salt, ikm, info, len) => new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']), len * 8));
@@ -136,5 +137,63 @@ describe('İstemci: hatırlatma planı', () => {
     const now = 1_000_000_000_000;
     const out = buildSchedule([{ id: 'b', t: now + 5 }, { id: 'a', t: now + 1 }, { id: 'gone', t: now - 3 * 3600_000 }], now, 10);
     expect(out.map((i) => i.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('Bildirim derin bağlantısı', () => {
+  it('geçerli hedefleri çözer, geçersizi reddeder', () => {
+    expect(parseGo('ilac')).toEqual({ tab: 'ortak', sub: 'ilac' });
+    expect(parseGo('takvim')).toEqual({ tab: 'takvim' });
+    expect(parseGo('event:aile:abc1')).toEqual({ tab: 'takvim', route: { n: 'event', scope: 'aile', id: 'abc1' } });
+    expect(parseGo('event:baska:abc')).toBeNull();
+    expect(parseGo('https://evil.example')).toBeNull();
+    expect(parseGo(undefined)).toBeNull();
+  });
+  it('Worker plandaki go alanını korur ve geçersizini atar, push yüküne koyar', async () => {
+    const env = { KV: kv() };
+    const { sub, decrypt } = await fakePhone();
+    await subscribe(env, 'U', sub);
+    await setSchedule(env, 'U', [{ id: 'a', t: Date.now() - 1000, title: 't', body: 'b', go: 'fridge' }, { id: 'b', t: Date.now() + 9e6, title: 't', body: 'b', go: 'x y' }]);
+    const items = JSON.parse(env.KV.m.get('push:U')).items;
+    expect(items[0].go).toBe('fridge');
+    expect(items[1].go).toBeUndefined();
+    const bodies = [];
+    vi.stubGlobal('fetch', async (u, init) => { bodies.push(init.body); return new Response(null, { status: 201 }); });
+    await runDue(env);
+    expect(JSON.parse(await decrypt(bodies[0])).go).toBe('fridge');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('Eşe bildirim', () => {
+  it('gönderen hariç diğer kullanıcıya gider', async () => {
+    const env = { KV: kv() };
+    const a = await fakePhone('https://web.push.apple.com/a'), b = await fakePhone('https://web.push.apple.com/b');
+    await subscribe(env, 'A', a.sub); await subscribe(env, 'B', b.sub);
+    const sent = [];
+    vi.stubGlobal('fetch', async (u, init) => { sent.push({ u, body: init.body }); return new Response(null, { status: 201 }); });
+    expect(await notifyOthers(env, 'A', { title: 'Alışveriş listesi', body: 'Eşin ekledi: süt', go: 'ev' })).toEqual({ sent: 1 });
+    expect(sent).toHaveLength(1);
+    expect(sent[0].u).toBe('https://web.push.apple.com/b');
+    expect(JSON.parse(await b.decrypt(sent[0].body))).toMatchObject({ title: 'Alışveriş listesi', body: 'Eşin ekledi: süt', go: 'ev' });
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('Pazar akşamı haftaya bakış', () => {
+  const T = '2026-11-05'; // Thursday
+  it('ilk Pazar 20:00 için özet üretir', () => {
+    const ev = [{ id: 'e', scope: 'aile', title: 'Diş', date: '2026-11-09', time: '10:00', repeat: 'none' }];
+    const todos = [{ id: 'o', text: 'x', done: false, dueDate: '2026-11-12' }];
+    const [w] = weekItems(ev, todos, [], T, localMs(T, '12:00'));
+    expect(w.id).toBe('w-2026-11-08');
+    expect(w.t).toBe(localMs('2026-11-08', '20:00'));
+    expect(w.body).toBe('1 etkinlik (ilki: Pzt 10:00 Diş) · 1 yapılacağın son günü var');
+    expect(w.go).toBe('takvim');
+  });
+  it('Pazar 20:00 geçtiyse bir sonraki Pazar; boş hafta nazik metin', () => {
+    const [w] = weekItems([], [], [], '2026-11-08', localMs('2026-11-08', '21:00'));
+    expect(w.id).toBe('w-2026-11-15');
+    expect(w.body).toBe('Önümüzdeki hafta için kayıtlı bir şey yok.');
   });
 });

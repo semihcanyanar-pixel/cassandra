@@ -1,6 +1,6 @@
 // App-shell cache + web push.
 // Pages (navigations) are network-first so a new version shows up on the next open; hashed assets are stale-while-revalidate.
-const CACHE = 'cassandra-shell-v3';
+const CACHE = 'cassandra-shell-v4';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
   e.waitUntil(
@@ -33,13 +33,16 @@ self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Cassandra', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Cassandra', {
-    body: d.body || '', tag: d.tag || undefined, icon: './icon-192.png', badge: './icon-192.png', data: { url: './' },
+    body: d.body || '', tag: d.tag || undefined, icon: './icon-192.png', badge: './icon-192.png', data: { go: d.go || '' },
   }));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
+  const go = e.notification.data?.go || '';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    for (const c of list) if ('focus' in c) return c.focus();
-    return self.clients.openWindow('./');
+    for (const c of list) {
+      if ('focus' in c) { if (go) c.postMessage({ type: 'go', go }); return c.focus(); }
+    }
+    return self.clients.openWindow(go ? `./?go=${encodeURIComponent(go)}` : './');
   }));
 });

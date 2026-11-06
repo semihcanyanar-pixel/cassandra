@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { Seg } from '../components/Seg.jsx';
 import { Ilaclar } from './Ilaclar.jsx';
 import { Buzdolabi } from './Buzdolabi.jsx';
+import { notifyPartnerAdded } from '../push.js';
 import { urgentCount } from '../lib/fridge.js';
 import { today } from '../lib/dates.js';
 import { IconPlus, IconTrash, IconEdit } from '../icons.jsx';
@@ -53,6 +54,7 @@ export function Ortak({ session, house, nav, onSettings }) {
     if (!v) return;
     if (sub === 'ev') addShopping(hid, me.uid, { text: v, category: filter });
     else addFamilyTodo(hid, me.uid, v, dueDate || null);
+    if (partner) notifyPartnerAdded(sub, me.name, v);
     setText(''); setDueDate('');
   }
 

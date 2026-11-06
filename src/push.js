@@ -2,7 +2,7 @@ import { useEffect } from 'preact/hooks';
 import { callWorker, workerConfigured, WORKER_URL } from './worker.js';
 import { tagScopes } from './lib/events.js';
 import { medPeople } from './lib/meds.js';
-import { eventItems, medItems, taskItems, fridgeItems, todoItems, buildSchedule } from './lib/push.js';
+import { eventItems, medItems, taskItems, fridgeItems, todoItems, weekItems, buildSchedule } from './lib/push.js';
 import { today } from './lib/dates.js';
 
 const FLAG = 'cassandra.push';
@@ -51,6 +51,7 @@ export function buildPushPayload({ session, data, house }, nowMs = Date.now(), t
     ...taskItems(data.tasks || [], t),
     ...fridgeItems(house.fridge, t),
     ...todoItems(house.todos, t, nowMs),
+    ...weekItems(tagScopes(house.events, data.events), house.todos, house.fridge, t, nowMs),
   ];
   return buildSchedule(items, nowMs);
 }
@@ -66,3 +67,30 @@ export function usePushSchedule({ session, data, house }) {
     return () => clearTimeout(id);
   }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
 }
+
+// Tells the household partner about new shared items ("Şeyma alışverişe 2 ürün ekledi").
+// Adds made within a few seconds are merged into one notification.
+const pending = { ev: [], todo: [] };
+let notifyTimer;
+const NOTIFY = {
+  ev: { title: 'Alışveriş listesi', word: 'ürün', where: 'listeye' },
+  todo: { title: 'Ortak yapılacaklar', word: 'yapılacak', where: 'listeye' },
+};
+export function notifyPartnerAdded(kind, name, text) {
+  if (!workerConfigured || !NOTIFY[kind]) return;
+  pending[kind].push({ name, text });
+  clearTimeout(notifyTimer);
+  notifyTimer = setTimeout(flushPartnerNotices, 12000);
+}
+export function flushPartnerNotices() {
+  for (const kind of Object.keys(pending)) {
+    const list = pending[kind].splice(0);
+    if (!list.length) continue;
+    const who = list[0].name || 'Eşin';
+    const texts = list.map((x) => x.text);
+    const body = list.length === 1 ? `${who} ekledi: ${texts[0]}` : `${who} ${list.length} ${NOTIFY[kind].word} ekledi: ${texts.slice(0, 3).join(', ')}${list.length > 3 ? '…' : ''}`;
+    callWorker('/push/notify', { title: NOTIFY[kind].title, body, go: kind }).catch((e) => console.warn('push notify', e.message));
+  }
+}
+// Leaving the app inside the wait window: send what is queued right away.
+if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushPartnerNotices(); });

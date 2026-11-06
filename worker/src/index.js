@@ -1,9 +1,9 @@
 import { verifyIdToken } from './jwt.js';
 import { uploadFile, readFile, removeFile, isFileId } from './files.js';
-import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue } from './push.js';
+import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue, notifyOthers } from './push.js';
 
 // Gemini proxy + web push. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
-const LIMITS = { ai: 10, slot: 6 }; // per user per day
+const LIMITS = { ai: 10, slot: 6, notify: 40 }; // per user per day
 
 const cors = (env, req) => {
   const origin = req.headers.get('Origin') || '';
@@ -218,7 +218,7 @@ export default {
       }
       return reply(env, req, { error: 'method' }, 405);
     }
-    const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test'];
+    const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test', '/push/notify'];
     if (req.method === 'POST' && authed.includes(url.pathname)) {
       const uid = await auth(env, req);
       if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
@@ -229,6 +229,11 @@ export default {
       if (url.pathname === '/push/subscribe') return (await subscribe(env, uid, body.subscription)) ? reply(env, req, { ok: true }) : reply(env, req, { error: 'bad subscription' }, 400);
       if (url.pathname === '/push/unsubscribe') { await unsubscribe(env, uid, String(body.endpoint || '')); return reply(env, req, { ok: true }); }
       if (url.pathname === '/push/schedule') return reply(env, req, await setSchedule(env, uid, body.items));
+      if (url.pathname === '/push/notify') {
+        if (!(await rateLimit(env, uid, 'notify'))) return reply(env, req, { error: 'rate' }, 429);
+        await recordUse(env, uid, 'notify');
+        return reply(env, req, await notifyOthers(env, uid, { title: str(body.title, 80), body: str(body.body, 200), go: str(body.go, 80) }));
+      }
       return reply(env, req, await sendTest(env, uid));
     }
     return reply(env, req, { error: 'not found' }, 404);

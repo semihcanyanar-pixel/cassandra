@@ -5,6 +5,7 @@ import { generateVapid, sendPush } from './webpush.js';
 const SUBJECT = 'https://semihcanyanar-pixel.github.io/cassandra/';
 const HOSTS = [/\.push\.apple\.com$/, /^fcm\.googleapis\.com$/, /\.push\.services\.mozilla\.com$/, /\.notify\.windows\.com$/];
 const MAX_ITEMS = 400;
+const GO = /^[a-zA-Z0-9:_-]{1,80}$/; // where a tap on the notification goes (see src/lib/deeplink.js)
 const LATE_MS = 20 * 60 * 1000; // a reminder later than this is stale and skipped
 
 export async function getVapid(env) {
@@ -47,7 +48,7 @@ export async function unsubscribe(env, uid, endpoint) {
 
 const cleanItems = (list) => (Array.isArray(list) ? list : []).slice(0, MAX_ITEMS).flatMap((i) => (
   i && typeof i.id === 'string' && i.id.length < 120 && Number.isFinite(i.t)
-    ? [{ id: i.id, t: Math.round(i.t), title: String(i.title || 'Cassandra').slice(0, 80), body: String(i.body || '').slice(0, 200) }] : []));
+    ? [{ id: i.id, t: Math.round(i.t), title: String(i.title || 'Cassandra').slice(0, 80), body: String(i.body || '').slice(0, 200), ...(GO.test(i.go) ? { go: i.go } : {}) }] : []));
 
 // Replaces the user's schedule. Skips the KV write when nothing changed (free-tier write limit).
 export async function setSchedule(env, uid, items) {
@@ -85,6 +86,23 @@ export async function sendTest(env, uid) {
   return { sent, devices: rec.subs.length };
 }
 
+// Notifies everyone else who has notifications on (the household partner) right now, e.g. "X added to the shopping list".
+export async function notifyOthers(env, fromUid, { title, body, go }) {
+  const idx = (await env.KV.get('push:index', 'json')) || [];
+  const vapid = await getVapid(env);
+  const payload = { title: String(title || 'Cassandra').slice(0, 80), body: String(body || '').slice(0, 200), tag: `n-${Date.now()}`, go: GO.test(go) ? go : undefined };
+  let sent = 0;
+  for (const uid of idx) {
+    if (uid === fromUid) continue;
+    const rec = await load(env, uid);
+    if (!rec.subs.length) continue;
+    const before = rec.subs.length;
+    sent += await deliver(env, vapid, rec, payload);
+    if (rec.subs.length !== before) await save(env, uid, rec);
+  }
+  return { sent };
+}
+
 // Cron: every minute. Sends due reminders (up to LATE_MS late) once each.
 export async function runDue(env, now = Date.now()) {
   const idx = (await env.KV.get('push:index', 'json')) || [];
@@ -96,7 +114,7 @@ export async function runDue(env, now = Date.now()) {
     const due = rec.items.filter((i) => i.t <= now && i.t > now - LATE_MS && !rec.sent.includes(i.id));
     if (!due.length || !rec.subs.length) continue;
     for (const i of due) {
-      const ok = await deliver(env, vapid, rec, { title: i.title, body: i.body, tag: i.id });
+      const ok = await deliver(env, vapid, rec, { title: i.title, body: i.body, tag: i.id, go: i.go });
       rec.sent.push(i.id);
       total += ok;
     }

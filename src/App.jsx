@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase.js';
 import { useSession } from './session.js';
@@ -24,6 +24,8 @@ import { Splash } from './components/Splash.jsx';
 import { usePushSchedule } from './push.js';
 import { useAutoRefresh } from './update.js';
 import { Nav } from './components/Nav.jsx';
+import { parseGo } from './lib/deeplink.js';
+import { ortakStart } from './screens/Ortak.jsx';
 import { Notice } from './components/Notice.jsx';
 
 export function App() {
@@ -56,6 +58,24 @@ function Main({ session }) {
     replace: (r) => setStack((s) => [...s.slice(0, -1), r]),
   };
   usePushSchedule({ session, data, house });
+  // Notification taps: a cold start arrives as ?go=..., an already open app gets a message from the service worker.
+  useEffect(() => {
+    const open = (go) => {
+      const t = parseGo(go);
+      if (!t) return;
+      if (t.sub) ortakStart.sub = t.sub;
+      setTab(t.tab);
+      setStack(t.route ? [t.route] : []);
+      window.scrollTo(0, 0);
+    };
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.has('go')) { open(q.get('go')); window.history.replaceState(null, '', window.location.pathname + window.location.hash); }
+    } catch { /* ignore */ }
+    const onMsg = (e) => { if (e.data?.type === 'go') open(e.data.go); };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg);
+  }, []);
   useAutoRefresh(stack.length > 0);
   const route = stack[stack.length - 1];
   const uid = me.uid;
