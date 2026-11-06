@@ -1,4 +1,3 @@
-import { TopActions } from '../components/TopActions.jsx';
 import { useState, useRef, useLayoutEffect, useEffect } from 'preact/hooks';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
@@ -205,7 +204,6 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     <main class="screen">
       <div class="topbar">
         <h1 style="font-size:40px">Notlar</h1>
-        <TopActions me={me} onSettings={onSettings} />
       </div>
 
       <Seg items={FILTERS} value={filter} onChange={setFilter} label="Kategori" />

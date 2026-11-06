@@ -1,4 +1,3 @@
-import { TopActions } from '../components/TopActions.jsx';
 import { useState } from 'preact/hooks';
 import { IconBack, IconNext, IconPlus, IconLock } from '../icons.jsx';
 import { occurrences, tagScopes, monthGrid, repeatLabel, remindsOf, sortReminds, remindsLabel } from '../lib/events.js';
@@ -30,13 +29,12 @@ export function Takvim({ me, house, data, nav, onSettings }) {
       <div class="topbar" style="align-items:flex-end">
         <div>
           <div class="title-sm muted">Takvim · {fromISO(month).getFullYear()}</div>
-          <h1 style="font-size:42px;text-transform:var(--h-transform)">{monthName(month)}</h1>
+          <h1 style="font-size:36px;text-transform:var(--h-transform)">{monthName(month)}</h1>
         </div>
         <div class="row" style="gap:6px">
           <button class="iconbtn" aria-label="Önceki ay" onClick={() => shift(-1)}><IconBack /></button>
           <button class="iconbtn" aria-label="Sonraki ay" onClick={() => shift(1)}><IconNext /></button>
           <button class="iconbtn cta" aria-label="Kayıt ekle" onClick={() => nav.go({ n: 'event', date: sel })}><IconPlus /></button>
-          <TopActions me={me} onSettings={onSettings} />
         </div>
       </div>
 
