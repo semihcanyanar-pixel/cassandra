@@ -57,3 +57,15 @@ export function useAutoRefresh(busy) {
   // A form was open when the update was found: reload as soon as the user is back on the main screen.
   useEffect(() => { if (!busy) reloadIfNeeded(); }, [busy]); // eslint-disable-line react-hooks/exhaustive-deps
 }
+
+// Forces the newest version: drops the service worker and its caches, then reloads from the network.
+export async function refreshApp() {
+  try {
+    const regs = await navigator.serviceWorker?.getRegistrations?.();
+    await Promise.all((regs || []).map((r) => r.unregister()));
+    const keys = await caches?.keys?.();
+    await Promise.all((keys || []).map((k) => caches.delete(k)));
+  } catch { /* reload anyway */ }
+  location.reload();
+}
+

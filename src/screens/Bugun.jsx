@@ -1,6 +1,7 @@
+import { TopActions } from '../components/TopActions.jsx';
 import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
-import { Card, Progress, actColor, inkKey } from '../components/ui.jsx';
+import { Card, actColor } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
 import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
@@ -86,11 +87,8 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   return (
     <main class="screen">
       <div class="topbar">
-        <div>
-          <div class="title-sm muted">Merhaba {me.name}</div>
-          <h1>{dateLabel()}</h1>
-        </div>
-        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <h1 class="topdate">{dateLabel()}</h1>
+        <TopActions me={me} onSettings={onSettings} />
       </div>
 
       {weekly && (
@@ -104,9 +102,9 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </Card>
       )}
       {note && (
-        <Card label={`GÜNÜN NOTU · ${note.slot.label.toLocaleUpperCase('tr-TR')}`}>
-          <div class="title-sm" style="font-weight:600;line-height:1.5">{note.text}</div>
-          {note.quote && <div class="sub" style="margin-top:10px;font-size:14px;line-height:1.5;font-style:italic">{note.quote}</div>}
+        <Card label="GÜNÜN NOTU" class="dnote">
+          <div class="dnote-text">{note.text}</div>
+          {note.quote && <div class="dnote-quote">{note.quote}</div>}
         </Card>
       )}
 
@@ -127,18 +125,25 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
           <button class="btn" style="margin-top:12px" onClick={() => nav.go({ n: 'activity' })}><IconPlus />Aktivite ekle</button>
         </div>
       ) : (
-        <div class="vtiles" aria-label="Aktiviteler">
+        <div class="vrings" aria-label="Aktiviteler">
           {rows.map((r) => {
             const { a, min, done } = r;
+            // The ring fills with today's minutes against the daily target; done without minutes (or no target) = full.
+            const frac = !done ? 0 : a.dailyMinutes && min ? Math.min(1, Math.max(0.06, min / a.dailyMinutes)) : 1;
+            const R = 26, C = 2 * Math.PI * R;
             return (
-              <div key={a.id} class="tile" data-c={inkKey(a.color)} style={`--c:${actColor(a.color)}`}>
-                <button type="button" class="tile-open" onClick={() => nav.go({ n: 'log', activityId: a.id })} aria-label={`${a.name}: süre ekle ya da düzenle`} />
-                <span class="tile-top">
-                  <span class="tile-name">{a.name}</span>
-                  <button type="button" class={done ? 'tile-check on' : 'tile-check'} role="checkbox" aria-checked={done} aria-label={`${a.name} bugün yapıldı`} onClick={() => toggleDone(r)}>{done && <Tick />}</button>
-                </span>
-                <span class="tile-val num">{min ? <>{min}<small> dk</small></> : done ? <span class="tile-did">Yaptım</span> : <span class="tile-did">—</span>}</span>
-                {a.dailyMinutes && min ? <><Progress pct={(min / a.dailyMinutes) * 100} color="var(--tile-bar)" /><span class="tile-sub">{min >= a.dailyMinutes ? 'hedef tamam' : `hedef ${a.dailyMinutes} dk`}</span></> : <span class="tile-sub">bu hafta {r.week}/{a.weeklyDays} gün</span>}
+              <div key={a.id} class="ring-item">
+                <button type="button" class="ring-btn" role="checkbox" aria-checked={done} aria-label={`${a.name} bugün yapıldı`} onClick={() => toggleDone(r)}>
+                  <svg width="68" height="68" viewBox="0 0 68 68" aria-hidden="true">
+                    <circle cx="34" cy="34" r={R} fill="none" stroke="var(--track)" stroke-width="8" />
+                    {frac > 0 && <circle cx="34" cy="34" r={R} fill="none" stroke={actColor(a.color)} stroke-width="8" stroke-linecap="round" stroke-dasharray={`${C * frac} ${C}`} transform="rotate(-90 34 34)" />}
+                    {done ? <path d="M25 35l6 6 12-13" fill="none" stroke="var(--text)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /> : <circle cx="34" cy="34" r="5" fill={actColor(a.color)} opacity=".45" />}
+                  </svg>
+                </button>
+                <button type="button" class="ring-meta" onClick={() => nav.go({ n: 'log', activityId: a.id })} aria-label={`${a.name}: süre ekle ya da düzenle`}>
+                  <span class="ring-n">{a.name}</span>
+                  <span class="ring-m">{min ? `${min} dk` : done ? 'Yaptım' : 'Bekliyor'}</span>
+                </button>
               </div>
             );
           })}

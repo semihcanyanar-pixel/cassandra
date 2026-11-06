@@ -204,3 +204,24 @@ button.hg-row { cursor: pointer; }
 .note.dragging { z-index: 20; box-shadow: 0 14px 30px rgba(0,0,0,.35) !important; opacity: .96; transition: none; }
 .note.dropover { outline: 3px dashed var(--ring); outline-offset: 3px; }
 .dragging-any .note-open { pointer-events: none; }
+
+/* Top right actions (theme, refresh, settings) and the compact "Günün notu" card. */
+.topacts { display: flex; gap: 6px; flex: none; margin-left: 8px; }
+.topbar > div:first-child { min-width: 0; }
+.card.dnote { padding: 10px 14px; }
+.card.dnote .label { font-size: 11px; }
+.dnote-text { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.dnote-quote { margin-top: 6px; font-size: 12.5px; line-height: 1.4; font-style: italic; color: var(--muted); }
+
+/* Bugün: one tidy line at the top (small date + the three actions). */
+.topbar:has(.topdate) { align-items: center; }
+.topdate { flex: 0 1 auto; min-width: 0; height: 44px; margin: 0 !important; padding: 0 14px; display: inline-flex; align-items: center; box-sizing: border-box; background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); font-size: 15px !important; font-weight: 700; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Bugün activity rings: a ring per activity (tap = done today), name and minutes below (tap = log form). */
+.vrings { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px 16px 2px 2px; margin-right: -16px; }
+.vrings::-webkit-scrollbar { display: none; }
+.ring-item { flex: none; width: 80px; display: flex; flex-direction: column; align-items: center; scroll-snap-align: start; }
+.ring-btn { width: 68px; height: 68px; padding: 0; background: transparent; border: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--text); }
+.ring-meta { width: 100%; min-height: 44px; padding: 2px 0; background: transparent; border: 0; color: inherit; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center; }
+.ring-n { font-size: 13px; font-weight: 700; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.ring-m { font-size: 11px; font-weight: 700; color: var(--muted); }

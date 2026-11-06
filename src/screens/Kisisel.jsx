@@ -1,3 +1,4 @@
+import { TopActions } from '../components/TopActions.jsx';
 import { useState } from 'preact/hooks';
 import { InsightCard } from './InsightCard.jsx';
 import { Card, Progress, actColor } from '../components/ui.jsx';
@@ -26,7 +27,7 @@ export function Kisisel({ me, data, nav, onSettings }) {
           <h1 style="font-size:40px">Kişisel</h1>
           <span class="badge" style="margin-top:8px"><IconLock />Sadece sen görürsün</span>
         </div>
-        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <TopActions me={me} onSettings={onSettings} />
       </div>
 
       <button class="card tap" onClick={() => nav.go({ n: 'report' })} aria-label="Bu hafta, raporu aç">

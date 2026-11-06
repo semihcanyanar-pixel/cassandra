@@ -1,3 +1,4 @@
+import { TopActions } from '../components/TopActions.jsx';
 import { useState } from 'preact/hooks';
 import { Seg } from '../components/Seg.jsx';
 import { Ilaclar } from './Ilaclar.jsx';
@@ -74,7 +75,7 @@ export function Ortak({ session, house, nav, onSettings }) {
     <main class={sub === 'ilac' || sub === 'fridge' ? 'screen' : 'screen has-addbar'}>
       <div class="topbar">
         <h1 style="font-size:40px">Takip Listesi</h1>
-        <button class={`avatar p${me.slot ?? 0}`} aria-label="Ayarlar" onClick={onSettings}>{me.initial}</button>
+        <TopActions me={me} onSettings={onSettings} />
       </div>
 
       <Seg items={[{ value: 'ev', label: 'İhtiyaçlar', badge: openShop || null }, { value: 'todo', label: 'Yapılacaklar', badge: todoOpen.length || null }, { value: 'fridge', label: 'Buzdolabı', badge: urgentCount(house.fridge, today()) || null }, { value: 'ilac', label: 'İlaçlar' }]} value={sub} onChange={setSub} label="Ortak bölüm" />
