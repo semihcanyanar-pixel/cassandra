@@ -136,7 +136,8 @@ const caretNow = (host) => {
 // apiRef.current receives the editing commands used by the toolbar.
 export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, placeholder }) {
   const host = useRef(null);
-  const emitted = useRef(null); // the blocks array we last produced / rendered: a different `value` means the note was changed from outside
+  const emitted = useRef(null); // null until the first render
+  const mine = useRef(new WeakSet()); // every blocks array this editor produced: a `value` that is not one of them was set from outside (an older one can still arrive while typing fast)
   const hist = useRef({ stack: [], i: -1, kind: '', t: 0 });
   const rendering = useRef(false);
   const composing = useRef(false);
@@ -147,32 +148,36 @@ export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, place
   const notify = () => cb.current.onHistory?.({ undo: hist.current.i > 0, redo: hist.current.i < hist.current.stack.length - 1 });
   const markEmpty = (blocks) => { if (host.current) host.current.dataset.empty = blocks.length === 1 && !blocks[0].t && blocks[0].k === 'p' ? '1' : ''; };
 
-  const record = (blocks, kind) => {
+  // meta (typing only): { tk: 'ins' | 'del', data }. Undo steps are small: a word (with the space after it), a short pause, or a switch between typing and deleting.
+  const record = (blocks, kind, meta = {}) => {
     const h = hist.current;
     const json = JSON.stringify(blocks);
     const top = h.stack[h.i];
     if (top && top.json === json) { top.caret = caretNow(host.current); return; }
     const entry = { json, blocks, caret: caretNow(host.current) };
     const now = Date.now();
-    if (kind === 'type' && h.kind === 'type' && now - h.t < 900 && h.i === h.stack.length - 1 && h.i > 0) h.stack[h.i] = entry; // one burst of typing = one undo step
-    else {
+    const space = /^\s$/.test(meta.data || '');
+    const sameStep = kind === 'type' && h.kind === 'type' && h.tk === meta.tk && now - h.t < 500 && (h.n || 0) < 25
+      && !(meta.tk === 'ins' && h.sp && meta.data && !space) && h.i === h.stack.length - 1 && h.i > 0;
+    if (sameStep) { h.stack[h.i] = entry; h.n = (h.n || 0) + 1; } else {
+      h.n = 1;
       h.stack = h.stack.slice(0, h.i + 1);
       h.stack.push(entry); h.i = h.stack.length - 1;
       if (h.stack.length > 200) { h.stack.shift(); h.i -= 1; }
     }
-    h.kind = kind; h.t = now;
+    h.kind = kind; h.t = now; h.tk = meta.tk; h.sp = space;
     notify();
   };
 
-  const commit = (kind = 'type') => {
+  const commit = (kind = 'type', meta) => {
     const el = host.current;
     if (!el || rendering.current) return;
     const p = caretNow(el);
     if (normalize(el) && p) setPos(el, p);
     const blocks = [...el.children].map(readLine);
-    emitted.current = blocks;
+    emitted.current = blocks; mine.current.add(blocks);
     markEmpty(blocks);
-    record(blocks, kind);
+    record(blocks, kind, meta);
     cb.current.onChange(blocks);
   };
 
@@ -180,7 +185,7 @@ export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, place
     rendering.current = true;
     host.current.innerHTML = blocksHtml(blocks);
     rendering.current = false;
-    emitted.current = blocks;
+    emitted.current = blocks; mine.current.add(blocks);
     markEmpty(blocks);
     if (caret) setPos(host.current, caret);
   };
@@ -188,7 +193,7 @@ export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, place
   // The note was replaced from outside (opened, draft restored or discarded): show it and start a fresh undo history.
   useEffect(() => {
     if (!host.current) return;
-    if (emitted.current === null || value !== emitted.current) {
+    if (emitted.current === null || !mine.current.has(value)) {
       applyBlocks(value, null);
       hist.current = { stack: [{ json: JSON.stringify(value), blocks: value, caret: null }], i: 0, kind: '', t: 0 };
       notify();
@@ -386,9 +391,9 @@ export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, place
       role="textbox" aria-multiline="true" aria-label="Not metni"
       style={`--ph:"${placeholder || ''}"`}
       autoCapitalize="sentences" spellcheck={true}
-      onInput={() => { if (!composing.current) commit('type'); }}
+      onInput={(e) => { if (!composing.current) commit('type', { tk: (e.inputType || '').startsWith('delete') ? 'del' : 'ins', data: e.data }); }}
       onCompositionStart={() => { composing.current = true; }}
-      onCompositionEnd={() => { composing.current = false; commit('type'); }}
+      onCompositionEnd={(e) => { composing.current = false; commit('type', { tk: 'ins', data: e.data }); }}
       onBeforeInput={onBefore}
       onKeyDown={onKey}
       onPaste={onPaste}
