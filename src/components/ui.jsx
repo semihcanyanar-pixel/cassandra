@@ -1,7 +1,15 @@
 import { IconClose } from '../icons.jsx';
 
-export const COLOR_COUNT = 7; // 0-5 theme colours, 6 = black
-export const actColor = (i) => `var(--act-${i ?? 0})`;
+export const COLOR_COUNT = 7; // 0-5 theme colours, 6 = navy
+// A colour is a palette index (0-6, follows the theme) or a custom "#rrggbb" string picked from the colour space.
+export const isHex = (c) => typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c);
+export const actColor = (c) => (isHex(c) ? c : `var(--act-${Number.isInteger(c) ? c : 0})`);
+// The value for `data-c`: 6 means "dark colour, use light text" (mozaik paints whole cards with the colour).
+export const inkKey = (c) => {
+  if (!isHex(c)) return Number.isInteger(c) ? c : 0;
+  const n = parseInt(c.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 140 ? 6 : 0;
+};
 
 // Single-choice chip group (radiogroup).
 export function Chips({ options, value, onChange, label, size }) {

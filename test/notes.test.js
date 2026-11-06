@@ -96,3 +96,16 @@ describe('Not boyut sınırları', () => {
     expect(NOTE_LIMITS.title).toBeGreaterThan(60);
   });
 });
+
+describe('Renk yardımcıları', () => {
+  it('palet indeksi ya da özel #rrggbb kabul edilir; koyu renk açık yazı ister', async () => {
+    const { actColor, isHex, inkKey } = await import('../src/components/ui.jsx');
+    expect(actColor(3)).toBe('var(--act-3)');
+    expect(actColor(undefined)).toBe('var(--act-0)');
+    expect(actColor('#8e24aa')).toBe('#8e24aa');
+    expect(isHex('red')).toBe(false);
+    expect(inkKey('#101010')).toBe(6);
+    expect(inkKey('#ffee88')).toBe(0);
+    expect(inkKey(2)).toBe(2);
+  });
+});

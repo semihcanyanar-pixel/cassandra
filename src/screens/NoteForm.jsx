@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { Page, Card, Chips, Switch, actColor } from '../components/ui.jsx';
+import { Page, actColor, inkKey } from '../components/ui.jsx';
+import { ColorPicker } from '../components/ColorPicker.jsx';
 import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel } from '../lib/notes.js';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote } from '../data.js';
-import { IconPlus } from '../icons.jsx';
+import { IconLock, IconClose } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
-
-const NOTE_COLORS = [0, 1, 2, 3, 6]; // 6 = black
 
 const Ico = ({ d }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
@@ -195,20 +194,28 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
 
   const total = noteLength(blocks);
-  const tickRead = (idx) => saveNote(ctx, base0Category, id, { blocks: toggleCheck(toBlocks(existing), idx) });
-  const base0Category = base.category;
+  const tickRead = (idx) => saveNote(ctx, base.category, id, { blocks: toggleCheck(toBlocks(existing), idx) });
+  const canSwitch = files.length === 0;
+  const toggleCategory = () => {
+    if (!canSwitch) { setError('Eki olan notun kategorisi değiştirilemez, çünkü dosyalara erişim kategoriye bağlıdır.'); return; }
+    setCategory((c) => (c === 'kisisel' ? 'aile' : 'kisisel'));
+  };
 
+  // Reading view: the whole screen is the note, in its own colour, like a sheet of paper. The title is part of the sheet.
   if (reading && existing) {
     const rb = toBlocks(existing).map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
     return (
-      <Page title={existing.title || 'Not'} onClose={nav.back} footer={<button class="btn wide" type="button" onClick={() => setReading(false)}>Düzenle</button>}>
-        <div class="note-read" data-c={existing.color ?? 0} style={`--c:var(--act-${existing.color ?? 0})`}>
-          <span class="note-tag">{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
-          <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} /></div>
-          {rb.length === 0 && <div class="sub">Bu notta yazı yok.</div>}
+      <main class="note-sheet" data-c={inkKey(existing.color)} style={`--c:${actColor(existing.color)}`}>
+        <div class="sheet-top">
+          <span class="note-tag">{base.category === 'kisisel' && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
+          <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
         </div>
-        {(existing.files || []).length > 0 && <Card label="EKLER"><Attachments files={existing.files} /></Card>}
-      </Page>
+        {existing.title && <h1 class="sheet-title">{existing.title}</h1>}
+        <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} /></div>
+        {rb.length === 0 && !existing.title && <div class="sheet-empty">Bu notta yazı yok.</div>}
+        {(existing.files || []).length > 0 && <div class="sheet-files"><Attachments files={existing.files} /></div>}
+        <div class="sheet-footer"><button class="sheet-edit" type="button" onClick={() => setReading(false)}>Düzenle</button></div>
+      </main>
     );
   }
 
@@ -216,43 +223,57 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     <form onSubmit={submit}>
       <Page title={existing ? 'Notu düzenle' : 'Yeni not'} onClose={close} footer={<button class="btn wide" type="submit" disabled={busy}>Kaydet</button>}>
         {restored && (
-          <Card>
-            <div class="title-sm">Yarım kalan not geri yüklendi</div>
-            <div class="sub" style="margin-top:4px">En son yazdıkların taslak olarak saklanmıştı.</div>
-            <button type="button" class="chip" style="margin-top:10px" onClick={() => { if (confirm('Taslak silinsin mi?')) discardDraft(); }}>Taslağı at</button>
-          </Card>
-        )}
-        <Card label="KATEGORİ">
-          <Chips options={NOTE_CATEGORIES} value={category} onChange={files.length ? () => {} : setCategory} label="Kategori" />
-          {files.length > 0 && <div class="sub" style="margin-top:8px">Eki olan notun kategorisi değiştirilemez, çünkü dosyalara erişim kategoriye bağlıdır.</div>}
-          <div class="sub" style="margin-top:8px">
-            {noteScope(category) === 'personal' ? 'Yalnızca sen görürsün, eşin göremez.' : 'Eşin de görür ve düzenleyebilir.'}
+          <div class="nf-draft">
+            <span>Yarım kalan not geri yüklendi.</span>
+            <button type="button" class="nf-link" onClick={() => { if (confirm('Taslak silinsin mi?')) discardDraft(); }}>Taslağı at</button>
           </div>
-        </Card>
-        <Card>
-          <label class="label" for="baslik" style="padding:0;margin:0">BAŞLIK</label>
-          <input id="baslik" class="big-input" value={title} maxLength={NOTE_LIMITS.title} placeholder="İsteğe bağlı" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
-        </Card>
+        )}
+        <div class="nf-box">
+          <div class="nf-bar" role="toolbar" aria-label="Not ayarları">
+            <button type="button" class="nf-cat" onClick={toggleCategory} aria-label={`Kategori: ${categoryLabel(NOTE_CATEGORIES, category)}. Değiştirmek için dokun`}>
+              {category === 'kisisel' && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, category)}
+            </button>
+            {filesEnabled && (
+              <button type="button" class={addOpen || files.length ? 'nf-ico on' : 'nf-ico'} aria-label="Resim ya da PDF ekle" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" /></svg>
+              </button>
+            )}
+            <button type="button" class={pinned ? 'nf-ico on' : 'nf-ico'} aria-pressed={pinned} aria-label="Başa sabitle" onClick={() => setPinned(!pinned)}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>
+            </button>
+            <span class="fmt-sep" aria-hidden="true" />
+            <ColorPicker value={color} onChange={setColor} label="Not rengi" />
+          </div>
+          {addOpen && filesEnabled && (
+            <div class="row nf-add">
+              <label class="chip small filebtn">Resim ekle<input class="vh" type="file" accept="image/*" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
+              <label class="chip small filebtn">PDF ekle<input class="vh" type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
+              <span class="sub">En çok 20 MB</span>
+            </div>
+          )}
+          {files.length > 0 && <div class="nf-files"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
+          {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
 
-        <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
-          {KIND_BUTTONS.map((x) => (
-            <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
-          ))}
-          <span class="fmt-sep" aria-hidden="true" />
-          {FLAG_BUTTONS.map((x) => (
-            <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}<Lbl>{x.short}</Lbl></button>
-          ))}
-          <span class="fmt-sep" aria-hidden="true" />
-          <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /><Lbl>Girinti</Lbl></button>
-          <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /><Lbl>Geri</Lbl></button>
-          <span class="fmt-sep" aria-hidden="true" />
-          <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /><Lbl>Yukarı</Lbl></button>
-          <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
-          <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
-        </div>
+          <input id="baslik" class="nf-title" value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
 
-        <Card label="NOT">
-          <div class="lines">
+          <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
+            {KIND_BUTTONS.map((x) => (
+              <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
+            ))}
+            <span class="fmt-sep" aria-hidden="true" />
+            {FLAG_BUTTONS.map((x) => (
+              <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}<Lbl>{x.short}</Lbl></button>
+            ))}
+            <span class="fmt-sep" aria-hidden="true" />
+            <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /><Lbl>Girinti</Lbl></button>
+            <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /><Lbl>Geri</Lbl></button>
+            <span class="fmt-sep" aria-hidden="true" />
+            <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /><Lbl>Yukarı</Lbl></button>
+            <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
+            <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
+          </div>
+
+          <div class="lines nf-lines">
             {blocks.map((b, i) => (
               <div class={`line k-${b.k}`} key={i} style={`margin-left:${b.l * 22}px`}>
                 {b.k === 'cb' && (
@@ -273,38 +294,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           {total > NOTE_LIMITS.total * 0.7 && (
             <div class={total > NOTE_LIMITS.total ? 'sub counter over' : 'sub counter'} aria-live="polite">{total.toLocaleString('tr-TR')} / {NOTE_LIMITS.total.toLocaleString('tr-TR')} karakter</div>
           )}
-        </Card>
-
-        {filesEnabled && (
-          <Card label="EKLER">
-            <button type="button" class={addOpen ? 'chip on' : 'chip'} style="min-width:48px" aria-label="Ek ekle" aria-expanded={addOpen} onClick={() => setAddOpen((o) => !o)}><IconPlus /></button>
-            {addOpen && <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
-              <label class="chip filebtn">Resim ekle<input class="vh" type="file" accept="image/*" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
-              <label class="chip filebtn">PDF ekle<input class="vh" type="file" accept="application/pdf" multiple disabled={busy} onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} /></label>
-            </div>}
-            {files.length > 0 && <div style="margin-top:12px"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
-            {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
-            <div class="sub" style="margin-top:8px">Dosya boyutu en çok 20 MB olmalıdır.</div>
-          </Card>
-        )}
-        <Card label="RENK">
-          <div class="swatch-row" role="radiogroup" aria-label="Not rengi" style="justify-content:flex-start">
-            {NOTE_COLORS.map((i) => (
-              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={i === 6 ? 'Siyah' : `Renk ${i + 1}`} class="swatch" style={`background:${actColor(i)}`} onClick={() => setColor(i)}>
-                {color === i && <span class="swatch-dot" />}
-              </button>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <div class="row">
-            <div class="grow">
-              <div class="label" style="margin:0;padding:0">BAŞA SABİTLE</div>
-              <div class="sub">Notlar listesinde en üstte durur</div>
-            </div>
-            <Switch checked={pinned} onChange={setPinned} label="Başa sabitle" />
-          </div>
-        </Card>
+        </div>
         {error && <div class="error" role="alert">{error}</div>}
         {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Notu sil</button>}
       </Page>

@@ -1,7 +1,8 @@
+import { actColor } from './ui.jsx';
 import { countIn, habitBucket } from '../lib/stats.js';
 
 // Done / not-done views of habits (activities and repeating tasks).
-const colorOf = (h) => (h.color == null ? 'var(--muted)' : `var(--act-${h.color})`);
+const colorOf = (h) => (h.color == null ? 'var(--muted)' : actColor(h.color));
 
 // Rows = habits, columns = the slices of the chosen period. Each circle fills up to how much of the target was done in that slice.
 export function HabitGrid({ habits, buckets, mode, today, onPick, compact }) {

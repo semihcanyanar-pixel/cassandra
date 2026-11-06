@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
-import { Card, Progress } from '../components/ui.jsx';
+import { Card, Progress, actColor, inkKey } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
 import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
@@ -114,7 +114,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         <div class="row" style="justify-content:space-between"><span class="title-sm muted">Bugün yapılan</span><span class="streak-badge">{run} gün seri</span></div>
         <div class="num" style="font-size:28px;margin:4px 0 8px">{doneCount}/{rows.length}<small style="font-size:15px;font-weight:700"> aktivite</small></div>
         <div class="seg-bar" role="img" aria-label={`${rows.length} aktiviteden ${doneCount} tanesi yapıldı`}>
-          {rows.map((r) => <i key={r.a.id} style={`flex:1 1 0;background:${r.done ? `var(--act-${r.a.color})` : 'var(--track)'}`} />)}
+          {rows.map((r) => <i key={r.a.id} style={`flex:1 1 0;background:${r.done ? actColor(r.a.color) : 'var(--track)'}`} />)}
           {rows.length === 0 && <i class="seg-rest" style="flex:1 1 0;background:var(--track)" />}
         </div>
         {total > 0 && <div class="sub" style="margin-top:8px">Kayıtlı süre: {fmtDur(total)}</div>}
@@ -131,7 +131,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
           {rows.map((r) => {
             const { a, min, done } = r;
             return (
-              <div key={a.id} class="tile" data-c={a.color} style={`--c:var(--act-${a.color})`}>
+              <div key={a.id} class="tile" data-c={inkKey(a.color)} style={`--c:${actColor(a.color)}`}>
                 <button type="button" class="tile-open" onClick={() => nav.go({ n: 'log', activityId: a.id })} aria-label={`${a.name}: süre ekle ya da düzenle`} />
                 <span class="tile-top">
                   <span class="tile-name">{a.name}</span>

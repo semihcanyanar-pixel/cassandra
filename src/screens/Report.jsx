@@ -1,5 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
-import { Page, Card } from '../components/ui.jsx';
+import { Page, Card, actColor } from '../components/ui.jsx';
 import { Picker } from '../components/Picker.jsx';
 import { Chart } from '../components/Chart.jsx';
 import { HabitChart } from '../components/HabitViews.jsx';
@@ -97,7 +97,7 @@ export function Report({ uid, data, activityId, nav }) {
             {recent.length === 0 && <div class="sub" style="padding:14px 0">Henüz kayıt yok.</div>}
             {recent.map((l) => (
               <div class="list-row" key={l.id}>
-                <span class="dot" style={`background:var(--act-${habit.color ?? 0})`} />
+                <span class="dot" style={`background:${actColor(habit.color)}`} />
                 <div class="grow"><div class="title-sm">{habit.name}</div><div class="sub">{dayMonth(l.date)}</div></div>
                 <b>{l.minutes ? fmtDur(l.minutes) : 'Yapıldı'}</b>
                 <button class="iconbtn" aria-label="Kaydı düzenle" onClick={() => nav.go({ n: 'log', logId: l.id })}><IconEdit /></button>

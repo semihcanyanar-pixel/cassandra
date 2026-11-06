@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
-import { Page, Card, Chips, Switch, COLOR_COUNT, actColor } from '../components/ui.jsx';
+import { Page, Card, Chips, Switch, COLOR_COUNT } from '../components/ui.jsx';
+import { ColorPicker } from '../components/ColorPicker.jsx';
 import { saveActivity, deleteActivity } from '../data.js';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }));
@@ -59,14 +60,7 @@ export function ActivityForm({ uid, data, id, nav }) {
           )}
         </Card>
         <Card label="RENK">
-          <div class="swatch-row" role="radiogroup" aria-label="Renk">
-            {Array.from({ length: COLOR_COUNT }, (_, i) => (
-              <button key={i} type="button" role="radio" aria-checked={color === i} aria-label={i === 6 ? 'Siyah' : `Renk ${i + 1}`}
-                class="swatch" style={`background:${actColor(i)}`} onClick={() => setColor(i)}>
-                {color === i && <span class="swatch-dot" />}
-              </button>
-            ))}
-          </div>
+          <ColorPicker value={color} onChange={setColor} />
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
         <div class="sub" style="padding:0 4px;line-height:1.45">Kişisel alanında durur, eşin görmez. Sonradan düzenleyebilirsin.</div>

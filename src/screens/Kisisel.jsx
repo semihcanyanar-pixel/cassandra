@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { InsightCard } from './InsightCard.jsx';
-import { Card, Progress } from '../components/ui.jsx';
+import { Card, Progress, actColor } from '../components/ui.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { IconLock, IconPlus, IconNext } from '../icons.jsx';
 import { HabitGrid } from '../components/HabitViews.jsx';
@@ -50,7 +50,7 @@ export function Kisisel({ me, data, nav, onSettings }) {
             {data.activities.map((a) => {
               const n = activeDays(data.logs, a.id, ws, we);
               return (
-                <button key={a.id} class="vact-row" style={`--c:var(--act-${a.color})`} onClick={() => nav.go({ n: 'activity', id: a.id })} aria-label={`${a.name}, düzenle`}>
+                <button key={a.id} class="vact-row" style={`--c:${actColor(a.color)}`} onClick={() => nav.go({ n: 'activity', id: a.id })} aria-label={`${a.name}, düzenle`}>
                   <div class="row" style="justify-content:space-between">
                     <span class="row" style="gap:10px"><span class="dot" style="background:var(--c)" /><span class="title-sm">{a.name}</span></span>
                     <span class="sub">{n}/{a.weeklyDays} gün{a.dailyMinutes ? ` · ${a.dailyMinutes} dk` : ''}</span>
