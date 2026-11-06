@@ -16,7 +16,7 @@ export function NoteLines({ blocks, onTick }) {
     );
     const style = `margin-left:${b.l * 12}px`;
     return b.k === 'cb'
-      ? <button type="button" class="nl k-cb nl-tap" key={i} style={style} role="checkbox" aria-checked={b.d} aria-label={b.t} onClick={() => onTick(b.idx)}>{inner}</button>
-      : <span class={`nl k-${b.k}`} key={i} style={style}>{inner}</span>;
+      ? <button type="button" class={`nl k-cb nl-tap ${b.a ? `ta-${b.a}` : ''}`} key={i} style={style} role="checkbox" aria-checked={b.d} aria-label={b.t} onClick={() => onTick(b.idx)}>{inner}</button>
+      : <span class={`nl k-${b.k} ${b.a ? `ta-${b.a}` : ''}`} key={i} style={style}>{inner}</span>;
   });
 }

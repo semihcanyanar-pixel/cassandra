@@ -71,6 +71,7 @@ export function splitAtCaret(el) {
 
 export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onFocus, onRef, className, label, placeholder }) {
   const el = useRef(null);
+  const fromTap = useRef(false); // the tap that focuses this line: the caret goes to the start of the line
 
   // Keep the DOM in sync with the model when it changed from outside (split, merge, load). Typing already matches, so the caret is left alone.
   useEffect(() => {
@@ -85,6 +86,20 @@ export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceS
       role="textbox" aria-multiline="false" aria-label={label} data-ph={placeholder || ''}
       autoCapitalize="sentences" spellcheck={true}
       onFocus={onFocus}
+      onPointerDown={() => { fromTap.current = document.activeElement !== el.current; }}
+      onClick={() => {
+        if (!fromTap.current) return; // already inside this line: a tap places the caret where it landed
+        fromTap.current = false;
+        const toStart = () => { if (el.current && document.activeElement === el.current) placeCaret(el.current, 0); };
+        setTimeout(toStart, 0); setTimeout(toStart, 60); // after the browser has put the caret at the tap point
+      }}
+      onKeyDown={(e) => {
+        // Backspace at the very start of a line: some phone keyboards send no input event then, so the key itself is handled
+        if (e.key === 'Backspace') {
+          const sel = window.getSelection();
+          if (sel && sel.isCollapsed && caretOffset(el.current) === 0) { e.preventDefault(); onBackspaceStart(el.current); }
+        }
+      }}
       onInput={(e) => { const v = serialize(e.currentTarget).slice(0, NOTE_LIMITS.line); onValue(v); }}
       onBeforeInput={(e) => {
         if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') { e.preventDefault(); onEnter(el.current); return; }

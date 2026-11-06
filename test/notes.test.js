@@ -127,3 +127,12 @@ describe('Kişisel not düzeni', () => {
     expect(mergeOrder(['A1', 'K1', 'A2', 'K2', 'A3'], ['A3', 'A1', 'A2'])).toEqual(['A3', 'K1', 'A1', 'K2', 'A2']);
   });
 });
+
+describe('Satır hizalama', () => {
+  it('geçerli hizalama saklanır, sola yaslı için alan eklenmez', async () => {
+    const { normBlock } = await import('../src/lib/notes.js');
+    expect(normBlock({ t: 'x', a: 'j' }).a).toBe('j');
+    expect('a' in normBlock({ t: 'x' })).toBe(false);
+    expect('a' in normBlock({ t: 'x', a: 'zzz' })).toBe(false);
+  });
+});

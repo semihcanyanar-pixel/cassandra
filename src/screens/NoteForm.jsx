@@ -29,6 +29,15 @@ const FLAG_BUTTONS = [
   { f: 'i', label: 'İtalik', short: 'İtalik', icon: <i class="fi">I</i> },
   { f: 's', label: 'Üstü çizili', short: 'Çizgi', icon: <s class="fi">S</s> },
 ];
+const AlignIc = ({ rows }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">{rows.map((r, i) => <path key={i} d={`M${r[0]} ${5 + i * 5}H${r[1]}`} />)}</svg>
+);
+const ALIGN_BUTTONS = [
+  { a: '', label: 'Sola yasla', icon: <AlignIc rows={[[4, 20], [4, 14], [4, 18], [4, 12]]} /> },
+  { a: 'c', label: 'Ortala', icon: <AlignIc rows={[[4, 20], [7, 17], [5, 19], [8, 16]]} /> },
+  { a: 'r', label: 'Sağa yasla', icon: <AlignIc rows={[[4, 20], [10, 20], [6, 20], [12, 20]]} /> },
+  { a: 'j', label: 'İki yana yasla', icon: <AlignIc rows={[[4, 20], [4, 20], [4, 20], [4, 20]]} /> },
+];
 const Lbl = ({ children }) => <span class="fl">{children}</span>;
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
@@ -83,6 +92,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
       upd(cur, { t: serialize(el) });
     } else { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; }
   };
+  const setAlign = (a) => { upd(cur, { a }); focusAfter.current = cur; };
   const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
   const move = (d) => {
     const j = cur + d;
@@ -111,8 +121,13 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     else if (r.l > 0) upd(i, { l: r.l - 1 });
     else if (i > 0) {
       const prev = blocks[i - 1];
-      setBlocks((b) => [...b.slice(0, i - 1), { ...prev, t: prev.t + r.t }, ...b.slice(i + 1)]);
-      focusAfter.current = i - 1; caretAfter.current = plainText(prev.t).length; setCur(i - 1);
+      if (!plainText(prev.t).trim()) { // a blank line above: drop it, this line keeps its own style and the caret stays at its start
+        setBlocks((b) => [...b.slice(0, i - 1), ...b.slice(i)]);
+        focusAfter.current = i - 1; caretAfter.current = 0; setCur(i - 1);
+      } else {
+        setBlocks((b) => [...b.slice(0, i - 1), { ...prev, t: prev.t + r.t }, ...b.slice(i + 1)]);
+        focusAfter.current = i - 1; caretAfter.current = plainText(prev.t).length; setCur(i - 1);
+      }
     }
   }
 
@@ -266,6 +281,10 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               <button key={x.f} type="button" class={row[x.f] ? 'fmt on' : 'fmt'} aria-pressed={Boolean(row[x.f])} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => toggleFlag(x.f)}>{x.icon}<Lbl>{x.short}</Lbl></button>
             ))}
             <span class="fmt-sep" aria-hidden="true" />
+            {ALIGN_BUTTONS.map((x) => (
+              <button key={x.a || 'l'} type="button" class={(row.a || '') === x.a ? 'fmt on' : 'fmt'} aria-pressed={(row.a || '') === x.a} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setAlign(x.a)}>{x.icon}</button>
+            ))}
+            <span class="fmt-sep" aria-hidden="true" />
             <button type="button" class="fmt" aria-label="Girinti ekle" title="Girinti ekle" disabled={row.l >= 2} onMouseDown={keep} onClick={() => indent(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /><Lbl>Girinti</Lbl></button>
             <button type="button" class="fmt" aria-label="Girintiyi azalt" title="Girintiyi azalt" disabled={row.l <= 0} onMouseDown={keep} onClick={() => indent(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /><Lbl>Geri</Lbl></button>
             <span class="fmt-sep" aria-hidden="true" />
@@ -287,7 +306,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
                 {b.k === 'ul' && <span class="mark" aria-hidden="true">•</span>}
                 {b.k === 'ol' && <span class="mark num" aria-hidden="true">{labels[i]}</span>}
                 <LineEditor key={`e${i}`} onRef={(el) => { refs.current[i] = el; }}
-                  className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
+                  className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : '', b.a ? `ta-${b.a}` : ''].join(' ')}
                   label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
                   onFocus={() => setCur(i)} onValue={(v) => { upd(i, { t: v }); setError(''); }}
                   onEnter={(el) => onEnter(el, i)} onPasteLines={(el, parts) => onPasteLines(el, i, parts)} onBackspaceStart={() => onBackspaceStart(i)} />

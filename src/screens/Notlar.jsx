@@ -38,11 +38,10 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const setCorners = (v) => { setCornersState(v); try { localStorage.setItem(CORNERS_KEY, v); } catch { /* ignore */ } };
   const [tool, setTool] = useState(null); // 'pin' | 'eye': the next tapped note is pinned / hidden (one shot)
   const [dragKey, setDragKey] = useState(null); // the card being dragged
-  const [overKey, setOverKey] = useState(null); // the card it is hovering over (drop target)
+  const [ins, setIns] = useState(null); // where the dragged card would land: { key, mark } mark = bx/ax (before/after, side by side) or by/ay (above/below)
 
   const prefs = data.notePrefs || {};
   const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs);
-  const left = notes.filter((_, i) => i % 2 === 0), right = notes.filter((_, i) => i % 2 === 1);
   const anyHidden = notes.some((n) => n.hidden);
   const flow = useRef(null);
   const drag = useRef(null);
@@ -70,22 +69,30 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     return () => document.removeEventListener('touchmove', stop);
   }, []);
 
-  // Press and hold a card (both layouts), then drag it onto another card; it takes that card's place. Pinned notes stay where they are.
+  // Press and hold a card (both layouts), then drag it: it lands before or after the card nearest to your finger (a bar shows where). Pinned notes stay where they are.
   const onDown = (e) => {
     if (tool || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const container = e.currentTarget;
     const card = e.target.closest?.('.note');
     if (!card || card.dataset.pinned === '1' || e.target.closest('.rz') || !container) return;
-    const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, over: null, others: [], timer: 0, raf: 0 };
+    const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, ins: null, others: [], timer: 0, raf: 0, row: container.getBoundingClientRect().width, side: layout === 'manual' };
     drag.current = d;
     const place = () => {
-      d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0)}px) scale(1.03)`;
-      let hit = null;
+      d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0) - 36}px) scale(1.03)`; // lifted a little above the finger so the drop bar stays visible
+      // the nearest other card (distance 0 when the finger is over it), then before / after it
+      let best = null, bd = Infinity;
       for (const el of d.others) {
         const r = el.getBoundingClientRect();
-        if (d.px >= r.left && d.px <= r.right && d.py >= r.top && d.py <= r.bottom) { hit = el.dataset.key; break; }
+        const dist = Math.hypot(Math.max(r.left - d.px, 0, d.px - r.right), Math.max(r.top - d.py, 0, d.py - r.bottom));
+        if (dist < bd) { bd = dist; best = { el, r }; }
       }
-      if (hit !== d.over) { d.over = hit; setOverKey(hit); }
+      let next = null;
+      if (best) {
+        const byY = !d.side || best.r.width > d.row * 0.7; // two columns, or a full-width card: above / below; otherwise left / right
+        const before = byY ? d.py < best.r.top + best.r.height / 2 : d.px < best.r.left + best.r.width / 2;
+        next = { key: best.el.dataset.key, mark: (before ? 'b' : 'a') + (byY ? 'y' : 'x') };
+      }
+      if ((d.ins?.key) !== (next?.key) || (d.ins?.mark) !== (next?.mark)) { d.ins = next; setIns(next); }
     };
     const loop = () => {
       if (!d.active) return;
@@ -109,12 +116,12 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
       if (!was) return;
       d.active = false;
       d.card.style.transform = '';
-      setDragKey(null); setOverKey(null);
+      setDragKey(null); setIns(null);
       blockTap.current = Date.now() + 450;
-      if (drop && d.over && d.over !== d.key) {
-        const vis = latest.current.visible.slice();
-        const from = vis.indexOf(d.key), to = vis.indexOf(d.over);
-        if (from >= 0 && to >= 0) { vis.splice(from, 1); vis.splice(to, 0, d.key); setNotePrefs(latest.current.uid, { order: mergeOrder(latest.current.full, vis) }); }
+      if (drop && d.ins) {
+        const vis = latest.current.visible.filter((k) => k !== d.key);
+        const at = vis.indexOf(d.ins.key);
+        if (at >= 0) { vis.splice(d.ins.mark[0] === 'b' ? at : at + 1, 0, d.key); setNotePrefs(latest.current.uid, { order: mergeOrder(latest.current.full, vis) }); }
       }
     };
     const up = () => finish(true);
@@ -132,7 +139,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const card = (n, manual) => {
     const key = noteKey(n);
     return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs)}
-      dragging={dragKey === key} over={overKey === key && dragKey !== key} onOpen={() => tap(n)} />;
+      dragging={dragKey === key} ins={ins?.key === key && dragKey !== key ? ins.mark : null} onOpen={() => tap(n)} />;
   };
 
   return (
@@ -166,7 +173,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
           <div class="note-flow" ref={flow} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
         ) : (
           <div class="note-cols" onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
-            {[left, right].map((col, ci) => <div class="note-col" key={ci}>{col.map((n) => card(n, false))}</div>)}
+            {notes.map((n) => card(n, false))}
           </div>
         )}
       </div>
@@ -179,7 +186,7 @@ const MIN_W = 0.28, MIN_H = 64, MAX_H = 1200;
 // Width as a fraction of the row; the gap share is subtracted so two cards of 0.5 (or 0.4 + 0.6) fill a row with a 10px gap.
 const widthCss = (w) => `calc(${(w * 100).toFixed(2)}% - ${((1 - w) * 10).toFixed(2)}px)`;
 
-function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, over }) {
+function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, ins }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
   const blocks = all.map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
@@ -219,7 +226,7 @@ function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, over }) 
   const style = `--c:${actColor(n.color)};${manual ? `width:${widthCss(size?.w ?? 0.5)};${size?.h ? `height:${size.h}px;` : ''}` : ''}`;
 
   return (
-    <div ref={root} data-key={k} data-pinned={pinned ? '1' : '0'} class={`note ${personal ? 'personal' : ''} ${manual ? 'manual' : ''} ${size ? 'sized' : ''} ${n.hidden ? 'veiled' : ''} ${dragging ? 'dragging' : ''} ${over ? 'dropover' : ''}`} data-c={inkKey(n.color)} style={style}>
+    <div ref={root} data-key={k} data-pinned={pinned ? '1' : '0'} class={`note ${personal ? 'personal' : ''} ${manual ? 'manual' : ''} ${size ? 'sized' : ''} ${n.hidden ? 'veiled' : ''} ${dragging ? 'dragging' : ''} ${ins ? `ins-${ins}` : ''}`} data-c={inkKey(n.color)} style={style}>
       <button type="button" class="note-open" onClick={onOpen} aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'} — aç`} />
       <span class="note-tag">{pinned && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-label="Sabit"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>}{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
       {n.hidden && <svg class="note-eyeoff" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Gizli"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="2.8" /><path d="M4 20L20 4" /></svg>}

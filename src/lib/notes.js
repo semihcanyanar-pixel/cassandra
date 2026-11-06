@@ -54,9 +54,11 @@ export function mergeOrder(full, visibleNew) {
 // Kinds: p paragraph, h heading, s subheading, ul bullet, ol numbered, cb round checkbox (like iPhone Notes).
 // Older notes: `blocks` with { c } (checklist flag), `items` (all checklist) or `body` (plain text) are converted on read.
 export const KINDS = ['p', 'h', 's', 'ul', 'ol', 'cb'];
+// Line alignment: '' = left, c = centre, r = right, j = justified (both edges straight).
+export const ALIGNS = ['c', 'r', 'j'];
 export const normBlock = (b) => {
   const k = KINDS.includes(b.k) ? b.k : b.c ? 'cb' : 'p';
-  return { t: b.t || '', k, d: k === 'cb' && Boolean(b.d), l: Math.min(2, Math.max(0, Number(b.l) || 0)), b: Boolean(b.b), i: Boolean(b.i), s: Boolean(b.s) };
+  return { t: b.t || '', k, d: k === 'cb' && Boolean(b.d), l: Math.min(2, Math.max(0, Number(b.l) || 0)), b: Boolean(b.b), i: Boolean(b.i), s: Boolean(b.s), ...(ALIGNS.includes(b.a) ? { a: b.a } : {}) };
 };
 export function toBlocks(note) {
   if (Array.isArray(note?.blocks)) return note.blocks.map(normBlock);
