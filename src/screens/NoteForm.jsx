@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, actColor, inkKey } from '../components/ui.jsx';
 import { ColorPicker } from '../components/ColorPicker.jsx';
-import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel, effectivePin, visibleBlocks } from '../lib/notes.js';
+import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, normBlock, toggleCheck, categoryLabel, effectivePin, visibleBlocks } from '../lib/notes.js';
 import { NoteLines } from '../components/NoteLines.jsx';
-import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
+import { NoteEditor } from '../components/NoteEditor.jsx';
 import { saveNote, deleteNote, setNotePrefs } from '../data.js';
 import { IconLock, IconClose } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
@@ -12,10 +12,6 @@ import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_
 const Ico = ({ d }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
 );
-const Tick = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-);
-
 // Line kinds the toolbar can switch to (tap again = back to plain text).
 const KIND_BUTTONS = [
   { k: 'h', label: 'Başlık', short: 'Başlık', icon: <b class="fi">H</b> },
@@ -64,169 +60,15 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const originals = useRef(new Set((existing?.files || []).map((f) => f.id)));
   const removedOriginals = useRef([]);
   const scope = noteScope(category) === 'personal' ? 'personal' : 'family';
-  const refs = useRef([]);
-  const focusAfter = useRef(null);
-  const caretAfter = useRef(null);
-  // Select all: each line is its own field, so the phone's own "Select all" only reaches one line. When a whole line is selected a button offers
-  // "Tüm notu seç"; the whole note is then marked and can be copied, cut or deleted.
-  const [allSel, setAllSel] = useState(false);
-  const [wholeLine, setWholeLine] = useState(false);
-  useEffect(() => {
-    const on = () => {
-      const sel = window.getSelection();
-      if (!sel || sel.isCollapsed || !sel.rangeCount) { setWholeLine(false); return; }
-      const node = sel.anchorNode?.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
-      const el = node?.closest?.('.line-input');
-      if (!el) { setWholeLine(false); return; }
-      const strip = (t) => t.replace(/[\u200B\n]/g, '');
-      const txt = strip(el.textContent);
-      setWholeLine(txt.length > 0 && strip(sel.toString()).length >= txt.length);
-    };
-    document.addEventListener('selectionchange', on);
-    return () => document.removeEventListener('selectionchange', on);
-  }, []);
-  const selectAllNote = () => { setAllSel(true); setWholeLine(false); window.getSelection()?.removeAllRanges(); document.activeElement?.blur?.(); }; // plain-text caret offset to restore in the line that gets focus
-
-  useEffect(() => {
-    if (focusAfter.current != null) {
-      const el = refs.current[focusAfter.current];
-      el?.focus();
-      if (el && caretAfter.current != null) placeCaret(el, caretAfter.current);
-      focusAfter.current = null; caretAfter.current = null;
-    }
-  });
-
-  const upd = (i, patch) => setBlocks((b) => b.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const ed = useRef(null); // the editor's commands (see components/NoteEditor.jsx)
+  const [hist, setHist] = useState({ undo: false, redo: false });
   const row = blocks[cur] || blocks[0];
-  const labels = numberLabels(blocks);
-
-  const setKind = (k) => { upd(cur, { k: row.k === k ? 'p' : k, d: false }); focusAfter.current = cur; };
-  // With text selected the format applies to the selection (word level); with just a cursor it applies to the whole line.
-  const toggleFlag = (f) => {
-    const el = refs.current[cur];
-    const sel = window.getSelection();
-    if (row[f]) { upd(cur, { [f]: false }); focusAfter.current = cur; return; } // a whole-line format is switched off by tapping its button again, selection or not
-    if (el && sel && sel.rangeCount && !sel.isCollapsed && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) {
-      document.execCommand({ b: 'bold', i: 'italic', s: 'strikeThrough' }[f]); // applied to the selection, shows right away
-      upd(cur, { t: serialize(el) });
-    } else { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; }
-  };
-  const noteText = () => {
-    const lab = numberLabels(blocks);
-    const body = blocks.map((b, i) => (b.k === 'ul' ? '• ' : b.k === 'ol' ? `${lab[i]} ` : b.k === 'cb' ? (b.d ? '[x] ' : '[ ] ') : '') + plainText(b.t)).join('\n');
-    return (title.trim() ? `${title.trim()}\n` : '') + body;
-  };
-  const copyAll = async () => {
-    const t = noteText();
-    try { await navigator.clipboard.writeText(t); } catch {
-      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
-    }
-  };
-  const clearAll = () => { setBlocks([normBlock({})]); setTitle(''); setAllSel(false); setCur(0); focusAfter.current = 0; };
-  // Multi-line selection: lines are picked one by one (tap, or drag along the left edge) and then copied, cut, deleted or formatted together.
-  const [selMode, setSelMode] = useState(false);
-  const [picked, setPicked] = useState(() => new Set());
-  const linesRef = useRef(null);
-  const holdTimer = useRef(0);
-  const blockClick = useRef(0);
-  const enterSel = (i) => { document.activeElement?.blur?.(); window.getSelection()?.removeAllRanges(); setAllSel(false); setWholeLine(false); setSelMode(true); setPicked(new Set(i == null ? [] : [i])); };
-  const exitSel = () => { setSelMode(false); setPicked(new Set()); };
-  const togglePick = (i) => setPicked((p) => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n; });
-  const pickedList = [...picked].filter((i) => i < blocks.length).sort((a, b) => a - b);
-  const lineText = (b, i, lab) => (b.k === 'ul' ? '• ' : b.k === 'ol' ? `${lab[i]} ` : b.k === 'cb' ? (b.d ? '[x] ' : '[ ] ') : '') + plainText(b.t);
-  const copyText = async (t) => {
-    try { await navigator.clipboard.writeText(t); } catch {
-      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
-    }
-  };
-  const pickedText = () => { const lab = numberLabels(blocks); return pickedList.map((i) => lineText(blocks[i], i, lab)).join('\n'); };
-  const removePicked = () => { setBlocks((b) => { const rest = b.filter((_, i) => !picked.has(i)); return rest.length ? rest : [normBlock({})]; }); exitSel(); };
-  const patchPicked = (fn) => setBlocks((b) => b.map((x, i) => (picked.has(i) ? { ...x, ...fn(x) } : x)));
-  const allPicked = (test) => pickedList.length > 0 && pickedList.every((i) => test(blocks[i]));
-  const kindPicked = (k) => { const off = allPicked((x) => x.k === k); patchPicked(() => ({ k: off ? 'p' : k, d: false })); };
-  const flagPicked = (fl) => { const off = allPicked((x) => x[fl]); patchPicked(() => ({ [fl]: !off })); };
-  const alignPicked = (a) => patchPicked(() => ({ a }));
-  const indentPicked = (d) => patchPicked((x) => ({ l: Math.min(2, Math.max(0, x.l + d)) }));
-  const startHold = (i) => () => { clearTimeout(holdTimer.current); holdTimer.current = setTimeout(() => { blockClick.current = Date.now() + 700; enterSel(i); }, 480); };
-  const cancelHold = () => clearTimeout(holdTimer.current);
-  // Dragging along the left edge of the lines picks (or un-picks) every line the finger passes; near the top / bottom the box scrolls.
-  const onDotDown = (i) => (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const to = !picked.has(i);
-    const apply = (idx) => setPicked((p) => { const n = new Set(p); if (to) n.add(idx); else n.delete(idx); return n; });
-    apply(i);
-    let py = e.clientY, last = i, raf = 0;
-    const lineAt = (y) => {
-      const els = linesRef.current?.querySelectorAll('.line');
-      for (let k = 0; els && k < els.length; k++) { const r = els[k].getBoundingClientRect(); if (y >= r.top && y <= r.bottom) return k; }
-      return -1;
-    };
-    const fill = (k) => { const [a, z] = k >= last ? [last, k] : [k, last]; for (let j = a; j <= z; j++) apply(j); last = k; };
-    const check = () => { const k = lineAt(py); if (k >= 0 && k !== last) fill(k); };
-    const loop = () => {
-      const box = linesRef.current;
-      if (box) { const r = box.getBoundingClientRect(); if (py < r.top + 28) box.scrollTop -= 8; else if (py > r.bottom - 28) box.scrollTop += 8; }
-      check(); raf = requestAnimationFrame(loop);
-    };
-    const move = (ev) => { py = ev.clientY; check(); };
-    const up = () => { cancelAnimationFrame(raf); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-    raf = requestAnimationFrame(loop);
-  };
-  const setAlign = (a) => { upd(cur, { a }); focusAfter.current = cur; };
-  const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
-  const move = (d) => {
-    const j = cur + d;
-    if (j < 0 || j >= blocks.length) return;
-    setBlocks((b) => { const c = b.slice(); [c[cur], c[j]] = [c[j], c[cur]]; return c; });
-    setCur(j); focusAfter.current = j;
-  };
-  const removeLine = () => {
-    if (blocks.length === 1) { upd(0, { t: '', k: 'p', d: false, b: false, i: false, s: false, l: 0 }); focusAfter.current = 0; return; }
-    setBlocks((b) => b.filter((_, j) => j !== cur));
-    const n = Math.max(0, cur - 1); setCur(n); focusAfter.current = n;
-  };
-
-  function onEnter(el, i) {
-    const r = blocks[i];
-    if (['ul', 'ol', 'cb'].includes(r.k) && !r.t.trim()) { upd(i, { k: 'p', d: false, l: 0 }); return; } // Enter on an empty list line ends the list
-    const [head, tail] = splitAtCaret(el) || [r.t, ''];
-    const keep = ['ul', 'ol', 'cb'].includes(r.k); // lists continue; headings/text start a plain line
-    const next = normBlock({ t: tail, k: keep ? r.k : 'p', l: r.l });
-    setBlocks((b) => [...b.slice(0, i), { ...r, t: head }, next, ...b.slice(i + 1)]);
-    focusAfter.current = i + 1; caretAfter.current = 0; setCur(i + 1);
-  }
-  function onBackspaceStart(i) {
-    const r = blocks[i];
-    if (r.k !== 'p') upd(i, { k: 'p', d: false }); // first Backspace removes the line style
-    else if (r.l > 0) upd(i, { l: r.l - 1 });
-    else if (i > 0) {
-      const prev = blocks[i - 1];
-      if (!plainText(prev.t).trim()) { // a blank line above: drop it, this line keeps its own style and the caret stays at its start
-        setBlocks((b) => [...b.slice(0, i - 1), ...b.slice(i)]);
-        focusAfter.current = i - 1; caretAfter.current = 0; setCur(i - 1);
-      } else {
-        setBlocks((b) => [...b.slice(0, i - 1), { ...prev, t: prev.t + r.t }, ...b.slice(i + 1)]);
-        focusAfter.current = i - 1; caretAfter.current = plainText(prev.t).length; setCur(i - 1);
-      }
-    }
-  }
-
-  // Several lines pasted at once: the current line is split at the caret and the pasted lines go in between.
-  function onPasteLines(el, i, parts) {
-    const r = blocks[i];
-    const [head, tail] = splitAtCaret(el) || [r.t, ''];
-    const listKind = ['ul', 'ol', 'cb'].includes(r.k) ? r.k : 'p';
-    const room = Math.max(0, NOTE_LIMITS.lines - blocks.length);
-    const mid = parts.slice(1, -1).slice(0, room).map((t) => normBlock({ t: t.slice(0, NOTE_LIMITS.line), k: listKind, l: r.l }));
-    const last = normBlock({ t: (parts[parts.length - 1] + tail).slice(0, NOTE_LIMITS.line), k: listKind, l: r.l });
-    const first = { ...r, t: (head + parts[0]).slice(0, NOTE_LIMITS.line) };
-    setBlocks((b) => [...b.slice(0, i), first, ...mid, last, ...b.slice(i + 1)]);
-    const at = i + mid.length + 1;
-    focusAfter.current = at; caretAfter.current = plainText(parts[parts.length - 1]).length; setCur(at); setError('');
-  }
+  const setKind = (k) => ed.current?.setKind(k);
+  const toggleFlag = (f) => ed.current?.toggleFlag(f);
+  const setAlign = (a) => ed.current?.setAlign(a);
+  const indent = (d) => ed.current?.indent(d);
+  const move = (d) => ed.current?.move(d);
+  const removeLine = () => ed.current?.removeLines();
 
   async function addFiles(list) {
     setBusy(true); setError('');
@@ -343,6 +185,13 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>
             </button>
             <span class="fmt-sep" aria-hidden="true" />
+            <button type="button" class="nf-ico" disabled={!hist.undo} aria-label="Geri al" title="Geri al" onMouseDown={keep} onClick={() => ed.current?.undo()}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
+            </button>
+            <button type="button" class="nf-ico" disabled={!hist.redo} aria-label="İleri al" title="İleri al" onMouseDown={keep} onClick={() => ed.current?.redo()}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></svg>
+            </button>
+            <span class="fmt-sep" aria-hidden="true" />
             <ColorPicker value={color} onChange={setColor} label="Not rengi" />
           </div>
           {addOpen && filesEnabled && (
@@ -355,34 +204,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           {files.length > 0 && <div class="nf-files"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
           {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
 
-          {selMode && (
-            <div class="nf-selrow" role="toolbar" aria-label="Seçili satırlar">
-              <button type="button" class="nf-selbtn strong" onClick={exitSel}>Bitti</button>
-              <span class="nf-selinfo">{pickedList.length} satır</span>
-              <button type="button" class="nf-selbtn" onClick={() => setPicked(new Set(blocks.map((_, i) => i)))}>Hepsi</button>
-              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={async () => { await copyText(pickedText()); exitSel(); }}>Kopyala</button>
-              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={async () => { await copyText(pickedText()); removePicked(); }}>Kes</button>
-              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={() => { if (confirm(`${pickedList.length} satır silinsin mi?`)) removePicked(); }}>Sil</button>
-              <span class="fmt-sep" aria-hidden="true" />
-              {KIND_BUTTONS.map((x) => (
-                <button key={x.k} type="button" class={allPicked((b) => b.k === x.k) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => kindPicked(x.k)}>{x.icon}</button>
-              ))}
-              <span class="fmt-sep" aria-hidden="true" />
-              {FLAG_BUTTONS.map((x) => (
-                <button key={x.f} type="button" class={allPicked((b) => b[x.f]) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => flagPicked(x.f)}>{x.icon}</button>
-              ))}
-              <span class="fmt-sep" aria-hidden="true" />
-              {ALIGN_BUTTONS.map((x) => (
-                <button key={x.a || 'l'} type="button" class={allPicked((b) => (b.a || '') === x.a) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => alignPicked(x.a)}>{x.icon}</button>
-              ))}
-              <span class="fmt-sep" aria-hidden="true" />
-              <button type="button" class="fmt" disabled={!pickedList.length} aria-label="Girinti ekle" title="Girinti ekle" onClick={() => indentPicked(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /></button>
-              <button type="button" class="fmt" disabled={!pickedList.length} aria-label="Girintiyi azalt" title="Girintiyi azalt" onClick={() => indentPicked(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /></button>
-            </div>
-          )}
-          {!selMode && <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
-            <button type="button" class="fmt" aria-label="Birden çok satır seç" title="Birden çok satır seç" onMouseDown={keep} onClick={() => enterSel(cur)}><Ico d="M4 6l2 2 3-3M4 14l2 2 3-3M12 7h8M12 15h8" /><Lbl>Satır seç</Lbl></button>
-            <span class="fmt-sep" aria-hidden="true" />
+          <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
             {KIND_BUTTONS.map((x) => (
               <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
             ))}
@@ -401,40 +223,12 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
             <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /><Lbl>Yukarı</Lbl></button>
             <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
             <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
-          </div>}
+          </div>
 
-          <input id="baslik" class={allSel ? 'nf-title allsel' : 'nf-title'} value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
+          <input id="baslik" class="nf-title" value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
 
-          {wholeLine && !allSel && !selMode && (
-            <div class="nf-selbar"><button type="button" class="nf-selbtn" onMouseDown={keep} onClick={selectAllNote}>Tüm notu seç</button></div>
-          )}
-          {allSel && (
-            <div class="nf-selbar on" role="group" aria-label="Tüm not seçili">
-              <span class="nf-selinfo">Tüm not seçili</span>
-              <button type="button" class="nf-selbtn" onClick={async () => { await copyAll(); setAllSel(false); }}>Kopyala</button>
-              <button type="button" class="nf-selbtn" onClick={async () => { await copyAll(); clearAll(); }}>Kes</button>
-              <button type="button" class="nf-selbtn" onClick={() => { if (confirm('Tüm not metni silinsin mi?')) clearAll(); }}>Sil</button>
-              <button type="button" class="nf-selbtn" onClick={() => setAllSel(false)}>Vazgeç</button>
-            </div>
-          )}
-          <div ref={linesRef} class={`lines nf-lines${allSel ? ' allsel' : ''}${selMode ? ' selmode' : ''}`}>
-            {blocks.map((b, i) => (
-              <div class={`line k-${b.k}${selMode && picked.has(i) ? ' picked' : ''}`} key={i} style={`margin-left:${b.l * 22}px`} onClick={selMode ? () => togglePick(i) : undefined}>
-                {selMode && <button type="button" class={picked.has(i) ? 'sel-dot on' : 'sel-dot'} role="checkbox" aria-checked={picked.has(i)} aria-label={`Satır ${i + 1} seç`} onPointerDown={onDotDown(i)} onClick={(e) => { e.stopPropagation(); if (e.detail === 0) togglePick(i); }} />}
-                {b.k === 'cb' && (
-                  <button type="button" class={b.d ? 'circ on' : 'circ'} role="checkbox" aria-checked={b.d} aria-label="Tamamlandı" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold} onClick={() => { if (selMode || Date.now() < blockClick.current) return; upd(i, { d: !b.d }); }}>
-                    {b.d && <Tick />}
-                  </button>
-                )}
-                {b.k === 'ul' && <span class="mark" aria-hidden="true" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold}>•</span>}
-                {b.k === 'ol' && <span class="mark num" aria-hidden="true" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold}>{labels[i]}</span>}
-                <LineEditor key={`e${i}`} onRef={(el) => { refs.current[i] = el; }}
-                  className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : '', b.a ? `ta-${b.a}` : ''].join(' ')}
-                  label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
-                  onFocus={() => { setCur(i); setAllSel(false); }} onSelectAll={selectAllNote} readOnly={selMode} onValue={(v) => { upd(i, { t: v }); setError(''); }}
-                  onEnter={(el) => onEnter(el, i)} onPasteLines={(el, parts) => onPasteLines(el, i, parts)} onBackspaceStart={() => onBackspaceStart(i)} />
-              </div>
-            ))}
+          <div class="nf-ed">
+            <NoteEditor value={blocks} onChange={(b) => { setBlocks(b); setError(''); }} onActive={setCur} onHistory={setHist} apiRef={ed} placeholder="Notunu yaz…" />
           </div>
           {total > NOTE_LIMITS.total * 0.7 && (
             <div class={total > NOTE_LIMITS.total ? 'sub counter over' : 'sub counter'} aria-live="polite">{total.toLocaleString('tr-TR')} / {NOTE_LIMITS.total.toLocaleString('tr-TR')} karakter</div>
