@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, actColor, inkKey } from '../components/ui.jsx';
 import { ColorPicker } from '../components/ColorPicker.jsx';
-import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel } from '../lib/notes.js';
+import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel, effectivePin } from '../lib/notes.js';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
-import { saveNote, deleteNote } from '../data.js';
+import { saveNote, deleteNote, setNotePrefs } from '../data.js';
 import { IconLock, IconClose } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
@@ -38,7 +38,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const draft = useRef(undefined);
   if (draft.current === undefined) { try { draft.current = JSON.parse(localStorage.getItem(dkey) || 'null'); } catch { draft.current = null; } }
   const d0 = draft.current;
-  const base = { title: existing?.title || '', color: existing?.color ?? 0, pinned: Boolean(existing?.pinned), blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
+  const base = { title: existing?.title || '', color: existing?.color ?? 0, pinned: existing ? effectivePin({ ...existing, category: normalizeCategory(initialCategory) }, data.notePrefs) : false, blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
   const [restored, setRestored] = useState(Boolean(d0));
   // An existing note opens in a read-only view first (a restored draft goes straight to editing).
   const [reading, setReading] = useState(Boolean(existing) && !d0);
@@ -184,9 +184,12 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     const moved = Boolean(existing) && category !== base.category; // the category was changed: the note moves between personal and shared
     if (moved && !confirm(category === 'kisisel' ? 'Bu not kişisel olacak, eşin artık göremeyecek. Devam edilsin mi?' : 'Bu not aileye taşınacak, eşin de görecek ve düzenleyebilecek. Devam edilsin mi?')) return;
     clearDraft();
-    const payload = { title: title.trim(), color, pinned, blocks: clean, body: '', items: null, files };
-    if (moved) { saveNote(ctx, category, null, payload); deleteNote(ctx, base.category, id); } // new note in the other place, then remove the old one
-    else saveNote(ctx, category, id, payload);
+    const payload = { title: title.trim(), color, blocks: clean, body: '', items: null, files };
+    const written = moved ? saveNote(ctx, category, null, payload) : saveNote(ctx, category, id, payload);
+    if (moved) deleteNote(ctx, base.category, id); // new note in the other place, then remove the old one
+    // The pin is part of MY layout (users/{uid}/prefs/notes), not of the note, so the partner's list is not affected.
+    if (!existing || moved) { if (pinned) written.then((r) => r?.id && setNotePrefs(ctx.uid, { pins: { [`${category}_${r.id}`]: true } })); }
+    else if (pinned !== base.pinned) setNotePrefs(ctx.uid, { pins: { [`${category}_${id}`]: pinned } });
     removedOriginals.current.forEach(deleteFile);
     nav.back();
   }
@@ -254,8 +257,6 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           {files.length > 0 && <div class="nf-files"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
           {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
 
-          <input id="baslik" class="nf-title" value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
-
           <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
             {KIND_BUTTONS.map((x) => (
               <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
@@ -272,6 +273,8 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
             <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
             <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
           </div>
+
+          <input id="baslik" class="nf-title" value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
 
           <div class="lines nf-lines">
             {blocks.map((b, i) => (

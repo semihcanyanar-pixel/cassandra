@@ -109,3 +109,21 @@ describe('Renk yardımcıları', () => {
     expect(inkKey(2)).toBe(2);
   });
 });
+
+describe('Kişisel not düzeni', () => {
+  const mk = (id, category = 'aile', extra = {}) => ({ id, category, ...extra });
+  it('önce sabitliler, sonra benim sıram; yerleştirilmemiş yeni notlar başta', async () => {
+    const { arrangeNotes, noteKey, effectivePin } = await import('../src/lib/notes.js');
+    const notes = [mk('new'), mk('a'), mk('b'), mk('c')];
+    const prefs = { order: ['aile_c', 'aile_a', 'aile_b'], pins: { aile_b: true } };
+    expect(arrangeNotes(notes, prefs).map((n) => n.id)).toEqual(['b', 'new', 'c', 'a']);
+    expect(noteKey(mk('x', 'kisisel'))).toBe('kisisel_x');
+    expect(effectivePin(mk('p', 'aile', { pinned: true }), {})).toBe(true); // older shared pin is the fallback
+    expect(effectivePin(mk('p', 'aile', { pinned: true }), { pins: { aile_p: false } })).toBe(false); // my own choice wins
+  });
+  it('süzülmüş görünümde sürükleme, diğer notların yerini bozmaz', async () => {
+    const { mergeOrder } = await import('../src/lib/notes.js');
+    // full: A1 K1 A2 K2 A3 ; in the "aile" view A3 is dragged to the front
+    expect(mergeOrder(['A1', 'K1', 'A2', 'K2', 'A3'], ['A3', 'A1', 'A2'])).toEqual(['A3', 'K1', 'A1', 'K2', 'A2']);
+  });
+});

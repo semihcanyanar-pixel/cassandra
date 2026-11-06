@@ -3,8 +3,8 @@ import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { actColor, inkKey } from '../components/ui.jsx';
 import { IconLock, IconPlus } from '../icons.jsx';
-import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, toggleCheck } from '../lib/notes.js';
-import { saveNote, saveNoteSize, patchNote } from '../data.js';
+import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes, mergeOrder } from '../lib/notes.js';
+import { saveNote, patchNote, setNotePrefs } from '../data.js';
 
 const FILTERS = [{ value: 'all', label: 'Hepsi' }, ...NOTE_CATEGORIES];
 const LAYOUT_KEY = 'cassandra.notes.layout';
@@ -27,24 +27,112 @@ const EyeIcon = ({ off }) => <Ic><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 
 const CORNERS_KEY = 'cassandra.notes.corners';
 const readCorners = () => { try { return localStorage.getItem(CORNERS_KEY) === 'square' ? 'square' : 'round'; } catch { return 'round'; } };
 const TOOL_HINT = { pin: 'Sabitlemek ya da sabitlemeyi kaldırmak için bir nota dokun.', eye: 'Gizlemek ya da göstermek için bir nota dokun.' };
+const HOLD_MS = 380; // press and hold a card this long (manual layout) to pick it up
 
 export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const [filter, setFilter] = useState('all');
-  const [layout, setLayoutState] = useState(readLayout); // 'auto': two columns, long notes fade out | 'manual': windows you resize yourself
+  const [layout, setLayoutState] = useState(readLayout); // 'auto': two columns, long notes fade out | 'manual': windows you resize and arrange yourself
   const setLayout = (v) => { setLayoutState(v); try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* ignore */ } };
   const [corners, setCornersState] = useState(readCorners); // 'round' | 'square' (post-it)
   const setCorners = (v) => { setCornersState(v); try { localStorage.setItem(CORNERS_KEY, v); } catch { /* ignore */ } };
   const [tool, setTool] = useState(null); // 'pin' | 'eye': the next tapped note is pinned / hidden (one shot)
-  const notes = filterNotes(house.notes, data.notes, filter);
+  const [dragKey, setDragKey] = useState(null); // the card being dragged
+  const [overKey, setOverKey] = useState(null); // the card it is hovering over (drop target)
+
+  const prefs = data.notePrefs || {};
+  const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs);
   const left = notes.filter((_, i) => i % 2 === 0), right = notes.filter((_, i) => i % 2 === 1);
   const anyHidden = notes.some((n) => n.hidden);
+  const flow = useRef(null);
+  const drag = useRef(null);
+  const blockTap = useRef(0);
+  // Latest values for the drag handlers (they live longer than one render).
+  const latest = useRef({});
+  latest.current = {
+    uid: ctx.uid,
+    visible: notes.map(noteKey),
+    full: arrangeNotes(filterNotes(house.notes, data.notes, 'all'), prefs).map(noteKey),
+  };
+
   const tap = (n) => {
-    if (tool === 'pin') patchNote(ctx, n.category, n.id, { pinned: !n.pinned });
+    if (Date.now() < blockTap.current) return; // the tap that ends a drag must not open the note
+    if (tool === 'pin') setNotePrefs(ctx.uid, { pins: { [noteKey(n)]: !effectivePin(n, prefs) } });
     else if (tool === 'eye') patchNote(ctx, n.category, n.id, { hidden: !n.hidden });
     else { nav.go({ n: 'note', id: n.id, category: n.category }); return; }
     setTool(null);
   };
-  const card = (n, manual) => <NoteCard key={`${n.category}-${n.id}`} n={n} ctx={ctx} manual={manual} onOpen={() => tap(n)} />;
+
+  // iOS: once a card is picked up, the page must not scroll under the finger.
+  useEffect(() => {
+    const stop = (e) => { if (drag.current?.active && e.cancelable) e.preventDefault(); };
+    document.addEventListener('touchmove', stop, { passive: false });
+    return () => document.removeEventListener('touchmove', stop);
+  }, []);
+
+  // Press and hold a card (both layouts), then drag it onto another card; it takes that card's place. Pinned notes stay where they are.
+  const onDown = (e) => {
+    if (tool || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const container = e.currentTarget;
+    const card = e.target.closest?.('.note');
+    if (!card || card.dataset.pinned === '1' || e.target.closest('.rz') || !container) return;
+    const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, over: null, others: [], timer: 0, raf: 0 };
+    drag.current = d;
+    const place = () => {
+      d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0)}px) scale(1.03)`;
+      let hit = null;
+      for (const el of d.others) {
+        const r = el.getBoundingClientRect();
+        if (d.px >= r.left && d.px <= r.right && d.py >= r.top && d.py <= r.bottom) { hit = el.dataset.key; break; }
+      }
+      if (hit !== d.over) { d.over = hit; setOverKey(hit); }
+    };
+    const loop = () => {
+      if (!d.active) return;
+      if (d.py < 90) window.scrollBy(0, -12); else if (d.py > window.innerHeight - 90) window.scrollBy(0, 12); // edge auto-scroll
+      place();
+      d.raf = requestAnimationFrame(loop);
+    };
+    const end = () => {
+      clearTimeout(d.timer); cancelAnimationFrame(d.raf);
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel);
+      if (drag.current === d) drag.current = null;
+    };
+    const move = (ev) => {
+      d.px = ev.clientX; d.py = ev.clientY;
+      if (!d.active && Math.hypot(d.px - d.x0, d.py - d.y0) > 8) end(); // moved before the hold finished: it is a scroll, not a drag
+      else if (d.active) place();
+    };
+    const finish = (drop) => {
+      const was = d.active;
+      end();
+      if (!was) return;
+      d.active = false;
+      d.card.style.transform = '';
+      setDragKey(null); setOverKey(null);
+      blockTap.current = Date.now() + 450;
+      if (drop && d.over && d.over !== d.key) {
+        const vis = latest.current.visible.slice();
+        const from = vis.indexOf(d.key), to = vis.indexOf(d.over);
+        if (from >= 0 && to >= 0) { vis.splice(from, 1); vis.splice(to, 0, d.key); setNotePrefs(latest.current.uid, { order: mergeOrder(latest.current.full, vis) }); }
+      }
+    };
+    const up = () => finish(true);
+    const cancel = () => finish(false);
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', cancel);
+    d.timer = setTimeout(() => {
+      d.active = true;
+      d.others = [...container.querySelectorAll('.note:not([data-pinned="1"])')].filter((el) => el !== card);
+      setDragKey(d.key);
+      navigator.vibrate?.(12);
+      d.raf = requestAnimationFrame(loop);
+    }, HOLD_MS);
+  };
+
+  const card = (n, manual) => {
+    const key = noteKey(n);
+    return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs)}
+      dragging={dragKey === key} over={overKey === key && dragKey !== key} onOpen={() => tap(n)} />;
+  };
 
   return (
     <main class="screen">
@@ -57,7 +145,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
       <div class="nbar" role="toolbar" aria-label="Not araçları">
         <button type="button" class={layout === 'manual' ? 'nb on' : 'nb'} aria-pressed={layout === 'manual'}
-          aria-label={layout === 'manual' ? 'Notlar elle boyutlandırılıyor, otomatik düzene geç' : 'Notlar otomatik, elle boyutlandırmaya geç'}
+          aria-label={layout === 'manual' ? 'Notlar elle düzenleniyor, otomatik düzene geç' : 'Notlar otomatik, elle düzenlemeye geç'}
           onClick={() => setLayout(layout === 'manual' ? 'auto' : 'manual')}>{layout === 'manual' ? <ResizeIcon /> : <AutoIcon />}</button>
         <button type="button" class={corners === 'square' ? 'nb on' : 'nb'} aria-pressed={corners === 'square'}
           aria-label={corners === 'square' ? 'Post-it köşeli, oval köşeye geç' : 'Oval köşeli, post-it köşeliye geç'}
@@ -72,11 +160,11 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
       {notes.length === 0 && <div class="card empty"><div class="title-sm">Not yok</div><div class="sub">İlk notunu ekle.</div></div>}
 
-      <div class={`${corners === 'square' ? 'notes-square' : ''} ${tool ? 'tooling' : ''}`}>
+      <div class={`${corners === 'square' ? 'notes-square' : ''} ${tool ? 'tooling' : ''} ${dragKey ? 'dragging-any' : ''}`}>
         {layout === 'manual' ? (
-          <div class="note-flow">{notes.map((n) => card(n, true))}</div>
+          <div class="note-flow" ref={flow} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
         ) : (
-          <div class="note-cols">
+          <div class="note-cols" onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
             {[left, right].map((col, ci) => <div class="note-col" key={ci}>{col.map((n) => card(n, false))}</div>)}
           </div>
         )}
@@ -90,7 +178,7 @@ const MIN_W = 0.28, MIN_H = 64, MAX_H = 1200;
 // Width as a fraction of the row; the gap share is subtracted so two cards of 0.5 (or 0.4 + 0.6) fill a row with a 10px gap.
 const widthCss = (w) => `calc(${(w * 100).toFixed(2)}% - ${((1 - w) * 10).toFixed(2)}px)`;
 
-function NoteCard({ n, ctx, onOpen, manual }) {
+function NoteCard({ n, k, ctx, onOpen, manual, pinned, size0, dragging, over }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
   const blocks = all.map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
@@ -102,11 +190,11 @@ function NoteCard({ n, ctx, onOpen, manual }) {
   useLayoutEffect(() => { const el = box.current; if (el) setClipped(el.clientHeight >= 170 && el.scrollHeight > el.clientHeight + 1); }); // clipped only when the height cap was reached
   const more = !manual && (clipped || blocks.length > shown.length);
 
-  // Manual layout: size = { w: fraction of the row width, h: px }. While dragging, the element is resized directly (no re-render).
+  // Manual layout: size = { w: fraction of the row width, h: px }, kept in MY layout (not in the note). While dragging an edge the element is resized directly.
   const root = useRef(null);
   const [local, setLocal] = useState(null);
-  useEffect(() => { setLocal(null); }, [n.size?.w, n.size?.h]);
-  const size = manual ? (local || n.size || null) : null;
+  useEffect(() => { setLocal(null); }, [size0?.w, size0?.h]);
+  const size = manual ? (local || size0 || null) : null;
   const drag = useRef(null);
   const onDown = (mode) => (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -124,15 +212,15 @@ function NoteCard({ n, ctx, onOpen, manual }) {
   };
   const onUp = () => {
     const d = drag.current; drag.current = null;
-    if (d?.out) { setLocal(d.out); saveNoteSize(ctx, n.category, n.id, d.out); }
+    if (d?.out) { setLocal(d.out); setNotePrefs(ctx.uid, { sizes: { [k]: d.out } }); }
   };
   const grip = (mode) => ({ onPointerDown: onDown(mode), onPointerMove: onMove, onPointerUp: onUp, onPointerCancel: onUp });
   const style = `--c:${actColor(n.color)};${manual ? `width:${widthCss(size?.w ?? 0.5)};${size?.h ? `height:${size.h}px;` : ''}` : ''}`;
 
   return (
-    <div ref={root} class={`note ${personal ? 'personal' : ''} ${manual ? 'manual' : ''} ${size ? 'sized' : ''} ${n.hidden ? 'veiled' : ''}`} data-c={inkKey(n.color)} style={style}>
+    <div ref={root} data-key={k} data-pinned={pinned ? '1' : '0'} class={`note ${personal ? 'personal' : ''} ${manual ? 'manual' : ''} ${size ? 'sized' : ''} ${n.hidden ? 'veiled' : ''} ${dragging ? 'dragging' : ''} ${over ? 'dropover' : ''}`} data-c={inkKey(n.color)} style={style}>
       <button type="button" class="note-open" onClick={onOpen} aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'} — aç`} />
-      <span class="note-tag">{n.pinned && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-label="Sabit"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>}{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
+      <span class="note-tag">{pinned && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-label="Sabit"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></svg>}{personal && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, n.category).toUpperCase()}</span>
       {n.hidden && <svg class="note-eyeoff" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Gizli"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="2.8" /><path d="M4 20L20 4" /></svg>}
       {n.title && <span class="note-title">{n.title}</span>}
       {n.files?.length > 0 && (

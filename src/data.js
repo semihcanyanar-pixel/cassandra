@@ -19,6 +19,17 @@ function useUserCollection(uid, name) {
   return items;
 }
 
+// One document (users/{uid}/{coll}/{id}); {} when it does not exist yet.
+function useUserDoc(uid, coll, id) {
+  const [v, setV] = useState(null);
+  useEffect(() => onSnapshot(
+    doc(db, 'users', uid, coll, id),
+    (snap) => setV(snap.exists() ? snap.data() : {}),
+    (err) => { console.error(coll, err); setV({}); },
+  ), [uid, coll, id]);
+  return v;
+}
+
 const updated = (x) => x.updatedAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
 const created = (x) => x.createdAt?.toMillis?.() ?? Number.MAX_SAFE_INTEGER;
 
@@ -59,9 +70,11 @@ export function useUserData(uid) {
   const notes = useUserCollection(uid, 'notes');
   const events = useUserCollection(uid, 'events');
   const insights = useUserCollection(uid, 'insights');
-  const ready = activities && logs && tasks && goals && notes && events && insights;
+  const notePrefs = useUserDoc(uid, 'prefs', 'notes'); // my own note layout: pins, sizes, order (never shared with the partner)
+  const ready = activities && logs && tasks && goals && notes && events && insights && notePrefs;
   return {
     ready: Boolean(ready),
+    notePrefs: notePrefs || {},
     activities: (activities || []).slice().sort((a, b) => created(a) - created(b)),
     logs: logs || [],
     tasks: (tasks || []).slice().sort((a, b) => created(a) - created(b)),
@@ -73,7 +86,8 @@ export function useUserData(uid) {
 }
 
 // Writes are fire-and-forget: with offline persistence they resolve only after server ack.
-const fire = (thunk) => { if (!DEMO) thunk().catch((e) => console.error(e)); };
+// Returns a promise (resolving to the write's result, e.g. the new document reference; undefined on failure).
+const fire = (thunk) => (DEMO ? Promise.resolve() : thunk().catch((e) => { console.error(e); }));
 
 export const saveActivity = (uid, id, data) => fire(() => id
   ? updateDoc(ref(uid, 'activities', id), data)
@@ -223,7 +237,8 @@ export function saveNote({ uid, hid }, category, id, data) {
 }
 // Window size of a note card (Notlar, manual layout): saved without touching updatedAt, so the note keeps its place in the list.
 export const patchNote = ({ uid, hid }, category, id, patch) => fire(() => updateDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id), patch));
-export const saveNoteSize = (ctx, category, id, size) => patchNote(ctx, category, id, { size });
+// My own note layout (users/{uid}/prefs/notes): { pins: {key: bool}, sizes: {key: {w, h}}, order: [key] }. Merged, so partial patches are fine.
+export const setNotePrefs = (uid, patch) => fire(() => setDoc(doc(db, 'users', uid, 'prefs', 'notes'), patch, { merge: true }));
 export const deleteNote =({ uid, hid }, category, id) => fire(() => deleteDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id)));
 
 // Events: scope 'aile' -> households/{hid}/events, 'kisisel' -> users/{uid}/events (chosen only by the explicit scope).
