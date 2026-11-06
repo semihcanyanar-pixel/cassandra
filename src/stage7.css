@@ -251,3 +251,10 @@ button.hg-row { cursor: pointer; }
 .nf-selinfo { font-size: 13px; font-weight: 800; margin-right: 4px; }
 .nf-selbtn { min-height: 44px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 800; background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); }
 .nf-lines.allsel .line-input, .nf-title.allsel { background: rgba(47,75,255,.28); border-radius: 4px; }
+
+/* Note editor lines: no extra space between lines (an Enter looks like the wrapped part of a long line); headings get a little air above. */
+.nf-lines .line-input { padding: 0; }
+.nf-lines .mark { padding-top: 0; }
+.nf-lines .circ { margin-top: -3px; margin-bottom: -3px; }
+.nf-lines .line.k-h { margin-top: 10px; } .nf-lines .line.k-s { margin-top: 6px; }
+.nf-lines .line:first-child { margin-top: 0; }

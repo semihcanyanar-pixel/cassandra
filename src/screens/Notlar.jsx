@@ -4,7 +4,7 @@ import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { actColor, inkKey } from '../components/ui.jsx';
 import { IconLock, IconPlus } from '../icons.jsx';
-import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, visibleBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes, mergeOrder } from '../lib/notes.js';
+import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, visibleBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes } from '../lib/notes.js';
 import { saveNote, patchNote, setNotePrefs } from '../data.js';
 
 const FILTERS = [{ value: 'all', label: 'Hepsi' }, ...NOTE_CATEGORIES];
@@ -47,7 +47,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const [ins, setIns] = useState(null); // where the dragged card would land: { key, mark } mark = bx/ax (before/after, side by side) or by/ay (above/below)
 
   const prefs = data.notePrefs || {};
-  const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs);
+  const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs, filter);
   const anyHidden = notes.some((n) => n.hidden);
   const flow = useRef(null);
   // Manual layout becomes a free canvas as soon as a card has been moved: every card has its own place { x: fraction of the width, y: px },
@@ -93,7 +93,6 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     filter,
     canvas,
     visible: notes.map(noteKey),
-    full: arrangeNotes(filterNotes(house.notes, data.notes, 'all'), prefs).map(noteKey),
   };
 
   const tap = (n) => {
@@ -171,7 +170,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
       } else if (drop && d.ins) {
         const vis = latest.current.visible.filter((k) => k !== d.key);
         const at = vis.indexOf(d.ins.key);
-        if (at >= 0) { vis.splice(d.ins.mark[0] === 'b' ? at : at + 1, 0, d.key); setNotePrefs(latest.current.uid, { order: mergeOrder(latest.current.full, vis) }); }
+        if (at >= 0) { vis.splice(d.ins.mark[0] === 'b' ? at : at + 1, 0, d.key); setNotePrefs(latest.current.uid, { orders: { [latest.current.filter]: vis } }); }
       }
     };
     const up = () => finish(true);
@@ -198,7 +197,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
   const card = (n, manual) => {
     const key = noteKey(n);
-    return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} canvas={manual && canvas} pos={manual ? posMap[key] || autoPos[key] || null : null} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs)}
+    return <NoteCard key={key} k={key} n={n} ctx={ctx} manual={manual} canvas={manual && canvas} pos={manual ? posMap[key] || autoPos[key] || null : null} pinned={effectivePin(n, prefs)} size0={effectiveSize(n, prefs, filter)} filter={filter}
       dragging={dragKey === key} ins={ins?.key === key && dragKey !== key ? ins.mark : null} onOpen={() => tap(n)} />;
   };
 
@@ -249,7 +248,7 @@ const widthCss = (w) => `calc(${(w * 100).toFixed(2)}% - ${((1 - w) * 10).toFixe
 // On the free canvas (10px wider than the page, cards inset 5px on each side) a card is simply w of the canvas minus its 10px of inset.
 const canvasW = (w) => `calc(${(w * 100).toFixed(2)}% - 10px)`;
 
-function NoteCard({ n, k, ctx, onOpen, manual, canvas, pos, pinned, size0, dragging, ins }) {
+function NoteCard({ n, k, filter, ctx, onOpen, manual, canvas, pos, pinned, size0, dragging, ins }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
   const blocks = visibleBlocks(all);
@@ -285,7 +284,7 @@ function NoteCard({ n, k, ctx, onOpen, manual, canvas, pos, pinned, size0, dragg
   };
   const onUp = () => {
     const d = drag.current; drag.current = null;
-    if (d?.out) { setLocal(d.out); setNotePrefs(ctx.uid, { sizes: { [k]: d.out } }); }
+    if (d?.out) { setLocal(d.out); setNotePrefs(ctx.uid, { sizes: { [filter]: { [k]: d.out } } }); }
   };
   const grip = (mode) => ({ onPointerDown: onDown(mode), onPointerMove: onMove, onPointerUp: onUp, onPointerCancel: onUp });
   const geom = !manual ? '' : canvas

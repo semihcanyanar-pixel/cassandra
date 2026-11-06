@@ -34,22 +34,16 @@ export function filterNotes(householdNotes, personalNotes, filter) {
 // Notes saved before that carry `pinned` / `size` themselves; those are only the fallback.
 export const noteKey = (n) => `${n.category}_${n.id}`;
 export const effectivePin = (n, prefs) => prefs?.pins?.[noteKey(n)] ?? Boolean(n.pinned);
-export const effectiveSize = (n, prefs) => prefs?.sizes?.[noteKey(n)] ?? n.size ?? null;
+// Sizes, order and free places are kept per tab (Hepsi / Aile / Kişisel), so arranging one tab never changes another. Older global values are the fallback.
+export const effectiveSize = (n, prefs, filter) => prefs?.sizes?.[filter]?.[noteKey(n)] ?? prefs?.sizes?.[noteKey(n)] ?? n.size ?? null;
 // Pinned first, then my manual order. Notes I have not placed yet (new ones) come first inside their group, in the given order.
-export function arrangeNotes(notes, prefs) {
-  const idx = new Map((prefs?.order || []).map((k, i) => [k, i]));
+export function arrangeNotes(notes, prefs, filter) {
+  const idx = new Map((prefs?.orders?.[filter] ?? prefs?.order ?? []).map((k, i) => [k, i]));
   const rank = (n) => (idx.has(noteKey(n)) ? idx.get(noteKey(n)) : -1);
   return notes.map((n, i) => ({ n, i, p: effectivePin(n, prefs), o: rank(n) }))
     .sort((a, b) => Number(b.p) - Number(a.p) || (a.o === -1 && b.o === -1 ? a.i - b.i : a.o - b.o))
     .map((x) => x.n);
 }
-// After dragging inside a filtered view: the visible notes take, in their new order, the places the visible notes had in the full order.
-export function mergeOrder(full, visibleNew) {
-  const vis = new Set(visibleNew);
-  let i = 0;
-  return full.map((k) => (vis.has(k) ? visibleNew[i++] : k));
-}
-
 // A note is a list of lines. Each line: { t: text, k: kind, d: done (circle lines), l: indent 0..2, b: bold, i: italic, s: strikethrough }.
 // Kinds: p paragraph, h heading, s subheading, ul bullet, ol numbered, cb round checkbox (like iPhone Notes).
 // Older notes: `blocks` with { c } (checklist flag), `items` (all checklist) or `body` (plain text) are converted on read.
