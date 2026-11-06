@@ -50,8 +50,10 @@ describe('not satırları (biçimli metin + yuvarlak tik)', () => {
     expect(cleanBlocks([P({ t: ' a ', k: 'cb' }), P({ t: '  ' }), P({ t: 'b', d: true })])).toEqual([P({ t: 'a', k: 'cb' }), P({ t: '' }), P({ t: 'b' })]);
   });
   it('numaralı satırlar sırayla sayılır, araya başka satır girince yeniden başlar', () => {
-    const b = [P({ k: 'ol' }), P({ k: 'ol' }), P({ k: 'ol', l: 1 }), P({ k: 'ol', l: 1 }), P({ k: 'ol' }), P({ k: 'p' }), P({ k: 'ol' })];
+    const b = [P({ k: 'ol' }), P({ k: 'ol' }), P({ k: 'ol', l: 1 }), P({ k: 'ol', l: 1 }), P({ k: 'ol' }), P({ k: 'p', t: 'metin' }), P({ k: 'ol' })];
     expect(numberLabels(b)).toEqual(['1.', '2.', '1.', '2.', '3.', null, '1.']);
+    // a blank line between items does not break the numbering
+    expect(numberLabels([P({ k: 'ol' }), P({ k: 'p' }), P({ k: 'ol' })])).toEqual(['1.', null, '2.']);
   });
 });
 

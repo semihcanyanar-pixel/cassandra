@@ -31,7 +31,7 @@ export function serialize(node) {
 }
 
 const flagsOf = (b) => (b.b ? 'b' : '') + (b.i ? 'i' : '') + (b.s ? 's' : '');
-const lineHtml = (b) => `<div class="${LINE}" data-k="${b.k}" data-l="${b.l || 0}"${b.d ? ' data-d="1"' : ''}${flagsOf(b) ? ` data-f="${flagsOf(b)}"` : ''}${b.a ? ` data-a="${b.a}"` : ''}>${b.t ? toHtml(b.t) : '<br>'}</div>`;
+const lineHtml = (b) => `<div class="${LINE}" data-k="${b.k}" data-l="${b.l || 0}"${b.t ? '' : ' data-e="1"'}${b.d ? ' data-d="1"' : ''}${flagsOf(b) ? ` data-f="${flagsOf(b)}"` : ''}${b.a ? ` data-a="${b.a}"` : ''}>${b.t ? toHtml(b.t) : '<br>'}</div>`;
 export const blocksHtml = (blocks) => (blocks && blocks.length ? blocks : [normBlock({})]).map(lineHtml).join('');
 
 function readLine(el) {
@@ -70,6 +70,7 @@ function normalize(host) {
     const brs = line.querySelectorAll('br');
     if (empty && !brs.length) { line.appendChild(document.createElement('br')); changed = true; }
     if (!empty && brs.length) { brs.forEach((b) => b.remove()); changed = true; }
+    if (empty) { if (line.dataset.e !== '1') line.dataset.e = '1'; } else if (line.dataset.e) delete line.dataset.e;
   }
   return changed;
 }
@@ -272,12 +273,14 @@ export function NoteEditor({ value, onChange, onActive, onHistory, apiRef, place
     if (!el.contains(r.startContainer) || !atLineStart(el, r.startContainer, r.startOffset)) return false;
     const line = nodeLine(el, r.startContainer, r.startOffset);
     if (!line) return false;
-    if (line.dataset.k !== 'p') { line.dataset.k = 'p'; delete line.dataset.d; commit('struct'); return true; }
+    const empty = serialize(line) === '';
+    // an empty list item (with a line above) is deleted by Backspace, so the items below renumber; any other list line first loses its marker
+    if (line.dataset.k !== 'p' && !(empty && LISTS.includes(line.dataset.k) && line.previousElementSibling)) { line.dataset.k = 'p'; delete line.dataset.d; commit('struct'); return true; }
     const l = Number(line.dataset.l) || 0;
     if (l > 0) { line.dataset.l = String(l - 1); commit('struct'); return true; }
     const prev = line.previousElementSibling;
     if (!prev) return true;
-    if (serialize(prev) === '') { prev.remove(); putCaret(line); commit('struct'); return true; } // a blank line above: gone, this line keeps its own look
+    if (serialize(prev) === '' && !LISTS.includes(prev.dataset.k)) { prev.remove(); putCaret(line); commit('struct'); return true; } // a blank plain line above: gone, this line keeps its own look (an empty list item above is joined instead: the text becomes that item)
     prev.querySelectorAll('br').forEach((b) => b.remove());
     line.querySelectorAll('br').forEach((b) => b.remove());
     const join = document.createRange();

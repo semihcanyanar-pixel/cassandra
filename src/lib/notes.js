@@ -138,7 +138,11 @@ export const toggleCheck = (blocks, index) => blocks.map((b, i) => (i === index 
 export function numberLabels(blocks) {
   const counters = [0, 0, 0];
   return blocks.map((b) => {
-    if (b.k !== 'ol') { for (let l = b.l; l < 3; l++) counters[l] = 0; return null; }
+    if (b.k !== 'ol') {
+      if (!b.t && b.k === 'p') return null; // a blank line does not interrupt a numbered list; a line with text does
+      for (let l = b.l; l < 3; l++) counters[l] = 0;
+      return null;
+    }
     counters[b.l] += 1;
     for (let l = b.l + 1; l < 3; l++) counters[l] = 0;
     return `${counters[b.l]}.`;

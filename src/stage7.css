@@ -289,7 +289,7 @@ button.hg-row { cursor: pointer; }
 .ed-line[data-k="ol"][data-l="0"] { counter-increment: o0; counter-reset: o1 o2; } .ed-line[data-k="ol"][data-l="0"]::before { content: counter(o0) "."; }
 .ed-line[data-k="ol"][data-l="1"] { counter-increment: o1; counter-reset: o2; } .ed-line[data-k="ol"][data-l="1"]::before { content: counter(o1) "."; }
 .ed-line[data-k="ol"][data-l="2"] { counter-increment: o2; } .ed-line[data-k="ol"][data-l="2"]::before { content: counter(o2) "."; }
-.ed-line:not([data-k="ol"])[data-l="0"] { counter-reset: o0 o1 o2; } .ed-line:not([data-k="ol"])[data-l="1"] { counter-reset: o1 o2; } .ed-line:not([data-k="ol"])[data-l="2"] { counter-reset: o2; }
+.ed-line:not([data-k="ol"]):not([data-e="1"])[data-l="0"] { counter-reset: o0 o1 o2; } .ed-line:not([data-k="ol"]):not([data-e="1"])[data-l="1"] { counter-reset: o1 o2; } .ed-line:not([data-k="ol"]):not([data-e="1"])[data-l="2"] { counter-reset: o2; }
 .ed-line[data-k="cb"]::before { content: ""; position: absolute; left: 0; top: calc(.7em - 11px); width: 22px; height: 22px; box-sizing: border-box; border: 2px solid currentColor; border-radius: 50%; }
 .ed-line[data-k="cb"][data-d="1"]::before { background: var(--text); box-shadow: inset 0 0 0 4px var(--card); }
 .ed-line[data-k="cb"][data-d="1"], .ed-line[data-f*="s"] { text-decoration: line-through; opacity: .6; }
