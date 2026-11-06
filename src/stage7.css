@@ -181,3 +181,20 @@ button.hg-row { cursor: pointer; }
 .note-sheet[data-c="6"] .sheet-edit { background: #fff; color: #121212; }
 .nf-lines .line { flex: none; }
 .note-sheet .note-tag { color: inherit !important; }
+
+/* Notlar tool bar: layout, corners, [+], pin, eye. One bar, like the segmented controls. */
+.nbar { display: grid; grid-template-columns: 1fr 1fr 1.7fr 1fr 1fr; gap: 4px; align-items: center; padding: 4px; background: var(--card); border: var(--card-border); border-radius: var(--r); }
+.nb { min-height: 48px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--muted); border-radius: var(--r-ctl); }
+.nb.on { background: var(--track); color: var(--text); }
+.nb.add { min-height: 52px; background: var(--chip-on-bg); color: var(--chip-on-fg); border: var(--chip-on-border); }
+.nb.add svg { width: 28px; height: 28px; }
+.nb-hint { padding: 0 4px; }
+/* Post-it look: square corners, a soft shadow and a faint paper sheen. */
+.notes-square .note { border-radius: 2px; box-shadow: 0 3px 8px rgba(0,0,0,.22); background-image: linear-gradient(155deg, rgba(255,255,255,.16), rgba(0,0,0,.05)); }
+:root[data-theme="yorunge"] .notes-square .note { box-shadow: inset 7px 0 0 var(--c), 0 3px 8px rgba(0,0,0,.4); }
+:root[data-theme="teknik"] .notes-square .note { box-shadow: inset 0 9px 0 var(--c), 3px 3px 0 rgba(10,10,10,.25); }
+/* Hidden notes: text is blurred; ticking is off until the note is shown again. */
+.note.veiled .note-title, .note.veiled .note-lines, .note.veiled .note-att, .note.veiled .note-more { filter: blur(7px); -webkit-user-select: none; user-select: none; }
+.note.veiled .nl-tap { pointer-events: none; }
+.note-eyeoff { position: absolute; top: 12px; right: 12px; z-index: 1; color: var(--muted); }
+.tooling .nl-tap, .tooling .rz { pointer-events: none; }

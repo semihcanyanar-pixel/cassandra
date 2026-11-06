@@ -222,7 +222,8 @@ export function saveNote({ uid, hid }, category, id, data) {
   return fire(() => addDoc(base, personal ? payload : { ...payload, category, addedBy: uid }));
 }
 // Window size of a note card (Notlar, manual layout): saved without touching updatedAt, so the note keeps its place in the list.
-export const saveNoteSize = ({ uid, hid }, category, id, size) => fire(() => updateDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id), { size }));
+export const patchNote = ({ uid, hid }, category, id, patch) => fire(() => updateDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id), patch));
+export const saveNoteSize = (ctx, category, id, size) => patchNote(ctx, category, id, { size });
 export const deleteNote =({ uid, hid }, category, id) => fire(() => deleteDoc(category === 'kisisel' ? ref(uid, 'notes', id) : href(hid, 'notes', id)));
 
 // Events: scope 'aile' -> households/{hid}/events, 'kisisel' -> users/{uid}/events (chosen only by the explicit scope).
