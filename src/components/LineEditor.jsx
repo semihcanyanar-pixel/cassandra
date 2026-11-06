@@ -69,7 +69,7 @@ export function splitAtCaret(el) {
   return [serialize(headHolder), serialize(holder)];
 }
 
-export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onSelectAll, onFocus, onRef, className, label, placeholder }) {
+export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onSelectAll, readOnly, onFocus, onRef, className, label, placeholder }) {
   const el = useRef(null);
   const typed = useRef(false); // something was typed since the tap: do not move the caret any more
   const fromTap = useRef(false); // the tap that focuses this line: the caret goes to the start of the line
@@ -83,7 +83,7 @@ export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceS
     <div
       ref={(n) => { el.current = n; onRef?.(n); }}
       class={`${className} ${value ? '' : 'empty'}`}
-      contentEditable
+      contentEditable={!readOnly}
       role="textbox" aria-multiline="false" aria-label={label} data-ph={placeholder || ''}
       autoCapitalize="sentences" spellcheck={true}
       onFocus={onFocus}

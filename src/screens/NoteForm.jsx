@@ -124,6 +124,57 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     }
   };
   const clearAll = () => { setBlocks([normBlock({})]); setTitle(''); setAllSel(false); setCur(0); focusAfter.current = 0; };
+  // Multi-line selection: lines are picked one by one (tap, or drag along the left edge) and then copied, cut, deleted or formatted together.
+  const [selMode, setSelMode] = useState(false);
+  const [picked, setPicked] = useState(() => new Set());
+  const linesRef = useRef(null);
+  const holdTimer = useRef(0);
+  const blockClick = useRef(0);
+  const enterSel = (i) => { document.activeElement?.blur?.(); window.getSelection()?.removeAllRanges(); setAllSel(false); setWholeLine(false); setSelMode(true); setPicked(new Set(i == null ? [] : [i])); };
+  const exitSel = () => { setSelMode(false); setPicked(new Set()); };
+  const togglePick = (i) => setPicked((p) => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n; });
+  const pickedList = [...picked].filter((i) => i < blocks.length).sort((a, b) => a - b);
+  const lineText = (b, i, lab) => (b.k === 'ul' ? '• ' : b.k === 'ol' ? `${lab[i]} ` : b.k === 'cb' ? (b.d ? '[x] ' : '[ ] ') : '') + plainText(b.t);
+  const copyText = async (t) => {
+    try { await navigator.clipboard.writeText(t); } catch {
+      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
+    }
+  };
+  const pickedText = () => { const lab = numberLabels(blocks); return pickedList.map((i) => lineText(blocks[i], i, lab)).join('\n'); };
+  const removePicked = () => { setBlocks((b) => { const rest = b.filter((_, i) => !picked.has(i)); return rest.length ? rest : [normBlock({})]; }); exitSel(); };
+  const patchPicked = (fn) => setBlocks((b) => b.map((x, i) => (picked.has(i) ? { ...x, ...fn(x) } : x)));
+  const allPicked = (test) => pickedList.length > 0 && pickedList.every((i) => test(blocks[i]));
+  const kindPicked = (k) => { const off = allPicked((x) => x.k === k); patchPicked(() => ({ k: off ? 'p' : k, d: false })); };
+  const flagPicked = (fl) => { const off = allPicked((x) => x[fl]); patchPicked(() => ({ [fl]: !off })); };
+  const alignPicked = (a) => patchPicked(() => ({ a }));
+  const indentPicked = (d) => patchPicked((x) => ({ l: Math.min(2, Math.max(0, x.l + d)) }));
+  const startHold = (i) => () => { clearTimeout(holdTimer.current); holdTimer.current = setTimeout(() => { blockClick.current = Date.now() + 700; enterSel(i); }, 480); };
+  const cancelHold = () => clearTimeout(holdTimer.current);
+  // Dragging along the left edge of the lines picks (or un-picks) every line the finger passes; near the top / bottom the box scrolls.
+  const onDotDown = (i) => (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const to = !picked.has(i);
+    const apply = (idx) => setPicked((p) => { const n = new Set(p); if (to) n.add(idx); else n.delete(idx); return n; });
+    apply(i);
+    let py = e.clientY, last = i, raf = 0;
+    const lineAt = (y) => {
+      const els = linesRef.current?.querySelectorAll('.line');
+      for (let k = 0; els && k < els.length; k++) { const r = els[k].getBoundingClientRect(); if (y >= r.top && y <= r.bottom) return k; }
+      return -1;
+    };
+    const fill = (k) => { const [a, z] = k >= last ? [last, k] : [k, last]; for (let j = a; j <= z; j++) apply(j); last = k; };
+    const check = () => { const k = lineAt(py); if (k >= 0 && k !== last) fill(k); };
+    const loop = () => {
+      const box = linesRef.current;
+      if (box) { const r = box.getBoundingClientRect(); if (py < r.top + 28) box.scrollTop -= 8; else if (py > r.bottom - 28) box.scrollTop += 8; }
+      check(); raf = requestAnimationFrame(loop);
+    };
+    const move = (ev) => { py = ev.clientY; check(); };
+    const up = () => { cancelAnimationFrame(raf); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    raf = requestAnimationFrame(loop);
+  };
   const setAlign = (a) => { upd(cur, { a }); focusAfter.current = cur; };
   const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
   const move = (d) => {
@@ -304,7 +355,34 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           {files.length > 0 && <div class="nf-files"><Attachments files={files} onRemove={removeFile} busy={busy} /></div>}
           {files.length === 0 && busy && <div class="loadbar" role="progressbar" aria-label="Yükleniyor"><i /></div>}
 
-          <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
+          {selMode && (
+            <div class="nf-selrow" role="toolbar" aria-label="Seçili satırlar">
+              <button type="button" class="nf-selbtn strong" onClick={exitSel}>Bitti</button>
+              <span class="nf-selinfo">{pickedList.length} satır</span>
+              <button type="button" class="nf-selbtn" onClick={() => setPicked(new Set(blocks.map((_, i) => i)))}>Hepsi</button>
+              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={async () => { await copyText(pickedText()); exitSel(); }}>Kopyala</button>
+              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={async () => { await copyText(pickedText()); removePicked(); }}>Kes</button>
+              <button type="button" class="nf-selbtn" disabled={!pickedList.length} onClick={() => { if (confirm(`${pickedList.length} satır silinsin mi?`)) removePicked(); }}>Sil</button>
+              <span class="fmt-sep" aria-hidden="true" />
+              {KIND_BUTTONS.map((x) => (
+                <button key={x.k} type="button" class={allPicked((b) => b.k === x.k) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => kindPicked(x.k)}>{x.icon}</button>
+              ))}
+              <span class="fmt-sep" aria-hidden="true" />
+              {FLAG_BUTTONS.map((x) => (
+                <button key={x.f} type="button" class={allPicked((b) => b[x.f]) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => flagPicked(x.f)}>{x.icon}</button>
+              ))}
+              <span class="fmt-sep" aria-hidden="true" />
+              {ALIGN_BUTTONS.map((x) => (
+                <button key={x.a || 'l'} type="button" class={allPicked((b) => (b.a || '') === x.a) ? 'fmt on' : 'fmt'} disabled={!pickedList.length} aria-label={x.label} title={x.label} onClick={() => alignPicked(x.a)}>{x.icon}</button>
+              ))}
+              <span class="fmt-sep" aria-hidden="true" />
+              <button type="button" class="fmt" disabled={!pickedList.length} aria-label="Girinti ekle" title="Girinti ekle" onClick={() => indentPicked(1)}><Ico d="M5 12h14M13 6l6 6-6 6" /></button>
+              <button type="button" class="fmt" disabled={!pickedList.length} aria-label="Girintiyi azalt" title="Girintiyi azalt" onClick={() => indentPicked(-1)}><Ico d="M19 12H5M11 6l-6 6 6 6" /></button>
+            </div>
+          )}
+          {!selMode && <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
+            <button type="button" class="fmt" aria-label="Birden çok satır seç" title="Birden çok satır seç" onMouseDown={keep} onClick={() => enterSel(cur)}><Ico d="M4 6l2 2 3-3M4 14l2 2 3-3M12 7h8M12 15h8" /><Lbl>Satır seç</Lbl></button>
+            <span class="fmt-sep" aria-hidden="true" />
             {KIND_BUTTONS.map((x) => (
               <button key={x.k} type="button" class={row.k === x.k ? 'fmt on' : 'fmt'} aria-pressed={row.k === x.k} aria-label={x.label} title={x.label} onMouseDown={keep} onClick={() => setKind(x.k)}>{x.icon}<Lbl>{x.short}</Lbl></button>
             ))}
@@ -323,11 +401,11 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
             <button type="button" class="fmt" aria-label="Satırı yukarı taşı" title="Satırı yukarı taşı" disabled={cur === 0} onMouseDown={keep} onClick={() => move(-1)}><Ico d="M12 19V5M6 11l6-6 6 6" /><Lbl>Yukarı</Lbl></button>
             <button type="button" class="fmt" aria-label="Satırı aşağı taşı" title="Satırı aşağı taşı" disabled={cur >= blocks.length - 1} onMouseDown={keep} onClick={() => move(1)}><Ico d="M12 5v14M6 13l6 6 6-6" /><Lbl>Aşağı</Lbl></button>
             <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
-          </div>
+          </div>}
 
           <input id="baslik" class={allSel ? 'nf-title allsel' : 'nf-title'} value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
 
-          {wholeLine && !allSel && (
+          {wholeLine && !allSel && !selMode && (
             <div class="nf-selbar"><button type="button" class="nf-selbtn" onMouseDown={keep} onClick={selectAllNote}>Tüm notu seç</button></div>
           )}
           {allSel && (
@@ -339,20 +417,21 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
               <button type="button" class="nf-selbtn" onClick={() => setAllSel(false)}>Vazgeç</button>
             </div>
           )}
-          <div class={allSel ? 'lines nf-lines allsel' : 'lines nf-lines'}>
+          <div ref={linesRef} class={`lines nf-lines${allSel ? ' allsel' : ''}${selMode ? ' selmode' : ''}`}>
             {blocks.map((b, i) => (
-              <div class={`line k-${b.k}`} key={i} style={`margin-left:${b.l * 22}px`}>
+              <div class={`line k-${b.k}${selMode && picked.has(i) ? ' picked' : ''}`} key={i} style={`margin-left:${b.l * 22}px`} onClick={selMode ? () => togglePick(i) : undefined}>
+                {selMode && <button type="button" class={picked.has(i) ? 'sel-dot on' : 'sel-dot'} role="checkbox" aria-checked={picked.has(i)} aria-label={`Satır ${i + 1} seç`} onPointerDown={onDotDown(i)} onClick={(e) => { e.stopPropagation(); if (e.detail === 0) togglePick(i); }} />}
                 {b.k === 'cb' && (
-                  <button type="button" class={b.d ? 'circ on' : 'circ'} role="checkbox" aria-checked={b.d} aria-label="Tamamlandı" onClick={() => upd(i, { d: !b.d })}>
+                  <button type="button" class={b.d ? 'circ on' : 'circ'} role="checkbox" aria-checked={b.d} aria-label="Tamamlandı" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold} onClick={() => { if (selMode || Date.now() < blockClick.current) return; upd(i, { d: !b.d }); }}>
                     {b.d && <Tick />}
                   </button>
                 )}
-                {b.k === 'ul' && <span class="mark" aria-hidden="true">•</span>}
-                {b.k === 'ol' && <span class="mark num" aria-hidden="true">{labels[i]}</span>}
+                {b.k === 'ul' && <span class="mark" aria-hidden="true" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold}>•</span>}
+                {b.k === 'ol' && <span class="mark num" aria-hidden="true" onPointerDown={startHold(i)} onPointerUp={cancelHold} onPointerLeave={cancelHold} onPointerCancel={cancelHold}>{labels[i]}</span>}
                 <LineEditor key={`e${i}`} onRef={(el) => { refs.current[i] = el; }}
                   className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : '', b.a ? `ta-${b.a}` : ''].join(' ')}
                   label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
-                  onFocus={() => { setCur(i); setAllSel(false); }} onSelectAll={selectAllNote} onValue={(v) => { upd(i, { t: v }); setError(''); }}
+                  onFocus={() => { setCur(i); setAllSel(false); }} onSelectAll={selectAllNote} readOnly={selMode} onValue={(v) => { upd(i, { t: v }); setError(''); }}
                   onEnter={(el) => onEnter(el, i)} onPasteLines={(el, parts) => onPasteLines(el, i, parts)} onBackspaceStart={() => onBackspaceStart(i)} />
               </div>
             ))}
