@@ -226,9 +226,6 @@ button.hg-row { cursor: pointer; }
 .ring-n { font-size: 13px; font-weight: 700; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 .ring-m { font-size: 11px; font-weight: 700; color: var(--muted); }
 
-/* Auto layout: two balanced columns in reading order top to bottom (CSS columns), so "above / below" while dragging means exactly that. */
-.note-cols { display: block; column-count: 2; column-gap: 10px; }
-.note-cols .note { break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; }
 /* Line alignment (left is the default) */
 .ta-c { text-align: center; } .ta-r { text-align: right; } .ta-j { text-align: justify; text-justify: inter-word; hyphens: auto; -webkit-hyphens: auto; }
 .nl.ta-c .nt, .nl.ta-r .nt, .nl.ta-j .nt { flex: 1 1 auto; min-width: 0; }

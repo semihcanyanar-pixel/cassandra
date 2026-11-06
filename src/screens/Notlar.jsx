@@ -44,6 +44,22 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs);
   const anyHidden = notes.some((n) => n.hidden);
   const flow = useRef(null);
+  // Auto layout: two columns in reading order (top to bottom, left then right), split where the heights balance best.
+  const colsRef = useRef(null);
+  const [split, setSplit] = useState(null);
+  const firstCol = Math.min(split ?? Math.ceil(notes.length / 2), notes.length);
+  useLayoutEffect(() => {
+    if (layout === 'manual' || !colsRef.current) return;
+    const hs = [...colsRef.current.querySelectorAll('.note')].map((el) => el.offsetHeight + 10); // DOM order = note order
+    const total = hs.reduce((a, b) => a + b, 0);
+    let best = 0, bestMax = Infinity, run = 0;
+    for (let k = 0; k <= hs.length; k++) {
+      const m = Math.max(run, total - run);
+      if (m < bestMax - 0.5) { bestMax = m; best = k; }
+      run += hs[k] || 0;
+    }
+    if (best !== firstCol) setSplit(best);
+  });
   const drag = useRef(null);
   const blockTap = useRef(0);
   // Latest values for the drag handlers (they live longer than one render).
@@ -172,8 +188,9 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
         {layout === 'manual' ? (
           <div class="note-flow" ref={flow} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
         ) : (
-          <div class="note-cols" onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
-            {notes.map((n) => card(n, false))}
+          <div class="note-cols" ref={colsRef} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
+            <div class="note-col">{notes.slice(0, firstCol).map((n) => card(n, false))}</div>
+            <div class="note-col">{notes.slice(firstCol).map((n) => card(n, false))}</div>
           </div>
         )}
       </div>
