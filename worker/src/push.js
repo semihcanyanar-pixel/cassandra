@@ -86,6 +86,16 @@ export async function sendTest(env, uid) {
   return { sent, devices: rec.subs.length };
 }
 
+// Per-user switches kept next to the subscriptions. partnerAdds === false: do not tell me when my partner adds shared items.
+export async function setPrefs(env, uid, prefs) {
+  const rec = await load(env, uid);
+  const next = { ...(rec.prefs || {}), partnerAdds: prefs?.partnerAdds !== false };
+  if (JSON.stringify(rec.prefs || {}) === JSON.stringify(next)) return { changed: false };
+  rec.prefs = next;
+  await save(env, uid, rec);
+  return { changed: true };
+}
+
 // Notifies everyone else who has notifications on (the household partner) right now, e.g. "X added to the shopping list".
 export async function notifyOthers(env, fromUid, { title, body, go }) {
   const idx = (await env.KV.get('push:index', 'json')) || [];
@@ -95,7 +105,7 @@ export async function notifyOthers(env, fromUid, { title, body, go }) {
   for (const uid of idx) {
     if (uid === fromUid) continue;
     const rec = await load(env, uid);
-    if (!rec.subs.length) continue;
+    if (!rec.subs.length || rec.prefs?.partnerAdds === false) continue;
     const before = rec.subs.length;
     sent += await deliver(env, vapid, rec, payload);
     if (rec.subs.length !== before) await save(env, uid, rec);

@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { pushSupported, isStandalone, pushEnabledHere, enablePush, disablePush, sendTestPush } from '../push.js';
-import { workerConfigured } from '../worker.js';
+import { workerConfigured, callWorker } from '../worker.js';
 import { medPeople } from '../lib/meds.js';
 
 // Settings > Bildirimler: web push for medication doses and calendar reminders.
@@ -21,9 +21,16 @@ export function PushSection({ session }) {
     patchProfile({ medReminderFor: [...next] }).catch((e) => console.error(e));
   };
 
+  const partnerOn = profile?.partnerNotify !== false;
+  const togglePartner = () => {
+    const v = !partnerOn;
+    patchProfile({ partnerNotify: v }).catch((e) => console.error(e));
+    callWorker('/push/prefs', { partnerAdds: v }).catch((e) => console.warn('push prefs', e.message));
+  };
+
   async function turnOn() {
     setBusy(true); setMsg('');
-    try { await enablePush(); setOn(true); setMsg('Bildirimler açıldı.'); } catch (e) {
+    try { await enablePush(); callWorker('/push/prefs', { partnerAdds: partnerOn }).catch(() => {}); setOn(true); setMsg('Bildirimler açıldı.'); } catch (e) {
       setMsg(e.message === 'permission-denied' ? 'İzin verilmedi. iPhone Ayarlar > Bildirimler > Cassandra bölümünden açabilirsin.' : 'Açılamadı, tekrar dene.');
       console.error(e);
     }
@@ -58,6 +65,14 @@ export function PushSection({ session }) {
           <button class="btn wide" disabled={busy} onClick={turnOn}>Bildirimleri aç</button>
         )}
         {msg && <div class="sub" role="status">{msg}</div>}
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+        <div class="title-sm">Eşimin eklemelerini bildir</div>
+        <div class="chips" role="group" aria-label="Eşimin eklemeleri">
+          <button type="button" class={partnerOn ? 'chip on' : 'chip'} aria-pressed={partnerOn} onClick={() => { if (!partnerOn) togglePartner(); }}>Açık</button>
+          <button type="button" class={!partnerOn ? 'chip on' : 'chip'} aria-pressed={!partnerOn} onClick={() => { if (partnerOn) togglePartner(); }}>Kapalı</button>
+        </div>
+        <div class="sub">Eşin alışveriş listesine ya da ortak yapılacaklara bir şey eklediğinde bu telefona bildirim gelir.</div>
       </div>
       <div class="card" style="display:flex;flex-direction:column;gap:12px">
         <div class="title-sm">Hangi kişilerin ilaçları hatırlatılsın?</div>

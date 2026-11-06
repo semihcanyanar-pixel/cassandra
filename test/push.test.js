@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateVapid, encryptPayload, b64u, unb64u, sendPush } from '../worker/src/webpush.js';
-import { subscribe, setSchedule, runDue, validSub, sendTest, notifyOthers } from '../worker/src/push.js';
+import { subscribe, setSchedule, runDue, validSub, sendTest, notifyOthers, setPrefs } from '../worker/src/push.js';
 import { eventItems, medItems, weekItems, buildSchedule, localMs } from '../src/lib/push.js';
 import { parseGo } from '../src/lib/deeplink.js';
 
@@ -176,6 +176,20 @@ describe('Eşe bildirim', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0].u).toBe('https://web.push.apple.com/b');
     expect(JSON.parse(await b.decrypt(sent[0].body))).toMatchObject({ title: 'Alışveriş listesi', body: 'Eşin ekledi: süt', go: 'ev' });
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('Eş bildirimi tercihi', () => {
+  it('kapatan kullanıcıya gitmez', async () => {
+    const env = { KV: kv() };
+    const b = await fakePhone('https://web.push.apple.com/b');
+    await subscribe(env, 'B', b.sub);
+    await setPrefs(env, 'B', { partnerAdds: false });
+    vi.stubGlobal('fetch', async () => new Response(null, { status: 201 }));
+    expect(await notifyOthers(env, 'A', { title: 't', body: 'b' })).toEqual({ sent: 0 });
+    await setPrefs(env, 'B', { partnerAdds: true });
+    expect((await notifyOthers(env, 'A', { title: 't', body: 'b' })).sent).toBe(1);
     vi.unstubAllGlobals();
   });
 });
