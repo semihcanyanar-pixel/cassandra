@@ -237,3 +237,17 @@ button.hg-row { cursor: pointer; }
 
 /* Manual layout, free canvas: cards are placed absolutely; the canvas is 10px wider than the page so the 5px insets line up with the page edges. */
 .note-canvas { position: relative; margin: 0 -5px; }
+
+/* Note editor: lines are compact so a gap between sentences is a real blank line you can write in; plain lines are left aligned unless set otherwise. */
+.nf-lines { gap: 0; }
+.nf-lines .line-input { padding: 6px 0; text-align: left; }
+.nf-lines .mark { padding-top: 6px; }
+.nf-lines .circ { margin-top: 3px; }
+.nf-lines .line-input.ta-c { text-align: center; } .nf-lines .line-input.ta-r { text-align: right; } .nf-lines .line-input.ta-j { text-align: justify; }
+.nl.nl-blank { min-height: 10px; }
+.note-read-lines .nl.nl-blank { min-height: 16px; }
+.nf-selbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--line); }
+.nf-selbar.on { background: rgba(47,75,255,.10); border-radius: var(--r-ctl); padding: 6px 8px; }
+.nf-selinfo { font-size: 13px; font-weight: 800; margin-right: 4px; }
+.nf-selbtn { min-height: 44px; padding: 0 14px; font: inherit; font-size: 14px; font-weight: 800; background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); }
+.nf-lines.allsel .line-input, .nf-title.allsel { background: rgba(47,75,255,.28); border-radius: 4px; }

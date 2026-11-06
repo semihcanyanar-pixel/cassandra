@@ -69,8 +69,9 @@ export function splitAtCaret(el) {
   return [serialize(headHolder), serialize(holder)];
 }
 
-export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onFocus, onRef, className, label, placeholder }) {
+export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onSelectAll, onFocus, onRef, className, label, placeholder }) {
   const el = useRef(null);
+  const typed = useRef(false); // something was typed since the tap: do not move the caret any more
   const fromTap = useRef(false); // the tap that focuses this line: the caret goes to the start of the line
 
   // Keep the DOM in sync with the model when it changed from outside (split, merge, load). Typing already matches, so the caret is left alone.
@@ -86,21 +87,23 @@ export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceS
       role="textbox" aria-multiline="false" aria-label={label} data-ph={placeholder || ''}
       autoCapitalize="sentences" spellcheck={true}
       onFocus={onFocus}
-      onPointerDown={() => { fromTap.current = document.activeElement !== el.current; }}
+      onPointerDown={() => { fromTap.current = document.activeElement !== el.current; typed.current = false; }}
       onClick={() => {
         if (!fromTap.current) return; // already inside this line: a tap places the caret where it landed
         fromTap.current = false;
         const toStart = () => { if (el.current && document.activeElement === el.current) placeCaret(el.current, 0); };
-        setTimeout(toStart, 0); setTimeout(toStart, 60); // after the browser has put the caret at the tap point
+        for (const ms of [0, 50, 120, 250]) setTimeout(() => { if (!typed.current) toStart(); }, ms); // after the browser (and the keyboard opening) has put the caret at the tap point
       }}
       onKeyDown={(e) => {
+        typed.current = true;
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a' && onSelectAll) { e.preventDefault(); onSelectAll(); return; } // select all = the whole note
         // Backspace at the very start of a line: some phone keyboards send no input event then, so the key itself is handled
         if (e.key === 'Backspace') {
           const sel = window.getSelection();
           if (sel && sel.isCollapsed && caretOffset(el.current) === 0) { e.preventDefault(); onBackspaceStart(el.current); }
         }
       }}
-      onInput={(e) => { const v = serialize(e.currentTarget).slice(0, NOTE_LIMITS.line); onValue(v); }}
+      onInput={(e) => { typed.current = true; const v = serialize(e.currentTarget).slice(0, NOTE_LIMITS.line); onValue(v); }}
       onBeforeInput={(e) => {
         if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') { e.preventDefault(); onEnter(el.current); return; }
         if (e.inputType === 'deleteContentBackward') {
@@ -111,10 +114,12 @@ export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceS
       onPaste={(e) => {
         e.preventDefault();
         const raw = (e.clipboardData?.getData('text/plain') || '').replace(/\r/g, '');
-        const parts = raw.split('\n').map((x) => x.trimEnd()).filter((x) => x.trim());
-        // several lines pasted: they become separate note lines (the parent splits the current line around the caret)
+        // several lines pasted: they become separate note lines, blank lines between them stay blank lines (the parent splits the current line around the caret)
+        const parts = raw.split('\n').map((x) => x.trimEnd());
+        while (parts.length && !parts[0].trim()) parts.shift();
+        while (parts.length && !parts[parts.length - 1].trim()) parts.pop();
         if (parts.length > 1 && onPasteLines) { onPasteLines(el.current, parts); return; }
-        const t = raw.replace(/\s*\n\s*/g, ' ');
+        const t = parts.join(' ');
         if (t) document.execCommand('insertText', false, t);
       }}
     />

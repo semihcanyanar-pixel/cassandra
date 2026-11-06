@@ -4,7 +4,7 @@ import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { actColor, inkKey } from '../components/ui.jsx';
 import { IconLock, IconPlus } from '../icons.jsx';
-import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes, mergeOrder } from '../lib/notes.js';
+import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, visibleBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes, mergeOrder } from '../lib/notes.js';
 import { saveNote, patchNote, setNotePrefs } from '../data.js';
 
 const FILTERS = [{ value: 'all', label: 'Hepsi' }, ...NOTE_CATEGORIES];
@@ -252,7 +252,7 @@ const canvasW = (w) => `calc(${(w * 100).toFixed(2)}% - 10px)`;
 function NoteCard({ n, k, ctx, onOpen, manual, canvas, pos, pinned, size0, dragging, ins }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
-  const blocks = all.map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
+  const blocks = visibleBlocks(all);
   const shown = blocks.slice(0, MAX_LINES);
   // Ticking a round checkbox on the card saves the note right away (no need to open it).
   const tick = (idx) => saveNote(ctx, n.category, n.id, { blocks: toggleCheck(all, idx) });

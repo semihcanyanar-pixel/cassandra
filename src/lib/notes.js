@@ -69,7 +69,23 @@ export function toBlocks(note) {
 // Size limits: one line, the whole note, the title, and the number of lines (a Firestore document may hold 1 MB, this stays far below).
 export const NOTE_LIMITS = { line: 5000, total: 20000, title: 100, lines: 400 };
 export const noteLength = (blocks) => blocks.reduce((n, b) => n + (b.t || '').length, 0);
-export const cleanBlocks = (blocks) => blocks.map((b) => normBlock({ ...b, t: (b.t || '').trim() })).filter((b) => b.t);
+// On save: text is trimmed; empty lines are kept only between text (plain empty lines are real blank lines), leading / trailing ones and empty bullets are dropped.
+export function cleanBlocks(blocks) {
+  const keep = blocks.map((b) => normBlock({ ...b, t: (b.t || '').trim() })).filter((b) => b.t || b.k === 'p');
+  let a = 0, z = keep.length;
+  while (a < z && !keep[a].t) a++;
+  while (z > a && !keep[z - 1].t) z--;
+  return keep.slice(a, z);
+}
+// Lines to show read-only, each with its position `idx` in the whole note (so ticking a circle saves the right line).
+export function visibleBlocks(blocks) {
+  const all = blocks.map((b, idx) => ({ ...b, idx }));
+  const first = all.findIndex((b) => b.t);
+  if (first < 0) return [];
+  let last = all.length - 1;
+  while (!all[last].t) last--;
+  return all.slice(first, last + 1).filter((b) => b.t || b.k === 'p');
+}
 
 // Word-level formatting lives inside the line text as markers: **bold**, __italic__, ~~strikethrough~~.
 export const MARKS = { b: '**', i: '__', s: '~~' };

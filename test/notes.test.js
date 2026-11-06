@@ -47,7 +47,7 @@ describe('not satırları (biçimli metin + yuvarlak tik)', () => {
     expect(toBlocks({ blocks: [{ t: 'x', k: 'zzz' }] })[0].k).toBe('p');
   });
   it('kaydederken boş satırlar atılır, metin kırpılır', () => {
-    expect(cleanBlocks([P({ t: ' a ', k: 'cb' }), P({ t: '  ' }), P({ t: 'b', d: true })])).toEqual([P({ t: 'a', k: 'cb' }), P({ t: 'b' })]);
+    expect(cleanBlocks([P({ t: ' a ', k: 'cb' }), P({ t: '  ' }), P({ t: 'b', d: true })])).toEqual([P({ t: 'a', k: 'cb' }), P({ t: '' }), P({ t: 'b' })]);
   });
   it('numaralı satırlar sırayla sayılır, araya başka satır girince yeniden başlar', () => {
     const b = [P({ k: 'ol' }), P({ k: 'ol' }), P({ k: 'ol', l: 1 }), P({ k: 'ol', l: 1 }), P({ k: 'ol' }), P({ k: 'p' }), P({ k: 'ol' })];
@@ -134,5 +134,16 @@ describe('Satır hizalama', () => {
     expect(normBlock({ t: 'x', a: 'j' }).a).toBe('j');
     expect('a' in normBlock({ t: 'x' })).toBe(false);
     expect('a' in normBlock({ t: 'x', a: 'zzz' })).toBe(false);
+  });
+});
+
+describe('Boş satırlar', () => {
+  it('metin aralarındaki boş satır korunur; baştaki, sondaki ve boş madde atılır', async () => {
+    const { cleanBlocks, visibleBlocks } = await import('../src/lib/notes.js');
+    const P = (o) => ({ t: '', k: 'p', ...o });
+    const out = cleanBlocks([P({}), P({ t: 'a' }), P({}), P({}), P({ t: 'b' }), P({ k: 'ul' }), P({})]);
+    expect(out.map((b) => b.t)).toEqual(['a', '', '', 'b']);
+    const vis = visibleBlocks([P({}), P({ t: 'a' }), P({}), P({ t: 'b' }), P({})]);
+    expect(vis.map((b) => [b.t, b.idx])).toEqual([['a', 1], ['', 2], ['b', 3]]);
   });
 });

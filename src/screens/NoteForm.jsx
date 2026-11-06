@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, actColor, inkKey } from '../components/ui.jsx';
 import { ColorPicker } from '../components/ColorPicker.jsx';
-import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel, effectivePin } from '../lib/notes.js';
+import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel, effectivePin, visibleBlocks } from '../lib/notes.js';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote, setNotePrefs } from '../data.js';
@@ -66,7 +66,26 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const scope = noteScope(category) === 'personal' ? 'personal' : 'family';
   const refs = useRef([]);
   const focusAfter = useRef(null);
-  const caretAfter = useRef(null); // plain-text caret offset to restore in the line that gets focus
+  const caretAfter = useRef(null);
+  // Select all: each line is its own field, so the phone's own "Select all" only reaches one line. When a whole line is selected a button offers
+  // "Tüm notu seç"; the whole note is then marked and can be copied, cut or deleted.
+  const [allSel, setAllSel] = useState(false);
+  const [wholeLine, setWholeLine] = useState(false);
+  useEffect(() => {
+    const on = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.rangeCount) { setWholeLine(false); return; }
+      const node = sel.anchorNode?.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
+      const el = node?.closest?.('.line-input');
+      if (!el) { setWholeLine(false); return; }
+      const strip = (t) => t.replace(/[\u200B\n]/g, '');
+      const txt = strip(el.textContent);
+      setWholeLine(txt.length > 0 && strip(sel.toString()).length >= txt.length);
+    };
+    document.addEventListener('selectionchange', on);
+    return () => document.removeEventListener('selectionchange', on);
+  }, []);
+  const selectAllNote = () => { setAllSel(true); setWholeLine(false); window.getSelection()?.removeAllRanges(); document.activeElement?.blur?.(); }; // plain-text caret offset to restore in the line that gets focus
 
   useEffect(() => {
     if (focusAfter.current != null) {
@@ -92,6 +111,19 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
       upd(cur, { t: serialize(el) });
     } else { upd(cur, { [f]: !row[f] }); focusAfter.current = cur; }
   };
+  const noteText = () => {
+    const lab = numberLabels(blocks);
+    const body = blocks.map((b, i) => (b.k === 'ul' ? '• ' : b.k === 'ol' ? `${lab[i]} ` : b.k === 'cb' ? (b.d ? '[x] ' : '[ ] ') : '') + plainText(b.t)).join('\n');
+    return (title.trim() ? `${title.trim()}\n` : '') + body;
+  };
+  const copyAll = async () => {
+    const t = noteText();
+    try { await navigator.clipboard.writeText(t); } catch {
+      const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
+    }
+  };
+  const clearAll = () => { setBlocks([normBlock({})]); setTitle(''); setAllSel(false); setCur(0); focusAfter.current = 0; };
   const setAlign = (a) => { upd(cur, { a }); focusAfter.current = cur; };
   const indent = (d) => { upd(cur, { l: Math.min(2, Math.max(0, row.l + d)) }); focusAfter.current = cur; };
   const move = (d) => {
@@ -221,7 +253,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
 
   // Reading view: the whole screen is the note, in its own colour, like a sheet of paper. The title is part of the sheet.
   if (reading && existing) {
-    const rb = toBlocks(existing).map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
+    const rb = visibleBlocks(toBlocks(existing));
     return (
       <main class="note-sheet" data-c={inkKey(existing.color)} style={`--c:${actColor(existing.color)}`}>
         <div class="sheet-top">
@@ -293,9 +325,21 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
             <button type="button" class="fmt" aria-label="Satırı sil" title="Satırı sil" onMouseDown={keep} onClick={removeLine}><Ico d="M6 6l12 12M18 6L6 18" /><Lbl>Satırı sil</Lbl></button>
           </div>
 
-          <input id="baslik" class="nf-title" value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
+          <input id="baslik" class={allSel ? 'nf-title allsel' : 'nf-title'} value={title} maxLength={NOTE_LIMITS.title} placeholder="Başlık" aria-label="Başlık" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
 
-          <div class="lines nf-lines">
+          {wholeLine && !allSel && (
+            <div class="nf-selbar"><button type="button" class="nf-selbtn" onMouseDown={keep} onClick={selectAllNote}>Tüm notu seç</button></div>
+          )}
+          {allSel && (
+            <div class="nf-selbar on" role="group" aria-label="Tüm not seçili">
+              <span class="nf-selinfo">Tüm not seçili</span>
+              <button type="button" class="nf-selbtn" onClick={async () => { await copyAll(); setAllSel(false); }}>Kopyala</button>
+              <button type="button" class="nf-selbtn" onClick={async () => { await copyAll(); clearAll(); }}>Kes</button>
+              <button type="button" class="nf-selbtn" onClick={() => { if (confirm('Tüm not metni silinsin mi?')) clearAll(); }}>Sil</button>
+              <button type="button" class="nf-selbtn" onClick={() => setAllSel(false)}>Vazgeç</button>
+            </div>
+          )}
+          <div class={allSel ? 'lines nf-lines allsel' : 'lines nf-lines'}>
             {blocks.map((b, i) => (
               <div class={`line k-${b.k}`} key={i} style={`margin-left:${b.l * 22}px`}>
                 {b.k === 'cb' && (
@@ -308,7 +352,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
                 <LineEditor key={`e${i}`} onRef={(el) => { refs.current[i] = el; }}
                   className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : '', b.a ? `ta-${b.a}` : ''].join(' ')}
                   label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
-                  onFocus={() => setCur(i)} onValue={(v) => { upd(i, { t: v }); setError(''); }}
+                  onFocus={() => { setCur(i); setAllSel(false); }} onSelectAll={selectAllNote} onValue={(v) => { upd(i, { t: v }); setError(''); }}
                   onEnter={(el) => onEnter(el, i)} onPasteLines={(el, parts) => onPasteLines(el, i, parts)} onBackspaceStart={() => onBackspaceStart(i)} />
               </div>
             ))}

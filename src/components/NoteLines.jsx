@@ -4,6 +4,7 @@ import { numberLabels, parseInline } from '../lib/notes.js';
 export function NoteLines({ blocks, onTick }) {
   const labels = numberLabels(blocks);
   return blocks.map((b, i) => {
+    if (!b.t) return <span class="nl nl-blank" key={i} aria-hidden="true" />;
     const inner = (
       <>
         {b.k === 'cb' && <i class={b.d ? 'nc on' : 'nc'}>{b.d && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</i>}
