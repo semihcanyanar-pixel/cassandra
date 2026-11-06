@@ -44,6 +44,9 @@ export function toBlocks(note) {
   if (note?.body) return note.body.split('\n').map((t) => normBlock({ t }));
   return [];
 }
+// Size limits: one line, the whole note, the title, and the number of lines (a Firestore document may hold 1 MB, this stays far below).
+export const NOTE_LIMITS = { line: 5000, total: 20000, title: 100, lines: 400 };
+export const noteLength = (blocks) => blocks.reduce((n, b) => n + (b.t || '').length, 0);
 export const cleanBlocks = (blocks) => blocks.map((b) => normBlock({ ...b, t: (b.t || '').trim() })).filter((b) => b.t);
 
 // Word-level formatting lives inside the line text as markers: **bold**, __italic__, ~~strikethrough~~.

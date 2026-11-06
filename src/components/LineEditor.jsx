@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { toHtml, MARKS } from '../lib/notes.js';
+import { toHtml, MARKS, NOTE_LIMITS } from '../lib/notes.js';
 
 // One note line as a contenteditable element: bold / italic / strikethrough show directly (no markers).
 // The note still stores the line as marker text (**bold**, __italic__, ~~strike~~); this file converts DOM <-> marker text.
@@ -69,7 +69,7 @@ export function splitAtCaret(el) {
   return [serialize(headHolder), serialize(holder)];
 }
 
-export function LineEditor({ value, onValue, onEnter, onBackspaceStart, onFocus, onRef, className, label, placeholder }) {
+export function LineEditor({ value, onValue, onEnter, onPasteLines, onBackspaceStart, onFocus, onRef, className, label, placeholder }) {
   const el = useRef(null);
 
   // Keep the DOM in sync with the model when it changed from outside (split, merge, load). Typing already matches, so the caret is left alone.
@@ -85,7 +85,7 @@ export function LineEditor({ value, onValue, onEnter, onBackspaceStart, onFocus,
       role="textbox" aria-multiline="false" aria-label={label} data-ph={placeholder || ''}
       autoCapitalize="sentences" spellcheck={true}
       onFocus={onFocus}
-      onInput={(e) => { const v = serialize(e.currentTarget).slice(0, 500); onValue(v); }}
+      onInput={(e) => { const v = serialize(e.currentTarget).slice(0, NOTE_LIMITS.line); onValue(v); }}
       onBeforeInput={(e) => {
         if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') { e.preventDefault(); onEnter(el.current); return; }
         if (e.inputType === 'deleteContentBackward') {
@@ -93,7 +93,15 @@ export function LineEditor({ value, onValue, onEnter, onBackspaceStart, onFocus,
           if (sel && sel.isCollapsed && caretOffset(el.current) === 0) { e.preventDefault(); onBackspaceStart(el.current); }
         }
       }}
-      onPaste={(e) => { e.preventDefault(); const t = (e.clipboardData?.getData('text/plain') || '').replace(/\s*\n\s*/g, ' '); if (t) document.execCommand('insertText', false, t); }}
+      onPaste={(e) => {
+        e.preventDefault();
+        const raw = (e.clipboardData?.getData('text/plain') || '').replace(/\r/g, '');
+        const parts = raw.split('\n').map((x) => x.trimEnd()).filter((x) => x.trim());
+        // several lines pasted: they become separate note lines (the parent splits the current line around the caret)
+        if (parts.length > 1 && onPasteLines) { onPasteLines(el.current, parts); return; }
+        const t = raw.replace(/\s*\n\s*/g, ' ');
+        if (t) document.execCommand('insertText', false, t);
+      }}
     />
   );
 }

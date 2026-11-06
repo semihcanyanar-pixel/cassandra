@@ -1,6 +1,7 @@
-import { useState } from 'preact/hooks';
+import { useState, useRef, useLayoutEffect } from 'preact/hooks';
+import { NoteLines } from '../components/NoteLines.jsx';
 import { IconLock, IconPlus } from '../icons.jsx';
-import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, numberLabels, parseInline, toggleCheck } from '../lib/notes.js';
+import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, toggleCheck } from '../lib/notes.js';
 import { saveNote } from '../data.js';
 
 const FILTERS = [{ value: 'all', label: 'Hepsi' }, ...NOTE_CATEGORIES];
@@ -41,16 +42,19 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   );
 }
 
-const MAX_LINES = 8;
+const MAX_LINES = 40; // the card only renders this many lines; CSS cuts it to a fixed height anyway
 
 function NoteCard({ n, ctx, onOpen }) {
   const personal = n.category === 'kisisel';
   const all = toBlocks(n);
   const blocks = all.map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
-  const labels = numberLabels(blocks);
   const shown = blocks.slice(0, MAX_LINES);
   // Ticking a round checkbox on the card saves the note right away (no need to open it).
   const tick = (idx) => saveNote(ctx, n.category, n.id, { blocks: toggleCheck(all, idx) });
+  const box = useRef(null);
+  const [clipped, setClipped] = useState(false);
+  useLayoutEffect(() => { const el = box.current; if (el) setClipped(el.clientHeight >= 170 && el.scrollHeight > el.clientHeight + 1); }); // clipped only when the height cap was reached
+  const more = clipped || blocks.length > shown.length;
   return (
     <div class={`note ${personal ? 'personal' : ''}`} data-c={n.color ?? 0} style={`--c:var(--act-${n.color ?? 0})`}>
       <button type="button" class="note-open" onClick={onOpen} aria-label={`${categoryLabel(NOTE_CATEGORIES, n.category)} notu: ${n.title || 'Başlıksız'} — aç`} />
@@ -60,25 +64,10 @@ function NoteCard({ n, ctx, onOpen }) {
         <span class="note-att"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" /></svg>{n.files.length} ek</span>
       )}
       {shown.length > 0 && (
-        <span class="note-lines">
-          {shown.map((b, i) => {
-            const inner = (
-              <>
-                {b.k === 'cb' && <i class={b.d ? 'nc on' : 'nc'}>{b.d && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</i>}
-                {b.k === 'ul' && <i class="nm">•</i>}
-                {b.k === 'ol' && <i class="nm">{labels[i]}</i>}
-                <span class={`nt ${b.b ? 'b' : ''} ${b.i ? 'i' : ''} ${b.s || (b.k === 'cb' && b.d) ? 's' : ''}`}>
-                  {parseInline(b.t).map((r, j) => <span key={j} class={`${r.b ? 'b' : ''} ${r.i ? 'i' : ''} ${r.s ? 's' : ''}`}>{r.text}</span>)}
-                </span>
-              </>
-            );
-            const style = `margin-left:${b.l * 12}px`;
-            return b.k === 'cb'
-              ? <button type="button" class={`nl k-cb nl-tap`} key={i} style={style} role="checkbox" aria-checked={b.d} aria-label={b.t} onClick={() => tick(b.idx)}>{inner}</button>
-              : <span class={`nl k-${b.k}`} key={i} style={style}>{inner}</span>;
-          })}
-          {blocks.length > MAX_LINES && <span class="sub">+{blocks.length - MAX_LINES} satır</span>}
-        </span>
+        <>
+          <span class={more ? 'note-lines clipped' : 'note-lines'} ref={box}><NoteLines blocks={shown} onTick={tick} /></span>
+          {more && <span class="note-more">Devamı</span>}
+        </>
       )}
     </div>
   );

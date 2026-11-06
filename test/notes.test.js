@@ -87,3 +87,12 @@ describe('kelime bazlı biçim', () => {
     expect(toggleCheck(b, 2)).toEqual(b);
   });
 });
+
+describe('Not boyut sınırları', () => {
+  it('toplam karakter sayısı satırların toplamıdır; sınırlar genişletildi', async () => {
+    const { noteLength, NOTE_LIMITS } = await import('../src/lib/notes.js');
+    expect(noteLength([{ t: 'abc' }, { t: 'de' }, {}])).toBe(5);
+    expect(NOTE_LIMITS.line).toBeGreaterThan(500);
+    expect(NOTE_LIMITS.title).toBeGreaterThan(60);
+  });
+});

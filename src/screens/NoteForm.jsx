@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Page, Card, Chips, Switch, actColor } from '../components/ui.jsx';
-import { NOTE_CATEGORIES, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText } from '../lib/notes.js';
+import { NOTE_CATEGORIES, NOTE_LIMITS, noteLength, noteScope, normalizeCategory, toBlocks, cleanBlocks, numberLabels, normBlock, plainText, toggleCheck, categoryLabel } from '../lib/notes.js';
+import { NoteLines } from '../components/NoteLines.jsx';
 import { LineEditor, serialize, placeCaret, splitAtCaret } from '../components/LineEditor.jsx';
 import { saveNote, deleteNote } from '../data.js';
 import { IconPlus } from '../icons.jsx';
@@ -40,6 +41,8 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   const d0 = draft.current;
   const base = { title: existing?.title || '', color: existing?.color ?? 0, pinned: Boolean(existing?.pinned), blocks: toBlocks(existing), files: existing?.files || [], category: normalizeCategory(existing?.category || initialCategory) };
   const [restored, setRestored] = useState(Boolean(d0));
+  // An existing note opens in a read-only view first (a restored draft goes straight to editing).
+  const [reading, setReading] = useState(Boolean(existing) && !d0);
   const [category, setCategory] = useState(d0 && !existing ? normalizeCategory(d0.category) : base.category);
   const [title, setTitle] = useState(d0 ? d0.title : base.title);
   const [blocks, setBlocks] = useState(() => { const b = d0 ? (d0.blocks || []).map(normBlock) : base.blocks; return b.length ? b : [normBlock({})]; });
@@ -114,6 +117,20 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     }
   }
 
+  // Several lines pasted at once: the current line is split at the caret and the pasted lines go in between.
+  function onPasteLines(el, i, parts) {
+    const r = blocks[i];
+    const [head, tail] = splitAtCaret(el) || [r.t, ''];
+    const listKind = ['ul', 'ol', 'cb'].includes(r.k) ? r.k : 'p';
+    const room = Math.max(0, NOTE_LIMITS.lines - blocks.length);
+    const mid = parts.slice(1, -1).slice(0, room).map((t) => normBlock({ t: t.slice(0, NOTE_LIMITS.line), k: listKind, l: r.l }));
+    const last = normBlock({ t: (parts[parts.length - 1] + tail).slice(0, NOTE_LIMITS.line), k: listKind, l: r.l });
+    const first = { ...r, t: (head + parts[0]).slice(0, NOTE_LIMITS.line) };
+    setBlocks((b) => [...b.slice(0, i), first, ...mid, last, ...b.slice(i + 1)]);
+    const at = i + mid.length + 1;
+    focusAfter.current = at; caretAfter.current = plainText(parts[parts.length - 1]).length; setCur(at); setError('');
+  }
+
   async function addFiles(list) {
     setBusy(true); setError('');
     for (const f of [...list]) {
@@ -163,6 +180,8 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     e.preventDefault();
     const clean = cleanBlocks(blocks);
     if (!title.trim() && clean.length === 0 && files.length === 0) { setError('Boş not kaydedilemez.'); return; }
+    if (noteLength(clean) > NOTE_LIMITS.total) { setError(`Not çok uzun: en çok ${NOTE_LIMITS.total.toLocaleString('tr-TR')} karakter olabilir. Fazlasını ikinci bir nota taşı.`); return; }
+    if (clean.length > NOTE_LIMITS.lines) { setError(`Not en çok ${NOTE_LIMITS.lines} satır olabilir.`); return; }
     const moved = Boolean(existing) && category !== base.category; // the category was changed: the note moves between personal and shared
     if (moved && !confirm(category === 'kisisel' ? 'Bu not kişisel olacak, eşin artık göremeyecek. Devam edilsin mi?' : 'Bu not aileye taşınacak, eşin de görecek ve düzenleyebilecek. Devam edilsin mi?')) return;
     clearDraft();
@@ -174,6 +193,24 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
   }
   const remove = () => { if (confirm('Not silinsin mi?')) { files.forEach((f) => deleteFile(f.id)); clearDraft(); deleteNote(ctx, base.category, id); nav.back(); } };
   const keep = (e) => e.preventDefault(); // keep the keyboard open when a toolbar button is tapped
+
+  const total = noteLength(blocks);
+  const tickRead = (idx) => saveNote(ctx, base0Category, id, { blocks: toggleCheck(toBlocks(existing), idx) });
+  const base0Category = base.category;
+
+  if (reading && existing) {
+    const rb = toBlocks(existing).map((b, idx) => ({ ...b, idx })).filter((b) => b.t);
+    return (
+      <Page title={existing.title || 'Not'} onClose={nav.back} footer={<button class="btn wide" type="button" onClick={() => setReading(false)}>Düzenle</button>}>
+        <div class="note-read" data-c={existing.color ?? 0} style={`--c:var(--act-${existing.color ?? 0})`}>
+          <span class="note-tag">{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
+          <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} /></div>
+          {rb.length === 0 && <div class="sub">Bu notta yazı yok.</div>}
+        </div>
+        {(existing.files || []).length > 0 && <Card label="EKLER"><Attachments files={existing.files} /></Card>}
+      </Page>
+    );
+  }
 
   return (
     <form onSubmit={submit}>
@@ -194,7 +231,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
         </Card>
         <Card>
           <label class="label" for="baslik" style="padding:0;margin:0">BAŞLIK</label>
-          <input id="baslik" class="big-input" value={title} maxLength={60} placeholder="İsteğe bağlı" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
+          <input id="baslik" class="big-input" value={title} maxLength={NOTE_LIMITS.title} placeholder="İsteğe bağlı" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
         </Card>
 
         <div class="fmtbar" role="toolbar" aria-label="Biçim araçları">
@@ -229,10 +266,13 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
                   className={['line-input', b.b ? 'b' : '', b.i ? 'i' : '', b.s || (b.k === 'cb' && b.d) ? 's' : ''].join(' ')}
                   label={`Satır ${i + 1}`} value={b.t} placeholder={i === 0 && blocks.length === 1 ? 'Notunu yaz…' : ''}
                   onFocus={() => setCur(i)} onValue={(v) => { upd(i, { t: v }); setError(''); }}
-                  onEnter={(el) => onEnter(el, i)} onBackspaceStart={() => onBackspaceStart(i)} />
+                  onEnter={(el) => onEnter(el, i)} onPasteLines={(el, parts) => onPasteLines(el, i, parts)} onBackspaceStart={() => onBackspaceStart(i)} />
               </div>
             ))}
           </div>
+          {total > NOTE_LIMITS.total * 0.7 && (
+            <div class={total > NOTE_LIMITS.total ? 'sub counter over' : 'sub counter'} aria-live="polite">{total.toLocaleString('tr-TR')} / {NOTE_LIMITS.total.toLocaleString('tr-TR')} karakter</div>
+          )}
         </Card>
 
         {filesEnabled && (
