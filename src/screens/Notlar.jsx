@@ -211,22 +211,22 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     <main class="screen">
       <div class="topbar">
         <h1 style="font-size:40px">Notlar</h1>
+        {mozaik && (
+          <button type="button" class={paper === 'frame' ? 'iconbtn on' : 'iconbtn'} aria-pressed={paper === 'frame'}
+            aria-label={paper === 'frame' ? 'Çerçeveli not kağıdı, tam renkli kağıda geç' : 'Tam renkli not kağıdı, siyah çerçeveli kağıda geç'}
+            onClick={() => setPaper(paper === 'frame' ? 'color' : 'frame')}><FrameIcon /></button>
+        )}
       </div>
 
       <Seg items={FILTERS} value={filter} onChange={setFilter} label="Kategori" />
 
-      <div class={mozaik ? 'nbar six' : 'nbar'} role="toolbar" aria-label="Not araçları">
+      <div class="nbar" role="toolbar" aria-label="Not araçları">
         <button type="button" class={layout === 'manual' ? 'nb on' : 'nb'} aria-pressed={layout === 'manual'}
           aria-label={layout === 'manual' ? 'Notlar elle düzenleniyor, otomatik düzene geç' : 'Notlar otomatik, elle düzenlemeye geç'}
           onClick={() => setLayout(layout === 'manual' ? 'auto' : 'manual')}>{layout === 'manual' ? <ResizeIcon /> : <AutoIcon />}</button>
         <button type="button" class={corners === 'square' ? 'nb on' : 'nb'} aria-pressed={corners === 'square'}
           aria-label={corners === 'square' ? 'Post-it köşeli, oval köşeye geç' : 'Oval köşeli, post-it köşeliye geç'}
           onClick={() => setCorners(corners === 'square' ? 'round' : 'square')}>{corners === 'square' ? <SquareIcon /> : <RoundIcon />}</button>
-        {mozaik && (
-          <button type="button" class={paper === 'frame' ? 'nb on' : 'nb'} aria-pressed={paper === 'frame'}
-            aria-label={paper === 'frame' ? 'Çerçeveli not kağıdı, tam renkli kağıda geç' : 'Tam renkli not kağıdı, siyah çerçeveli kağıda geç'}
-            onClick={() => setPaper(paper === 'frame' ? 'color' : 'frame')}><FrameIcon /></button>
-        )}
         <button type="button" class="nb add" aria-label="Not ekle" onClick={() => nav.go({ n: 'note', category: filter === 'all' ? 'aile' : filter })}><IconPlus /></button>
         <button type="button" class={tool === 'pin' ? 'nb on' : 'nb'} aria-pressed={tool === 'pin'} aria-label="Sabitle: sonra bir nota dokun"
           onClick={() => setTool(tool === 'pin' ? null : 'pin')}><PinIcon /></button>
