@@ -391,9 +391,8 @@ button.hg-row { cursor: pointer; }
 
 /* Günün notu: a boxless open book. Pages are swipeable (snap) and tilt like turning leaves; a thin spine line on the left, a rule and page number below. */
 .dnote.book { margin: 18px 0 6px; padding: 0 0 0 16px; border-left: 3px solid var(--text); }
-.dn-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; }
-.dn-track::-webkit-scrollbar { display: none; }
-.dn-page { flex: 0 0 100%; min-width: 0; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; }
+.dn-stack { display: grid; perspective: 900px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.dn-page { grid-area: 1 / 1; min-width: 0; box-sizing: border-box; transform-origin: left center; will-change: transform, opacity; }
 .dn-leaf { padding: 2px 4px 2px 0; min-height: 96px; }
 .dn-label { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: var(--muted); }
 .dn-text { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.1px; }
