@@ -324,4 +324,6 @@ button.hg-row { cursor: pointer; }
 
 /* Calendar entries in the day list: a calendar (or birthday cake) icon at the same size as the tick boxes. */
 .vico { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
-.vico svg { width: 24px; height: 24px; }
+.vico svg { width: 26px; height: 26px; }
+/* In the day list the tick boxes, the calendar icon and the cake are about the same size. */
+.vrow .check::before { width: 22px; height: 22px; }
