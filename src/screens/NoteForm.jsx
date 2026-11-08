@@ -167,13 +167,17 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
         <article class={`note big ${col ? 'big-col' : ''}`} data-c={inkKey(existing.color)} style={`--c:${actColor(existing.color)}`}>
           <div class="sheet-top">
             <span class="note-tag">{base.category === 'kisisel' && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
-            <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
+            <span class="sheet-acts">
+              <button type="button" class="sheet-x" aria-label="Notu düzenle" title="Düzenle" onClick={() => setReading(false)}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z" /><path d="M14.5 6.5l3 3" /></svg>
+              </button>
+              <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
+            </span>
           </div>
           {existing.title && <h1 class="sheet-title">{existing.title}</h1>}
           <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} circleOnly /></div>
           {rb.length === 0 && !existing.title && <div class="sheet-empty">Bu notta yazı yok.</div>}
           {(existing.files || []).length > 0 && <div class="sheet-files"><Attachments files={existing.files} /></div>}
-          <div class="sheet-footer"><button class="sheet-edit" type="button" onClick={() => setReading(false)}>Düzenle</button></div>
         </article>
       </div>
     );

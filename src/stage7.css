@@ -520,3 +520,7 @@ button.hg-row { cursor: pointer; }
 /* Pull to refresh */
 .ptr { position: fixed; top: env(safe-area-inset-top, 0px); left: 50%; margin-left: -23px; z-index: 40; pointer-events: none; color: var(--text); }
 .ptr svg { display: block; }
+
+.sheet-acts { display: inline-flex; align-items: center; margin-right: -10px; }
+.sheet-acts .sheet-x { margin-right: 0; }
+.note.big { min-height: min(48dvh, 100%); }
