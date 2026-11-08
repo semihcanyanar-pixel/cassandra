@@ -411,7 +411,7 @@ button.hg-row { cursor: pointer; }
 .pdate { margin: 0 !important; display: flex; align-items: center; gap: 10px; min-width: 0; }
 .pdate b { font-size: 58px; line-height: .9; letter-spacing: -3px; font-weight: 800; }
 .pdate span { font-size: 15px; font-weight: 800; line-height: 1.15; letter-spacing: .6px; color: var(--muted); }
-.topbar.poster .iconbtn { background: transparent; border: 2px solid var(--text); color: var(--text); box-sizing: border-box; box-shadow: none; }
+.topbar.poster .iconbtn, .topbar.outlined .iconbtn { background: transparent; border: 2px solid var(--text); color: var(--text); box-sizing: border-box; box-shadow: none; }
 
 /* Bugün "Tırmanış": no box. Big count and streak on top, the mountain below. */
 .hero { margin: 14px 0 8px; }

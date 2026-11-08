@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { trailAt, stepFraction, climberAt, climbText, SUMMIT, TRAIL } from '../src/lib/climb.js';
+import { trailAt, stepFraction, climberAt, climbText, AHEAD, SUMMIT, TRAIL } from '../src/lib/climb.js';
 
 describe('Tırmanış geometrisi', () => {
   it('iz dağın eteğinden zirveye gider', () => {
@@ -14,7 +14,7 @@ describe('Tırmanış geometrisi', () => {
   });
   it('tırmanıcı yapılan sayıya göre durur', () => {
     expect(climberAt(0, 4).pose).toBe('walk');
-    expect(climberAt(2, 4)).toMatchObject({ pose: 'climb', ...trailAt(stepFraction(1, 4)) });
+    expect(climberAt(2, 4)).toMatchObject({ pose: 'climb', ...trailAt(stepFraction(1, 4) + AHEAD) });
     expect(climberAt(4, 4)).toMatchObject({ pose: 'cheer', x: SUMMIT[0], y: SUMMIT[1] });
     expect(climberAt(1, 1).pose).toBe('cheer');
   });

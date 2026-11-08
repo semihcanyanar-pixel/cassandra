@@ -22,7 +22,7 @@ export function Kisisel({ me, data, nav, onSettings }) {
 
   return (
     <main class="screen">
-      <div class="topbar">
+      <div class="topbar outlined">
         <div>
           <h1 style="font-size:40px">Kişisel</h1>
           <span class="badge" style="margin-top:8px"><IconLock />Sadece sen görürsün</span>

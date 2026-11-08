@@ -29,11 +29,12 @@ export function trailAt(f) {
 // Footprints are spread evenly up the trail, a little short of the summit (it stays free for the flag) and away from the ridge corners.
 export const stepFraction = (i, n) => ((i + 0.5) / (n + 0.5)) * 0.95;
 
+export const AHEAD = 0.06; // the climber stands this far past the last finished camp
 // Where the climber stands: at the foot with nothing done, on the last finished footprint, on the summit when all are done.
 export function climberAt(done, n) {
   if (n > 0 && done >= n) return { ...trailAt(1), pose: 'cheer' };
   if (done <= 0) return { ...trailAt(0), pose: 'walk' };
-  return { ...trailAt(stepFraction(done - 1, n)), pose: 'climb' };
+  return { ...trailAt(Math.min(1, stepFraction(done - 1, n) + AHEAD)), pose: 'climb' }; // standing just past the camp he reached
 }
 
 export const climbText = (done, n) => (n > 0 && done >= n ? 'Zirvedesin!' : done === 0 ? 'Yola çıkalım' : `zirveye ${n - done} adım kaldı`);
