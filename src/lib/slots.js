@@ -1,13 +1,13 @@
 import { tasksForDay, taskDone, streak } from './stats.js';
 
-// Three automatic day notes (shown on Bugün): morning plan, afternoon check-in, evening wrap-up.
+// Three automatic day notes (shown on Bugün): morning plan (from 06:00), afternoon check-in, evening wrap-up.
 export const SLOTS = [
-  { id: 'sabah', from: 10, label: 'Sabah' },
+  { id: 'sabah', from: 6, label: 'Sabah' },
   { id: 'ogle', from: 15, label: 'Öğleden sonra' },
   { id: 'aksam', from: 20, label: 'Akşam' },
 ];
 
-// The latest slot whose time has come, or null before 10:00.
+// The latest slot whose time has come, or null before 06:00.
 export const currentSlot = (hour) => [...SLOTS].reverse().find((s) => hour >= s.from) || null;
 export const slotDocId = (dateISO, slotId) => `s-${dateISO}-${slotId}`;
 

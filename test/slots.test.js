@@ -3,7 +3,9 @@ import { currentSlot, slotDocId, latestNote, buildSlotInput, hasPlan, weeklyDue 
 
 describe('günün notu saatleri', () => {
   it('10, 15 ve 20 den itibaren; 10 dan önce yok', () => {
-    expect(currentSlot(9)).toBeNull();
+    expect(currentSlot(5)).toBeNull();
+    expect(currentSlot(6).id).toBe('sabah');
+    expect(currentSlot(9).id).toBe('sabah');
     expect(currentSlot(10).id).toBe('sabah');
     expect(currentSlot(14).id).toBe('sabah');
     expect(currentSlot(15).id).toBe('ogle');

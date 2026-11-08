@@ -16,7 +16,7 @@ const cooled = (key) => {
 };
 
 // On opening the app (and when the data is ready) creates:
-//  - the note for the current time slot (10:00 / 15:00 / 20:00) if it does not exist yet,
+//  - the note for the current time slot (06:00 / 15:00 / 20:00) if it does not exist yet,
 //  - the weekly evaluation on Sunday evening.
 // Returns { note, weekly } to show on Bugün.
 export function useAutoNote(uid, data) {
