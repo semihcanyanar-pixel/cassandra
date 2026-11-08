@@ -41,18 +41,24 @@ const HOLD_MS = 380; // press and hold a card this long (manual layout) to pick 
 
 export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const [filter, setFilter] = useState('all');
-  const [layout, setLayoutState] = useState(readLayout); // 'auto': two columns, long notes fade out | 'manual': windows you resize and arrange yourself
-  const setLayout = (v) => { setLayoutState(v); try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* ignore */ } };
   const mozaik = useTheme() === 'mozaik';
-  const [paper, setPaperState] = useState(readPaper); // Mozaik only: 'color' (whole card coloured) | 'frame' (white card, black frame, coloured top strip)
-  const setPaper = (v) => { setPaperState(v); try { localStorage.setItem(PAPER_KEY, v); } catch { /* ignore */ } };
-  const [corners, setCornersState] = useState(readCorners); // 'round' | 'square' (post-it)
-  const setCorners = (v) => { setCornersState(v); try { localStorage.setItem(CORNERS_KEY, v); } catch { /* ignore */ } };
+  // How the notes screen looks (layout: 'auto' two columns | 'manual' free windows, corners: 'round' | 'square' post-it, paper: 'color' | 'frame' Mozaik only)
+  // is part of MY profile (users/{uid}/prefs/notes, field ui), so it follows me to every device. The phone's own copy is the quick fallback.
+  const [mine, setMine] = useState({}); // what I changed in this session (shown at once)
+  const setUi = (key, storeKey) => (v) => {
+    setMine((m) => ({ ...m, [key]: v }));
+    try { localStorage.setItem(storeKey, v); } catch { /* ignore */ }
+    setNotePrefs(ctx.uid, { ui: { [key]: v } });
+  };
+  const setLayout = setUi('layout', LAYOUT_KEY), setPaper = setUi('paper', PAPER_KEY), setCorners = setUi('corners', CORNERS_KEY);
   const [tool, setTool] = useState(null); // 'pin' | 'eye': the next tapped note is pinned / hidden (one shot)
   const [dragKey, setDragKey] = useState(null); // the card being dragged
   const [ins, setIns] = useState(null); // where the dragged card would land: { key, mark } mark = bx/ax (before/after, side by side) or by/ay (above/below)
 
   const prefs = data.notePrefs || {};
+  const layout = mine.layout ?? prefs.ui?.layout ?? readLayout();
+  const corners = mine.corners ?? prefs.ui?.corners ?? readCorners();
+  const paper = mine.paper ?? prefs.ui?.paper ?? readPaper();
   const notes = arrangeNotes(filterNotes(house.notes, data.notes, filter), prefs, filter);
   const anyHidden = notes.some((n) => n.hidden);
   const flow = useRef(null);
