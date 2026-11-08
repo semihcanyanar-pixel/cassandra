@@ -1,4 +1,5 @@
 import { IconPlus, IconTrash } from '../icons.jsx';
+import { EmptyArt } from '../components/EmptyArt.jsx';
 import { today } from '../lib/dates.js';
 import { sortFridge, fridgeState, ageText, leftText } from '../lib/fridge.js';
 import { deleteFridge } from '../data.js';
@@ -13,6 +14,7 @@ export function Buzdolabi({ house, hid, nav }) {
 
       {items.length === 0 ? (
         <div class="card empty">
+          <EmptyArt kind="fridge" />
           <div class="title-sm">Liste boş</div>
           <div class="sub">Açtığın süt, yoğurt gibi ürünleri ya da yaptığın yemekleri tarihiyle ekle. Kaç gün kaldığını buradan görürsün.</div>
         </div>

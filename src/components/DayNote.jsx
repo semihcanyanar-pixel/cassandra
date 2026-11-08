@@ -107,6 +107,7 @@ export function DayNote({ dayPool, weekly, date }) {
           </div>
         ))}
       </div>
+      {count > 1 && <button type="button" class="dn-curl" aria-label="Sonraki sayfa" onClick={() => { touched.current = Date.now(); animateTo((Math.round(pos.current) + 1) % count, Math.round(pos.current) + 1 >= count ? 700 : 420); }} />}
       {count > 1 && (
         <div class="dn-foot" aria-hidden="true">
           <div class="dn-dots">{pages.map((p, i) => <i key={p.key} class={i === page ? 'on' : ''} />)}</div>

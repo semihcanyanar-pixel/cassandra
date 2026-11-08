@@ -7,6 +7,7 @@ import { NoteEditor } from '../components/NoteEditor.jsx';
 import { saveNote, deleteNote, setNotePrefs } from '../data.js';
 import { IconLock, IconClose } from '../icons.jsx';
 import { Attachments } from '../components/Attachments.jsx';
+import { useTheme } from '../theme.js';
 import { filesEnabled, uploadFile, deleteFile, compressImage, isImage, MAX_FILE_BYTES } from '../files.js';
 
 const Ico = ({ d }) => (
@@ -35,8 +36,21 @@ const ALIGN_BUTTONS = [
   { a: 'j', label: 'İki yana yasla', icon: <AlignIc rows={[[4, 20], [4, 20], [4, 20], [4, 20]]} /> },
 ];
 const Lbl = ({ children }) => <span class="fl">{children}</span>;
+const lsGet = (k, fallback) => { try { return localStorage.getItem(k) || fallback; } catch { return fallback; } };
+
+// How the notes list looks for ME (same rules as Notlar.jsx): the opened note is a much bigger version of its small card.
+function useNoteLook(data) {
+  const mozaik = useTheme() === 'mozaik';
+  const ui = data.notePrefs?.ui || {};
+  const paper = ui.paper ?? lsGet('cassandra.notes.paper', 'color');
+  const corners = ui.corners ?? lsGet('cassandra.notes.corners', 'round');
+  const full = mozaik && paper !== 'frame'; // the whole card is painted in the note colour (Mozaik, full colour paper)
+  const wrap = `${corners === 'square' ? 'notes-square' : ''} ${mozaik && paper === 'frame' ? 'notes-framed' : ''}`.trim();
+  return { full, wrap };
+}
 
 export function NoteForm({ ctx, data, house, id, category: initialCategory, nav }) {
+  const look = useNoteLook(data);
   const existing = id ? (initialCategory === 'kisisel' ? data.notes : house.notes).find((n) => n.id === id) : null;
   // A half-written note is kept as a draft on this phone, so leaving by accident (or an app reload) does not lose it.
   const dkey = `cassandra.draft.${ctx.uid}.${id || 'yeni'}`;
@@ -144,26 +158,29 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
     setCategory((c) => (c === 'kisisel' ? 'aile' : 'kisisel'));
   };
 
-  // Reading view: the whole screen is the note, in its own colour, like a sheet of paper. The title is part of the sheet.
+  // Reading view: the note opens as a big card over a dimmed screen, drawn like its small card (full colour only when the notes list is full colour).
   if (reading && existing) {
     const rb = visibleBlocks(toBlocks(existing));
+    const col = look.full;
     return (
-      <main class="note-sheet" data-c={inkKey(existing.color)} style={`--c:${actColor(existing.color)}`}>
-        <div class="sheet-top">
-          <span class="note-tag">{base.category === 'kisisel' && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
-          <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
-        </div>
-        {existing.title && <h1 class="sheet-title">{existing.title}</h1>}
-        <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} circleOnly /></div>
-        {rb.length === 0 && !existing.title && <div class="sheet-empty">Bu notta yazı yok.</div>}
-        {(existing.files || []).length > 0 && <div class="sheet-files"><Attachments files={existing.files} /></div>}
-        <div class="sheet-footer"><button class="sheet-edit" type="button" onClick={() => setReading(false)}>Düzenle</button></div>
-      </main>
+      <div class={`nsheet-bg ${look.wrap}`} onClick={(e) => { if (e.target === e.currentTarget) nav.back(); }}>
+        <article class={`note big ${col ? 'big-col' : ''}`} data-c={inkKey(existing.color)} style={`--c:${actColor(existing.color)}`}>
+          <div class="sheet-top">
+            <span class="note-tag">{base.category === 'kisisel' && <IconLock small />}{categoryLabel(NOTE_CATEGORIES, base.category).toUpperCase()}</span>
+            <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
+          </div>
+          {existing.title && <h1 class="sheet-title">{existing.title}</h1>}
+          <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} circleOnly /></div>
+          {rb.length === 0 && !existing.title && <div class="sheet-empty">Bu notta yazı yok.</div>}
+          {(existing.files || []).length > 0 && <div class="sheet-files"><Attachments files={existing.files} /></div>}
+          <div class="sheet-footer"><button class="sheet-edit" type="button" onClick={() => setReading(false)}>Düzenle</button></div>
+        </article>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} class={look.full ? 'nf-colored' : ''} data-c={inkKey(color)} style={look.full ? `--c:${actColor(color)}` : ''}>
       <Page title={existing ? 'Notu düzenle' : 'Yeni not'} onClose={close} footer={<button class="btn wide" type="submit" disabled={busy}>Kaydet</button>}>
         {restored && (
           <div class="nf-draft">

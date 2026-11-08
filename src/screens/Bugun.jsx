@@ -6,6 +6,7 @@ import { DayNote } from '../components/DayNote.jsx';
 import { Card, actColor } from '../components/ui.jsx';
 import { Climb } from '../components/Climb.jsx';
 import { Pop } from '../components/Pop.jsx';
+import { EmptyArt } from '../components/EmptyArt.jsx';
 import { climbText } from '../lib/climb.js';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
@@ -111,7 +112,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
               <div class="hero-big num"><Pop value={doneCount}>{doneCount}</Pop>/{rows.length}</div>
               <div class="hero-sub">aktivite · {climbText(doneCount, rows.length)}</div>
             </div>
-            <span class="streak-badge"><Pop value={run}>{run} gün seri</Pop></span>
+            <span class={`streak-badge ${run >= 100 ? 'tier3' : run >= 30 ? 'tier2' : run >= 7 ? 'tier1' : ''}`}>{run >= 7 && <svg class="flame" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z" /></svg>}<Pop value={run}>{run} gün seri</Pop></span>
           </div>
           <Climb rows={rows} />
           {total > 0 && <div class="sub hero-time">Kayıtlı süre: {fmtDur(total)}</div>}
@@ -120,6 +121,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
 
       {rows.length === 0 ? (
         <div class="card empty">
+          <EmptyArt kind="mountain" />
           <div class="title-sm">İlk aktiviteni ekle</div>
           <div class="sub">Süreni burada takip edeceksin.</div>
           <button class="btn" style="margin-top:12px" onClick={() => nav.go({ n: 'activity' })}><IconPlus />Aktivite ekle</button>

@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { Page, Card, Chips, Progress } from '../components/ui.jsx';
 import { IconPlus } from '../icons.jsx';
+import { EmptyArt } from '../components/EmptyArt.jsx';
 import { goalProgress } from '../lib/stats.js';
 import { saveGoal, deleteGoal } from '../data.js';
 import { today, diffDays, dayMonth } from '../lib/dates.js';
@@ -14,7 +15,7 @@ export function Goals({ data, nav }) {
       footer={<button class="btn wide" onClick={() => nav.go({ n: 'goal' })}><IconPlus />Hedef ekle</button>}>
       <div class="sub" style="padding:0 4px">Uzun vadeli hedeflerin. Grafik ve raporlardan bağımsızdır.</div>
       {data.goals.length === 0 && (
-        <div class="card empty"><div class="title-sm">Henüz hedef yok</div><div class="sub">Örn. “Yıl sonuna kadar 100 saat İngilizce”.</div></div>
+        <div class="card empty"><EmptyArt kind="goal" /><div class="title-sm">Henüz hedef yok</div><div class="sub">Örn. “Yıl sonuna kadar 100 saat İngilizce”.</div></div>
       )}
       {data.goals.map((g) => {
         const p = goalProgress(g, data.logs, data.tasks);

@@ -1,4 +1,5 @@
 import { useState, useRef, useLayoutEffect, useEffect } from 'preact/hooks';
+import { EmptyArt } from '../components/EmptyArt.jsx';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
 import { useTheme } from '../theme.js';
@@ -241,7 +242,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
       </div>
       {tool && <div class="sub nb-hint" role="status">{TOOL_HINT[tool]}</div>}
 
-      {notes.length === 0 && <div class="card empty"><div class="title-sm">Not yok</div><div class="sub">İlk notunu ekle.</div></div>}
+      {notes.length === 0 && <div class="card empty"><EmptyArt kind="note" /><div class="title-sm">Not yok</div><div class="sub">İlk notunu ekle.</div></div>}
 
       <div class={`${corners === 'square' ? 'notes-square' : ''} ${mozaik && paper === 'frame' ? 'notes-framed' : ''} ${tool ? 'tooling' : ''} ${dragKey ? 'dragging-any' : ''}`}>
         {layout === 'manual' ? (

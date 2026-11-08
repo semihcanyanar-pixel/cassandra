@@ -27,6 +27,7 @@ import { Nav } from './components/Nav.jsx';
 import { parseGo } from './lib/deeplink.js';
 import { ortakStart } from './screens/Ortak.jsx';
 import { Notice } from './components/Notice.jsx';
+import { PullRefresh } from './components/PullRefresh.jsx';
 
 export function App() {
   const s = useSession();
@@ -111,6 +112,7 @@ function Main({ session }) {
       {tab === 'notlar' && <Notlar me={me} ctx={{ uid, hid: session.hid }} house={house} data={data} nav={nav} onSettings={onSettings} />}
       {tab === 'takvim' && <Takvim me={me} house={house} data={data} nav={nav} onSettings={onSettings} />}
       <Nav tab={tab} onChange={setTab} />
+      <PullRefresh />
     </div>
   );
 }
