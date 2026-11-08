@@ -579,7 +579,7 @@ li.w { display: list-item; }
 .frame-bilet::before { top: -11px; clip-path: inset(50% 0 0 0); } .frame-bilet::after { bottom: -11px; clip-path: inset(0 0 50% 0); }
 :root[data-theme='teknik'] .frame-bilet { border-radius: 0; }
 
-.frame-not { margin: 24px 6px 14px; padding: 22px 18px 14px; background: var(--paper, #FFE066); color: var(--text); transition: background-color .35s; transform: rotate(-1.4deg); box-shadow: 0 8px 14px rgba(0,0,0,.18), inset 0 -28px 30px -28px rgba(0,0,0,.12); border-radius: 2px 2px 6px 2px;
+.frame-not { margin: 24px 0 14px; padding: 22px 18px 14px; background: var(--paper, #FFE066); color: var(--text); transition: background-color .35s; box-shadow: 0 8px 14px rgba(0,0,0,.18), inset 0 -28px 30px -28px rgba(0,0,0,.12); border-radius: 2px 2px 6px 2px;
   --text: #121212; --muted: rgba(18,18,18,.65); --track: rgba(18,18,18,.2); --line: rgba(18,18,18,.25); }
 .frame-not.dark { --text: #fff; --muted: rgba(255,255,255,.72); --track: rgba(255,255,255,.28); --line: rgba(255,255,255,.3); }
 .frame-not::before { content: ''; position: absolute; top: -12px; left: 0; right: 0; width: 84px; height: 24px; margin: 0 auto; background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
