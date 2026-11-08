@@ -78,7 +78,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     let best = 0, bestMax = Infinity, run = 0;
     for (let k = 0; k <= hs.length; k++) {
       const m = Math.max(run, total - run);
-      if (m < bestMax - 0.5) { bestMax = m; best = k; }
+      if (m <= bestMax + 0.5) { bestMax = Math.min(m, bestMax); best = k; } // on a tie the left column keeps more notes (a single note stays on the left)
       run += hs[k] || 0;
     }
     if (best !== firstCol) setSplit(best);
