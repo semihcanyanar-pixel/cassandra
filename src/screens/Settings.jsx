@@ -48,8 +48,9 @@ export function Settings({ session, data, house, onBack }) {
 
   function pick(key) { setTheme(key); saveTheme(me.uid, key); }
   const [frame, setFrame] = useState(dayFrame(data.notePrefs));
+  const [frameOpen, setFrameOpen] = useState(false); // the list of frames opens on tap
   function pickFrame(key) {
-    setFrame(key);
+    setFrame(key); setFrameOpen(false);
     try { localStorage.setItem(FRAME_KEY, key); } catch { /* ignore */ }
     setNotePrefs(me.uid, { ui: { dayframe: key } });
   }
@@ -84,17 +85,26 @@ export function Settings({ session, data, house, onBack }) {
       </div>
 
       <div class="label" id="cerceve">GÜNÜN NOTU ÇERÇEVESİ</div>
-      <div role="radiogroup" aria-labelledby="cerceve" style="display:flex;flex-direction:column;gap:10px">
-        {FRAMES.map((f) => (
-          <button key={f.key} class="themeopt" role="radio" aria-checked={frame === f.key} onClick={() => pickFrame(f.key)}>
-            <span class="grow">
-              <div style="font-size:16px;font-weight:700">{f.name}</div>
-              <div class="sub">{f.desc}</div>
-            </span>
-            {frame === f.key && <span class="tick" aria-label="Seçili"><IconCheck /></span>}
-          </button>
-        ))}
-      </div>
+      <button type="button" class="themeopt" aria-haspopup="listbox" aria-expanded={frameOpen} aria-labelledby="cerceve" onClick={() => setFrameOpen((o) => !o)}>
+        <span class="grow">
+          <div style="font-size:16px;font-weight:700">{FRAMES.find((f) => f.key === frame)?.name}</div>
+          <div class="sub">{FRAMES.find((f) => f.key === frame)?.desc}</div>
+        </span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style={`flex:none;transition:transform .2s;transform:rotate(${frameOpen ? 180 : 0}deg)`}><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      {frameOpen && (
+        <div role="listbox" aria-labelledby="cerceve" style="display:flex;flex-direction:column;gap:10px">
+          {FRAMES.map((f) => (
+            <button key={f.key} class="themeopt" role="option" aria-selected={frame === f.key} onClick={() => pickFrame(f.key)}>
+              <span class="grow">
+                <div style="font-size:16px;font-weight:700">{f.name}</div>
+                <div class="sub">{f.desc}</div>
+              </span>
+              {frame === f.key && <span class="tick" aria-label="Seçili"><IconCheck /></span>}
+            </button>
+          ))}
+        </div>
+      )}
 
       <PushSection session={session} />
 
