@@ -321,3 +321,7 @@ button.hg-row { cursor: pointer; }
 :root[data-theme='mozaik'] .notes-framed.notes-square .note { box-shadow: inset 0 9px 0 var(--c), 3px 3px 0 rgba(10,10,10,.25); }
 :root[data-theme='mozaik'] .notes-framed .note[data-c="6"] .note-tag, :root[data-theme='mozaik'] .notes-framed .note[data-c="6"] .note-att, :root[data-theme='mozaik'] .notes-framed .note[data-c="6"] .note-more { color: rgba(18,18,18,.75); }
 :root[data-theme='mozaik'] .notes-framed .note .nl .nc.on svg { color: var(--card); }
+
+/* Calendar entries in the day list: a calendar (or birthday cake) icon at the same size as the tick boxes. */
+.vico { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.vico svg { width: 24px; height: 24px; }

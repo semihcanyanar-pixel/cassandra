@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
 import { Card, actColor } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
-import { IconPlus, IconLock } from '../icons.jsx';
+import { IconPlus, IconLock, IconCalendar, IconCake } from '../icons.jsx';
 import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
 import { fmtDur, habitList, habitStreak, activeDays, tasksForDay, taskDone } from '../lib/stats.js';
 import { occurrences, tagScopes } from '../lib/events.js';
@@ -62,7 +62,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       tick: () => { if (confirm(`“${x.name}” bitti, listeden kaldırılsın mı?`)) deleteFridge(session.hid, x.id); },
       open: () => { ortakStart.sub = 'fridge'; goTab('ortak'); },
     })),
-    ...events.map((e) => ({ id: `e${e.scope}${e.id}`, time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
+    ...events.map((e) => ({ id: `e${e.scope}${e.id}`, icon: e.kind === 'dogum' ? 'cake' : 'cal', time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
   ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   const pendingMeds = items.filter((i) => i.med && !i.done).length;
   const shownItems = showMeds ? items : items.filter((i) => !i.med);
@@ -190,7 +190,7 @@ function Row({ it }) {
     <div class={`vrow ${it.done ? 'done' : ''} ${it.missed ? 'missed' : ''}`}>
       {it.tick
         ? <button class={it.done ? 'check on' : 'check'} role="checkbox" aria-checked={it.done} aria-label={it.title} onClick={it.tick}>{it.done && <Tick />}</button>
-        : <span class="vdot" aria-hidden="true" />}
+        : it.icon ? <span class="vico" aria-hidden="true">{it.icon === 'cake' ? <IconCake /> : <IconCalendar />}</span> : <span class="vdot" aria-hidden="true" />}
       <button class="vmain grow" onClick={it.open}>
         <span class={it.done ? 'title-sm struck' : 'title-sm'}>{it.title}</span>
         {it.sub && <span class="sub">{it.sub}</span>}

@@ -13,6 +13,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
   const [hasTime, setHasTime] = useState(Boolean(existing?.time));
   const [time, setTime] = useState(existing?.time || '09:00');
   const [scope, setScope] = useState(initialScope || 'aile');
+  const [kind, setKind] = useState(existing?.kind || ''); // '' = normal, 'dogum' = birthday (shown with a cake icon)
   const [repeat, setRepeat] = useState(existing?.repeat || 'none');
   const [reminds, setReminds] = useState(() => remindsOf(existing)); // several reminders are allowed: e.g. 1 week and 1 day before
   const [days, setDays] = useState(''); // the "N days before" box
@@ -34,7 +35,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
     if (!title.trim()) { setError('Kayda bir başlık yaz.'); return; }
     if (!date) { setError('Tarih seç.'); return; }
     const sorted = sortReminds(valid);
-    saveEvent(ctx, scope, id, { title: title.trim(), date, time: hasTime ? time : null, repeat, reminds: sorted, remind: sorted[0] || 'none' });
+    saveEvent(ctx, scope, id, { title: title.trim(), kind: kind || null, date, time: hasTime ? time : null, repeat, reminds: sorted, remind: sorted[0] || 'none' });
     nav.back();
   }
   const remove = () => { if (confirm('Kayıt silinsin mi?')) { deleteEvent(ctx, scope, id); nav.back(); } };
@@ -58,6 +59,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
           </div>
           {hasTime && <input class="date-input" type="time" value={time} aria-label="Saat" style="margin-top:10px" onInput={(e) => setTime(e.target.value)} />}
         </Card>
+        <Card label="TÜR"><Chips options={[{ value: '', label: 'Normal' }, { value: 'dogum', label: 'Doğum günü' }]} value={kind} onChange={setKind} label="Kayıt türü" /></Card>
         <Card label="TEKRAR"><Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" /></Card>
         <Card label="HATIRLATMA">
           <div class="chips" role="group" aria-label="Hatırlatmalar">

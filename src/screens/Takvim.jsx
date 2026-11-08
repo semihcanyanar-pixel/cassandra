@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { IconBack, IconNext, IconPlus, IconLock } from '../icons.jsx';
+import { IconBack, IconNext, IconPlus, IconLock, IconCake } from '../icons.jsx';
 import { occurrences, tagScopes, monthGrid, repeatLabel, remindsOf, sortReminds, remindsLabel } from '../lib/events.js';
 import { today, addDays, addMonths, monthStart, fromISO, dayMonth, DAY_LETTER } from '../lib/dates.js';
 
@@ -79,7 +79,7 @@ export function Takvim({ me, house, data, nav, onSettings }) {
 function EventRow({ e, onOpen }) {
   return (
     <button class="ev-row" onClick={onOpen} aria-label={`${e.title}, düzenle`}>
-      <span class={e.scope === 'kisisel' ? 'ev-ico per' : 'ev-ico fam'} aria-hidden="true">{e.scope === 'kisisel' ? <IconLock small /> : <IconPlus />}</span>
+      <span class={e.scope === 'kisisel' ? 'ev-ico per' : 'ev-ico fam'} aria-hidden="true">{e.kind === 'dogum' ? <IconCake /> : e.scope === 'kisisel' ? <IconLock small /> : <IconPlus />}</span>
       <span class="grow">
         <span class="title-sm" style="display:block">{e.title}</span>
         <span class="sub" style="display:block">{eventMeta(e) || (e.scope === 'kisisel' ? 'Kişisel' : 'Aile')}</span>
