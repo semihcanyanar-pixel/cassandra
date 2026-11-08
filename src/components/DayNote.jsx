@@ -69,7 +69,8 @@ export function DayNote({ dayPool, weekly, date }) {
   useEffect(() => {
     if (count < 2 || still.current) return undefined;
     const id = setInterval(() => {
-      if (document.visibilityState !== 'visible' || drag.current || Date.now() - touched.current < 10000) return;
+      // no check of drag.current: iOS can drop a pointerup, and a stale drag would stop the turning for good
+      if (document.visibilityState !== 'visible' || Date.now() - touched.current < 10000) return;
       const next = (Math.round(pos.current) + 1) % count;
       animateTo(next, next === 0 ? 700 : 420);
     }, 10000);

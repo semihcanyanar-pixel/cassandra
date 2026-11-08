@@ -9,7 +9,9 @@ const KEYS = THEMES.map((t) => t.key);
 
 export function applyTheme(key) {
   if (!KEYS.includes(key)) return;
-  document.documentElement.dataset.theme = key;
+  const root = document.documentElement;
+  if (root.dataset.theme && root.dataset.theme !== key) { root.classList.add('theme-fade'); setTimeout(() => root.classList.remove('theme-fade'), 600); } // soft colour change
+  root.dataset.theme = key;
   try { localStorage.setItem('cassandra.theme', key); } catch { /* storage may be blocked */ }
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = THEMES.find((t) => t.key === key).bar;

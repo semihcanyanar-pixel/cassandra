@@ -15,6 +15,8 @@ export function Takvim({ me, house, data, nav, onSettings }) {
   const t = today();
   const [month, setMonth] = useState(monthStart(t));
   const [sel, setSel] = useState(t);
+  const [dir, setDir] = useState(0); // which way the month grid slides in
+  const goMonth = (m) => { setDir(m > month ? 1 : m < month ? -1 : 0); setMonth(m); };
   const all = tagScopes(house.events, data.events);
   const cells = monthGrid(month);
   const occ = occurrences(all, cells[0], cells[41]);
@@ -22,7 +24,7 @@ export function Takvim({ me, house, data, nav, onSettings }) {
   for (const o of occ) (byDay[o.date] ||= []).push(o);
   const dayEvents = byDay[sel] || [];
   const upcoming = occurrences(all, addDays(sel, 1), addDays(sel, 120)).slice(0, 5);
-  const shift = (n) => { const m = addMonths(month, n); setMonth(m); setSel(m === monthStart(t) ? t : m); };
+  const shift = (n) => { const m = addMonths(month, n); goMonth(m); setSel(m === monthStart(t) ? t : m); };
   const edit = (e) => nav.go({ n: 'event', id: e.id, scope: e.scope });
 
   return (
@@ -40,7 +42,7 @@ export function Takvim({ me, house, data, nav, onSettings }) {
       </div>
 
       <div class="cal-head" aria-hidden="true">{DAY_LETTER.map((l, i) => <span key={i}>{l}</span>)}</div>
-      <div class="cal-grid" role="grid" aria-label={`${monthName(month)} takvimi`}>
+      <div key={month} class={`cal-grid ${dir > 0 ? 'slide-next' : dir < 0 ? 'slide-prev' : ''}`} role="grid" aria-label={`${monthName(month)} takvimi`}>
         {cells.map((d) => {
           const evs = byDay[d] || [];
           const fam = evs.some((e) => e.scope === 'aile'), per = evs.some((e) => e.scope === 'kisisel');
@@ -48,7 +50,7 @@ export function Takvim({ me, house, data, nav, onSettings }) {
           const cls = ['cell', inMonth ? '' : 'out', d === t ? 'today' : '', d === sel ? 'sel' : ''].join(' ');
           return (
             <button key={d} class={cls} role="gridcell" aria-selected={d === sel}
-              aria-label={`${dayMonth(d)}${evs.length ? `, ${evs.length} kayıt` : ''}`} onClick={() => { setSel(d); if (!inMonth) setMonth(monthStart(d)); }}>
+              aria-label={`${dayMonth(d)}${evs.length ? `, ${evs.length} kayıt` : ''}`} onClick={() => { setSel(d); if (!inMonth) goMonth(monthStart(d)); }}>
               <span>{fromISO(d).getDate()}</span>
               <span class="marks" aria-hidden="true">{fam && <i class="mk fam" />}{per && <i class="mk per" />}</span>
             </button>
@@ -66,7 +68,7 @@ export function Takvim({ me, house, data, nav, onSettings }) {
 
         {upcoming.length > 0 && <div class="label" style="margin:12px 0 4px;padding:0">YAKLAŞANLAR</div>}
         {upcoming.map((e) => (
-          <button key={`${e.scope}-${e.id}-${e.date}`} class="up-row" onClick={() => { setSel(e.date); setMonth(monthStart(e.date)); }}>
+          <button key={`${e.scope}-${e.id}-${e.date}`} class="up-row" onClick={() => { setSel(e.date); goMonth(monthStart(e.date)); }}>
             <span class="up-ico" aria-hidden="true"><EventIcon kind={e.kind} /></span>
             <span class="grow">{e.title}</span>
             {e.scope === 'kisisel' && <span class="badge small"><IconLock small />Kişisel</span>}

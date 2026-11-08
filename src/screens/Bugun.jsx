@@ -5,6 +5,7 @@ import { useDayPoolRefill } from '../dayPool.js';
 import { DayNote } from '../components/DayNote.jsx';
 import { Card, actColor } from '../components/ui.jsx';
 import { Climb } from '../components/Climb.jsx';
+import { Pop } from '../components/Pop.jsx';
 import { climbText } from '../lib/climb.js';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
@@ -23,7 +24,7 @@ const dateParts = () => {
   const f = (o) => new Intl.DateTimeFormat('tr-TR', o).format(d).toLocaleUpperCase('tr-TR');
   return { day: d.getDate(), month: f({ month: 'long' }), weekday: f({ weekday: 'long' }) };
 };
-const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="tk" d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" /></svg>;
 const Cross = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
 const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat === 'days' ? (task.days || []).slice().sort().map((d) => DAY_SHORT[d]).join(' · ') : null);
@@ -107,10 +108,10 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         <section class="hero" aria-label="Bugünkü ilerleme">
           <div class="hero-head">
             <div>
-              <div class="hero-big num">{doneCount}/{rows.length}</div>
+              <div class="hero-big num"><Pop value={doneCount}>{doneCount}</Pop>/{rows.length}</div>
               <div class="hero-sub">aktivite · {climbText(doneCount, rows.length)}</div>
             </div>
-            <span class="streak-badge">{run} gün seri</span>
+            <span class="streak-badge"><Pop value={run}>{run} gün seri</Pop></span>
           </div>
           <Climb rows={rows} />
           {total > 0 && <div class="sub hero-time">Kayıtlı süre: {fmtDur(total)}</div>}
@@ -135,8 +136,8 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
                 <button type="button" class="ring-btn" role="checkbox" aria-checked={done} aria-label={`${a.name} bugün yapıldı`} onClick={() => toggleDone(r)}>
                   <svg width="68" height="68" viewBox="0 0 68 68" aria-hidden="true">
                     <circle cx="34" cy="34" r={R} fill="none" stroke="var(--track)" stroke-width="8" />
-                    {frac > 0 && <circle cx="34" cy="34" r={R} fill="none" stroke={actColor(a.color)} stroke-width="8" stroke-linecap="round" stroke-dasharray={`${C * frac} ${C}`} transform="rotate(-90 34 34)" />}
-                    {done ? <path d="M25 35l6 6 12-13" fill="none" stroke="var(--text)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /> : <circle cx="34" cy="34" r="5" fill={actColor(a.color)} opacity=".45" />}
+                    <circle class="ring-arc" cx="34" cy="34" r={R} fill="none" stroke={actColor(a.color)} stroke-width="8" stroke-linecap="round" stroke-dasharray={`${Math.max(0.01, C * frac)} ${C}`} stroke-opacity={frac > 0 ? 1 : 0} transform="rotate(-90 34 34)" />
+                    {done ? <path class="ring-tick" pathLength="1" d="M25 35l6 6 12-13" fill="none" stroke="var(--text)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" /> : <circle cx="34" cy="34" r="5" fill={actColor(a.color)} opacity=".45" />}
                   </svg>
                 </button>
                 <button type="button" class="ring-meta" onClick={() => nav.go({ n: 'log', activityId: a.id })} aria-label={`${a.name}: süre ekle ya da düzenle`}>

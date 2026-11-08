@@ -63,7 +63,7 @@ export function Climb({ rows }) {
         const p = trailAt(stepFraction(i, n));
         return (
           <g key={r.a.id} transform={`translate(${p.x} ${p.y + 2})`} class={r.done ? 'cl-camp on' : 'cl-camp'}>
-            <Camp done={r.done} />
+            <g class={r.done ? 'cl-tent on' : 'cl-tent'}><Camp done={r.done} /></g>
           </g>
         );
       })}
@@ -74,7 +74,7 @@ export function Climb({ rows }) {
         </>
       )}
       <g class="cl-fig" style={{ transform: `translate(${at.x}px, ${at.y}px)` }}>
-        <Figure pose={at.pose} />
+        <g key={Math.round(at.x)} class="cl-hop"><Figure pose={at.pose} /></g>
       </g>
       {all && (
         <g class="cl-spark" stroke="var(--act-0)" stroke-width="2.6" stroke-linecap="round" fill="none">

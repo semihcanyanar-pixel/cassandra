@@ -390,7 +390,10 @@ button.hg-row { cursor: pointer; }
 .flow-card .tl-row .vrow .iconbtn { width: 40px; }
 
 /* Günün notu: a boxless open book. Pages are swipeable (snap) and tilt like turning leaves; a thin spine line on the left, a rule and page number below. */
-.dnote.book { margin: 18px 0 6px; padding: 0 0 0 16px; border-left: 3px solid var(--text); }
+/* A drawn book: thick spine on the left, stacked page edges at the right and bottom, a red ribbon bookmark. */
+.dnote.book { position: relative; margin: 18px 10px 14px 0; padding: 14px 14px 10px 18px; background: var(--card); border: 2px solid var(--text); border-left-width: 9px; border-radius: 5px 11px 11px 5px; box-shadow: 3px 3px 0 0 var(--card), 3px 3px 0 2px var(--text), 6px 6px 0 0 var(--card), 6px 6px 0 2px var(--text); }
+.dnote.book::after { content: ''; position: absolute; top: -2px; right: 22px; width: 14px; height: 30px; background: #E5383B; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); pointer-events: none; }
+:root[data-theme='teknik'] .dnote.book { border-radius: 0; }
 .dn-stack { display: grid; perspective: 900px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
 .dn-page { grid-area: 1 / 1; min-width: 0; box-sizing: border-box; transform-origin: left center; will-change: transform, opacity; }
 .dn-leaf { padding: 2px 4px 2px 0; min-height: 96px; }
@@ -399,7 +402,7 @@ button.hg-row { cursor: pointer; }
 .dn-quote { font-size: 17px; font-weight: 600; line-height: 1.45; font-style: italic; }
 .dn-by { display: block; margin-top: 8px; font-style: normal; font-weight: 800; font-size: 13px; color: var(--muted); }
 .dn-tips { margin: 10px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); }
-.dn-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+.dn-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--line); }
 .dn-dots { display: flex; gap: 6px; }
 .dn-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--track); transition: background .2s, width .2s; }
 .dn-dots i.on { width: 16px; border-radius: 3px; background: var(--text); }
@@ -427,3 +430,30 @@ button.hg-row { cursor: pointer; }
 @keyframes cl-wave { from { transform: scaleX(1); } to { transform: scaleX(.8); } }
 @keyframes cl-twinkle { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .cl-fig { transition: none; } .cl-cloth, .cl-spark { animation: none; } }
+
+/* Small animations (all switched off when the phone asks for less motion). */
+.note { transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); }
+.theme-fade, .theme-fade * { transition: background-color .45s ease, color .45s ease, border-color .45s ease, fill .45s ease, stroke .45s ease !important; }
+@media (prefers-reduced-motion: no-preference) {
+  .screen > * { animation: rise .42s ease-out backwards; }
+  .screen > *:nth-child(2) { animation-delay: .04s; } .screen > *:nth-child(3) { animation-delay: .08s; } .screen > *:nth-child(4) { animation-delay: .12s; }
+  .screen > *:nth-child(5) { animation-delay: .16s; } .screen > *:nth-child(6) { animation-delay: .2s; } .screen > *:nth-child(n+7) { animation-delay: .24s; }
+  .pop { display: inline-block; animation: pop-in .45s cubic-bezier(.3, 1.6, .5, 1); }
+  .ring-arc { transition: stroke-dasharray .6s cubic-bezier(.4, 0, .2, 1), stroke-opacity .2s; }
+  .ring-tick { stroke-dasharray: 1; animation: draw .35s .3s ease-out backwards; }
+  .check.on::before { animation: pop-in .3s cubic-bezier(.3, 1.6, .5, 1); }
+  .check.on svg .tk { stroke-dasharray: 1; animation: draw .3s .12s ease-out backwards; }
+  .vrow .title-sm { transition: color .3s; }
+  .cl-tent.on { transform-box: fill-box; transform-origin: 50% 100%; animation: tent-up .5s cubic-bezier(.3, 1.6, .5, 1) backwards; }
+  .cl-hop { animation: cl-hop .7s ease-in-out; }
+  .cal-grid.slide-next { animation: slide-next .32s ease-out; } .cal-grid.slide-prev { animation: slide-prev .32s ease-out; }
+  .nav button { transition: background-color .25s, color .25s; }
+  .nav button[aria-current='page'] svg { animation: pop-in .35s cubic-bezier(.3, 1.6, .5, 1); }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(35%) scale(.8); } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tent-up { from { transform: scale(0); } }
+@keyframes cl-hop { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-6px); } 50% { transform: translateY(0); } 75% { transform: translateY(-4px); } }
+@keyframes slide-next { from { opacity: 0; transform: translateX(26px); } }
+@keyframes slide-prev { from { opacity: 0; transform: translateX(-26px); } }

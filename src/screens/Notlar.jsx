@@ -131,7 +131,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
     const d = { key: card.dataset.key, card, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY, s0: window.scrollY, active: false, ins: null, others: [], timer: 0, raf: 0, row: container.getBoundingClientRect().width, side: layout === 'manual', free: layout === 'manual', r0: null };
     drag.current = d;
     const place = () => {
-      d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0) - 36}px) scale(1.03)`; // lifted a little above the finger so the drop bar stays visible
+      d.card.style.transform = `translate(${d.px - d.x0}px, ${d.py - d.y0 + (window.scrollY - d.s0) - 36}px) rotate(-2.2deg) scale(1.04)`; // lifted a little above the finger so the drop bar stays visible
       if (d.free) return; // free canvas: no insertion bar, the card simply lands where it is
       // the nearest other card (distance 0 when the finger is over it), then before / after it
       let best = null, bd = Infinity;
