@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useEffect } from 'preact/hooks';
 import { NoteLines } from '../components/NoteLines.jsx';
 import { Seg } from '../components/Seg.jsx';
+import { useTheme } from '../theme.js';
 import { actColor, inkKey } from '../components/ui.jsx';
 import { IconLock, IconPlus } from '../icons.jsx';
 import { filterNotes, categoryLabel, NOTE_CATEGORIES, toBlocks, visibleBlocks, toggleCheck, noteKey, effectivePin, effectiveSize, arrangeNotes } from '../lib/notes.js';
@@ -24,6 +25,9 @@ const SquareIcon = () => <Ic><path d="M4 4h16v16H4z" /><path d="M14 20v-6h6" /><
 const PinIcon = () => <Ic><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7" /></Ic>;
 const EyeIcon = ({ off }) => <Ic><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="2.8" />{off && <path d="M4 20L20 4" />}</Ic>;
 
+const PAPER_KEY = 'cassandra.notes.paper';
+const readPaper = () => { try { return localStorage.getItem(PAPER_KEY) === 'frame' ? 'frame' : 'color'; } catch { return 'color'; } };
+const FrameIcon = () => <Ic><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M4 8.5h16" stroke-width="4" /></Ic>;
 const CORNERS_KEY = 'cassandra.notes.corners';
 const readCorners = () => { try { return localStorage.getItem(CORNERS_KEY) === 'square' ? 'square' : 'round'; } catch { return 'round'; } };
 const TOOL_HINT = { pin: 'Sabitlemek ya da sabitlemeyi kaldırmak için bir nota dokun.', eye: 'Gizlemek ya da göstermek için bir nota dokun.' };
@@ -39,6 +43,9 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
   const [filter, setFilter] = useState('all');
   const [layout, setLayoutState] = useState(readLayout); // 'auto': two columns, long notes fade out | 'manual': windows you resize and arrange yourself
   const setLayout = (v) => { setLayoutState(v); try { localStorage.setItem(LAYOUT_KEY, v); } catch { /* ignore */ } };
+  const mozaik = useTheme() === 'mozaik';
+  const [paper, setPaperState] = useState(readPaper); // Mozaik only: 'color' (whole card coloured) | 'frame' (white card, black frame, coloured top strip)
+  const setPaper = (v) => { setPaperState(v); try { localStorage.setItem(PAPER_KEY, v); } catch { /* ignore */ } };
   const [corners, setCornersState] = useState(readCorners); // 'round' | 'square' (post-it)
   const setCorners = (v) => { setCornersState(v); try { localStorage.setItem(CORNERS_KEY, v); } catch { /* ignore */ } };
   const [tool, setTool] = useState(null); // 'pin' | 'eye': the next tapped note is pinned / hidden (one shot)
@@ -208,13 +215,18 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
       <Seg items={FILTERS} value={filter} onChange={setFilter} label="Kategori" />
 
-      <div class="nbar" role="toolbar" aria-label="Not araçları">
+      <div class={mozaik ? 'nbar six' : 'nbar'} role="toolbar" aria-label="Not araçları">
         <button type="button" class={layout === 'manual' ? 'nb on' : 'nb'} aria-pressed={layout === 'manual'}
           aria-label={layout === 'manual' ? 'Notlar elle düzenleniyor, otomatik düzene geç' : 'Notlar otomatik, elle düzenlemeye geç'}
           onClick={() => setLayout(layout === 'manual' ? 'auto' : 'manual')}>{layout === 'manual' ? <ResizeIcon /> : <AutoIcon />}</button>
         <button type="button" class={corners === 'square' ? 'nb on' : 'nb'} aria-pressed={corners === 'square'}
           aria-label={corners === 'square' ? 'Post-it köşeli, oval köşeye geç' : 'Oval köşeli, post-it köşeliye geç'}
           onClick={() => setCorners(corners === 'square' ? 'round' : 'square')}>{corners === 'square' ? <SquareIcon /> : <RoundIcon />}</button>
+        {mozaik && (
+          <button type="button" class={paper === 'frame' ? 'nb on' : 'nb'} aria-pressed={paper === 'frame'}
+            aria-label={paper === 'frame' ? 'Çerçeveli not kağıdı, tam renkli kağıda geç' : 'Tam renkli not kağıdı, siyah çerçeveli kağıda geç'}
+            onClick={() => setPaper(paper === 'frame' ? 'color' : 'frame')}><FrameIcon /></button>
+        )}
         <button type="button" class="nb add" aria-label="Not ekle" onClick={() => nav.go({ n: 'note', category: filter === 'all' ? 'aile' : filter })}><IconPlus /></button>
         <button type="button" class={tool === 'pin' ? 'nb on' : 'nb'} aria-pressed={tool === 'pin'} aria-label="Sabitle: sonra bir nota dokun"
           onClick={() => setTool(tool === 'pin' ? null : 'pin')}><PinIcon /></button>
@@ -225,7 +237,7 @@ export function Notlar({ me, ctx, house, data, nav, onSettings }) {
 
       {notes.length === 0 && <div class="card empty"><div class="title-sm">Not yok</div><div class="sub">İlk notunu ekle.</div></div>}
 
-      <div class={`${corners === 'square' ? 'notes-square' : ''} ${tool ? 'tooling' : ''} ${dragKey ? 'dragging-any' : ''}`}>
+      <div class={`${corners === 'square' ? 'notes-square' : ''} ${mozaik && paper === 'frame' ? 'notes-framed' : ''} ${tool ? 'tooling' : ''} ${dragKey ? 'dragging-any' : ''}`}>
         {layout === 'manual' ? (
           <div class={canvas ? 'note-canvas' : 'note-flow'} ref={flow} style={canvas ? `height:${canvasH}px` : ''} onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>{notes.map((n) => card(n, true))}</div>
         ) : (
