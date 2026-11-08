@@ -42,10 +42,13 @@ export function DayNote({ dayPool, weekly, date }) {
     els.current.forEach((el, i) => {
       if (!el) return;
       const d = t - i;
-      let op = 0, rot = 0;
-      if (d >= 0 && d < 1) { op = Math.max(0, 1 - d / 0.6); rot = -75 * d; } else if (d < 0 && d > -1) op = Math.max(0, (1 + d - 0.4) / 0.6); // little overlap, so the two texts never mix
+      let op = 0;
+      let tf = '';
+      if (d >= 0 && d < 1) { op = Math.max(0, 1 - d / 0.6); tf = `translateY(${(-d * 46).toFixed(1)}px) rotate(${(-d * 4).toFixed(2)}deg)`; } // slips up like a torn sheet
+      else if (d < 0 && d > -1) { op = Math.max(0, (1 + d - 0.4) / 0.6); tf = `scale(${(0.95 + (1 + d) * 0.05).toFixed(3)})`; } // the next page settles in
+      // little overlap, so the two texts never mix
       el.style.opacity = String(op);
-      el.style.transform = rot ? `rotateY(${rot.toFixed(1)}deg)` : '';
+      el.style.transform = tf;
       el.style.visibility = op > 0.01 ? 'visible' : 'hidden';
     });
     const r = Math.round(t);

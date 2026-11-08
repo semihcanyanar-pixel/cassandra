@@ -394,8 +394,8 @@ button.hg-row { cursor: pointer; }
 .dnote.book { position: relative; margin: 18px 10px 14px 0; padding: 14px 14px 10px 18px; background: var(--card); border: 2px solid var(--text); border-left-width: 9px; border-radius: 5px 11px 11px 5px; box-shadow: 3px 3px 0 0 var(--card), 3px 3px 0 2px var(--text), 6px 6px 0 0 var(--card), 6px 6px 0 2px var(--text); }
 .dnote.book::after { content: ''; position: absolute; top: -2px; right: 22px; width: 14px; height: 30px; background: #E5383B; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%); pointer-events: none; }
 :root[data-theme='teknik'] .dnote.book { border-radius: 0; }
-.dn-stack { display: grid; perspective: 900px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
-.dn-page { grid-area: 1 / 1; min-width: 0; box-sizing: border-box; transform-origin: left center; will-change: transform, opacity; }
+.dn-stack { display: grid; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.dn-page { grid-area: 1 / 1; min-width: 0; box-sizing: border-box; transform-origin: left top; will-change: transform, opacity; }
 .dn-leaf { padding: 2px 4px 2px 0; min-height: 96px; }
 .dn-label { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: var(--muted); }
 .dn-text { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.1px; }
@@ -524,3 +524,12 @@ button.hg-row { cursor: pointer; }
 .sheet-acts { display: inline-flex; align-items: center; margin-right: -10px; }
 .sheet-acts .sheet-x { margin-right: 0; }
 .note.big { min-height: min(48dvh, 100%); }
+
+/* Market mode: big rows for shopping with one hand. */
+.market-toggle { align-self: flex-start; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 14px; font-weight: 800; background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); }
+.market-toggle.on { background: var(--chip-on-bg); color: var(--chip-on-fg); border: var(--chip-on-border); }
+.card.market .list-row { min-height: 68px; }
+.card.market .list-row .title-sm { font-size: 21px; line-height: 1.2; }
+.card.market .check { width: 56px; height: 56px; }
+.card.market .check::before { width: 34px; height: 34px; }
+.card.market .check > svg { width: 20px; height: 20px; }
