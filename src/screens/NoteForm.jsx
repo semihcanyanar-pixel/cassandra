@@ -154,7 +154,7 @@ export function NoteForm({ ctx, data, house, id, category: initialCategory, nav 
           <button type="button" class="sheet-x" aria-label="Kapat" onClick={nav.back}><IconClose /></button>
         </div>
         {existing.title && <h1 class="sheet-title">{existing.title}</h1>}
-        <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} /></div>
+        <div class="note-read-lines"><NoteLines blocks={rb} onTick={tickRead} circleOnly /></div>
         {rb.length === 0 && !existing.title && <div class="sheet-empty">Bu notta yazı yok.</div>}
         {(existing.files || []).length > 0 && <div class="sheet-files"><Attachments files={existing.files} /></div>}
         <div class="sheet-footer"><button class="sheet-edit" type="button" onClick={() => setReading(false)}>Düzenle</button></div>
