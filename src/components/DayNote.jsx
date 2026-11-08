@@ -7,7 +7,7 @@ import { dailyNote } from '../lib/dayNote.js';
 // The change itself is plain CSS (the old page fades, the new one writes itself word by word), so it needs no scripted frames.
 const Words = ({ text, from = 0 }) => text.split(' ').map((w, i) => <>{i > 0 && ' '}<span key={i} class="w" style={`--i:${from + i}`}>{w}</span></>);
 
-export function DayNote({ dayPool, weekly, date }) {
+export function DayNote({ dayPool, weekly, date, frame = 'kitap' }) {
   const n = dailyNote(date, dayPool);
   const pages = [
     { key: 'm', label: 'GÜNÜN MOTİVASYONU', body: <div class="dn-text"><Words text={n.motivation.t} /></div> },
@@ -52,7 +52,8 @@ export function DayNote({ dayPool, weekly, date }) {
   };
 
   return (
-    <section class="dnote book" aria-roledescription="carousel" aria-label="Günün notu">
+    <section class={`dnote frame-${frame}`} aria-roledescription="carousel" aria-label="Günün notu">
+      <span class="dn-tab" aria-hidden="true">{pages[cur].label}</span>
       <div class="dn-stack" onTouchStart={onStart} onTouchEnd={onEnd}>
         {pages.map((p, i) => (
           <div class={i === cur ? 'dn-page on' : 'dn-page'} key={p.key} role="group" aria-label={`${i + 1} / ${count}`} aria-hidden={i !== cur}>
@@ -63,6 +64,7 @@ export function DayNote({ dayPool, weekly, date }) {
           </div>
         ))}
       </div>
+      {count > 1 && <span class="dn-stub num" aria-hidden="true"><b>{cur + 1}</b><i>/ {count}</i></span>}
       {count > 1 && <button type="button" class="dn-curl" aria-label="Sonraki sayfa" onClick={() => go(cur + 1)} />}
       {count > 1 && (
         <div class="dn-foot" aria-hidden="true">

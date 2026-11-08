@@ -7,7 +7,8 @@ import { IconBack, IconCheck } from '../icons.jsx';
 import { PushSection } from './PushSection.jsx';
 import { PasswordSection } from './PasswordSection.jsx';
 import { buildBackup, backupCounts, saveBackup, parseBackup, restoreOps } from '../lib/backup.js';
-import { applyRestore } from '../data.js';
+import { applyRestore, setNotePrefs } from '../data.js';
+import { FRAMES, FRAME_KEY, dayFrame } from '../lib/dayFrames.js';
 
 // Build time of the running version, e.g. "5 Kas 12:40".
 const versionLabel = () => {
@@ -46,6 +47,12 @@ export function Settings({ session, data, house, onBack }) {
   }
 
   function pick(key) { setTheme(key); saveTheme(me.uid, key); }
+  const [frame, setFrame] = useState(dayFrame(data.notePrefs));
+  function pickFrame(key) {
+    setFrame(key);
+    try { localStorage.setItem(FRAME_KEY, key); } catch { /* ignore */ }
+    setNotePrefs(me.uid, { ui: { dayframe: key } });
+  }
 
   return (
     <main class="screen">
@@ -76,6 +83,18 @@ export function Settings({ session, data, house, onBack }) {
         ))}
       </div>
 
+      <div class="label" id="cerceve">GÜNÜN NOTU ÇERÇEVESİ</div>
+      <div role="radiogroup" aria-labelledby="cerceve" style="display:flex;flex-direction:column;gap:10px">
+        {FRAMES.map((f) => (
+          <button key={f.key} class="themeopt" role="radio" aria-checked={frame === f.key} onClick={() => pickFrame(f.key)}>
+            <span class="grow">
+              <div style="font-size:16px;font-weight:700">{f.name}</div>
+              <div class="sub">{f.desc}</div>
+            </span>
+            {frame === f.key && <span class="tick" aria-label="Seçili"><IconCheck /></span>}
+          </button>
+        ))}
+      </div>
 
       <PushSection session={session} />
 

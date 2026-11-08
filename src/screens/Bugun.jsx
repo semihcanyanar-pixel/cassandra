@@ -6,6 +6,7 @@ import { DayNote } from '../components/DayNote.jsx';
 import { Card, actColor } from '../components/ui.jsx';
 import { Climb } from '../components/Climb.jsx';
 import { Pop } from '../components/Pop.jsx';
+import { dayFrame } from '../lib/dayFrames.js';
 import { EmptyArt } from '../components/EmptyArt.jsx';
 import { climbText } from '../lib/climb.js';
 import { ortakStart } from './Ortak.jsx';
@@ -152,7 +153,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </div>
       )}
 
-      <DayNote dayPool={house.dayPool || []} weekly={weekly} date={t} />
+      <DayNote dayPool={house.dayPool || []} weekly={weekly} date={t} frame={dayFrame(data.notePrefs)} />
 
       {untimed.length > 0 && <Card label="GÜN BOYU" class="vcard">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
       <Card label="AKIŞ" class="vcard flow-card" right={hasMeds && (
