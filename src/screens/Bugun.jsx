@@ -6,7 +6,7 @@ import { DayNote } from '../components/DayNote.jsx';
 import { Card, actColor } from '../components/ui.jsx';
 import { Climb } from '../components/Climb.jsx';
 import { Pop } from '../components/Pop.jsx';
-import { dayFrame } from '../lib/dayFrames.js';
+import { dayFrame, dayPaper, PAPER_KEY } from '../lib/dayFrames.js';
 import { EmptyArt } from '../components/EmptyArt.jsx';
 import { climbText } from '../lib/climb.js';
 import { ortakStart } from './Ortak.jsx';
@@ -16,7 +16,7 @@ import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.
 import { fmtDur, habitList, habitStreak, activeDays, tasksForDay, taskDone } from '../lib/stats.js';
 import { occurrences, tagScopes } from '../lib/events.js';
 import { today, addDays, dayMonth, weekStart, DAY_SHORT } from '../lib/dates.js';
-import { toggleTask, markDose, unmarkDose, markActivityDone, deleteLog, setFamilyTodoDone, deleteFridge } from '../data.js';
+import { setNotePrefs, toggleTask, markDose, unmarkDose, markActivityDone, deleteLog, setFamilyTodoDone, deleteFridge } from '../data.js';
 import { dueLeft, dueText } from '../lib/due.js';
 import { leftDays, leftText } from '../lib/fridge.js';
 
@@ -153,7 +153,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </div>
       )}
 
-      <DayNote dayPool={house.dayPool || []} weekly={weekly} date={t} frame={dayFrame(data.notePrefs)} />
+      <DayNote dayPool={house.dayPool || []} weekly={weekly} date={t} frame={dayFrame(data.notePrefs)} paper={dayPaper(data.notePrefs)} onPaper={(k) => { try { localStorage.setItem(PAPER_KEY, k); } catch { /* ignore */ } setNotePrefs(uid, { ui: { daypaper: k } }); }} />
 
       {untimed.length > 0 && <Card label="GÜN BOYU" class="vcard">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
       <Card label="AKIŞ" class="vcard flow-card" right={hasMeds && (

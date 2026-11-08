@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { dailyNote } from '../lib/dayNote.js';
+import { PAPERS } from '../lib/dayFrames.js';
 
 // "Günün notu": pages that also turn by themselves every 10 seconds (swipe, tap the curled corner, or wait).
 //   1. motivation   2. quote   3. a parenting / child development tip   4. the weekly evaluation (Sunday evening and Monday, personal)
@@ -7,7 +8,7 @@ import { dailyNote } from '../lib/dayNote.js';
 // The change itself is plain CSS (the old page fades, the new one writes itself word by word), so it needs no scripted frames.
 const Words = ({ text, from = 0 }) => text.split(' ').map((w, i) => <>{i > 0 && ' '}<span key={i} class="w" style={`--i:${from + i}`}>{w}</span></>);
 
-export function DayNote({ dayPool, weekly, date, frame = 'kitap' }) {
+export function DayNote({ dayPool, weekly, date, frame = 'kitap', paper = 'sari', onPaper }) {
   const n = dailyNote(date, dayPool);
   const pages = [
     { key: 'm', label: 'GÜNÜN MOTİVASYONU', body: <div class="dn-text"><Words text={n.motivation.t} /></div> },
@@ -27,6 +28,10 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap' }) {
     }] : []),
   ];
 
+  const [pk, setPk] = useState(paper);
+  const pi = Math.max(0, PAPERS.findIndex((p) => p.key === pk));
+  const cur0 = PAPERS[pi], next = PAPERS[(pi + 1) % PAPERS.length];
+  const nextPaper = () => { touched.current = Date.now(); setPk(next.key); onPaper?.(next.key); };
   const count = pages.length;
   const [page, setPage] = useState(0);
   const cur = Math.min(page, count - 1);
@@ -52,7 +57,7 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap' }) {
   };
 
   return (
-    <section class={`dnote frame-${frame}`} aria-roledescription="carousel" aria-label="Günün notu">
+    <section class={`dnote frame-${frame}${frame === 'not' && cur0.dark ? ' dark' : ''}`} style={frame === 'not' ? `--paper:${cur0.bg}` : undefined} aria-roledescription="carousel" aria-label="Günün notu">
       <span class="dn-tab" aria-hidden="true">{pages[cur].label}</span>
       <div class="dn-stack" onTouchStart={onStart} onTouchEnd={onEnd}>
         {pages.map((p, i) => (
@@ -67,9 +72,10 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap' }) {
       {count > 1 && <span class="dn-stub num" aria-hidden="true"><b>{cur + 1}</b><i>/ {count}</i></span>}
       {count > 1 && <button type="button" class="dn-curl" aria-label="Sonraki sayfa" onClick={() => go(cur + 1)} />}
       {count > 1 && (
-        <div class="dn-foot" aria-hidden="true">
-          <div class="dn-dots">{pages.map((p, i) => <i key={p.key} class={i === cur ? 'on' : ''} />)}</div>
-          <span class="dn-num num">{cur + 1} / {count}</span>
+        <div class="dn-foot">
+          <div class="dn-dots" aria-hidden="true">{pages.map((p, i) => <i key={p.key} class={i === cur ? 'on' : ''} />)}</div>
+          {frame === 'not' && <button type="button" class="dn-paper" aria-label={`Kâğıt rengi: ${cur0.name}. ${next.name} yap`} onClick={nextPaper}><i style={`background:${next.bg}`} /></button>}
+          <span class="dn-num num" aria-hidden="true">{cur + 1} / {count}</span>
         </div>
       )}
     </section>

@@ -14,3 +14,20 @@ export function dayFrame(prefs) {
   if (!OK.includes(v)) { try { v = localStorage.getItem(FRAME_KEY); } catch { v = null; } }
   return OK.includes(v) ? v : 'kitap';
 }
+
+// Colours of the "Not kağıdı" frame: all in the tone of the yellow. The dot under the paper cycles through them.
+export const PAPERS = [
+  { key: 'sari', name: 'Sarı', bg: '#FFE066' },
+  { key: 'kirmizi', name: 'Kırmızı', bg: '#FF8F85' },
+  { key: 'yesil', name: 'Yeşil', bg: '#8EE0A0' },
+  { key: 'mavi', name: 'Mavi', bg: '#8CC8FF' },
+  { key: 'gri', name: 'Gri', bg: '#D3D8E0' },
+  { key: 'siyah', name: 'Siyah', bg: '#26262B', dark: true },
+  { key: 'beyaz', name: 'Beyaz', bg: '#FFFFFF' },
+];
+export const PAPER_KEY = 'cassandra.daypaper';
+export function dayPaper(prefs) {
+  let v = prefs?.ui?.daypaper;
+  if (!PAPERS.some((p) => p.key === v)) { try { v = localStorage.getItem(PAPER_KEY); } catch { v = null; } }
+  return PAPERS.some((p) => p.key === v) ? v : 'sari';
+}
