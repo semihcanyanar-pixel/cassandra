@@ -58,6 +58,7 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap', paper = 'sari'
 
   return (
     <section class={`dnote frame-${frame}${frame === 'not' && cur0.dark ? ' dark' : ''}`} style={frame === 'not' ? `--paper:${cur0.bg}` : undefined} aria-roledescription="carousel" aria-label="Günün notu">
+      {frame === 'not' && <button type="button" class="dn-paper" aria-label={`Kâğıt rengi: ${cur0.name}. ${next.name} yap`} onClick={nextPaper}><i style={`background:${cur0.bg}`} /></button>}
       <span class="dn-tab" aria-hidden="true">{pages[cur].label}</span>
       <div class="dn-stack" onTouchStart={onStart} onTouchEnd={onEnd}>
         {pages.map((p, i) => (
@@ -74,7 +75,6 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap', paper = 'sari'
       {count > 1 && (
         <div class="dn-foot">
           <div class="dn-dots" aria-hidden="true">{pages.map((p, i) => <i key={p.key} class={i === cur ? 'on' : ''} />)}</div>
-          {frame === 'not' && <button type="button" class="dn-paper" aria-label={`Kâğıt rengi: ${cur0.name}. ${next.name} yap`} onClick={nextPaper}><i style={`background:${cur0.bg}`} /></button>}
           <span class="dn-num num" aria-hidden="true">{cur + 1} / {count}</span>
         </div>
       )}

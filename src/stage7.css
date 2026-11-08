@@ -586,6 +586,6 @@ li.w { display: list-item; }
 :root[data-theme='teknik'] .frame-not { border-radius: 0; }
 
 /* Not kağıdı: the small dot in the middle of the footer shows the paper colour; a tap switches to the next colour. */
-.dn-paper { width: 44px; height: 44px; margin: -12px 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; }
+.dn-paper { position: absolute; top: 2px; right: 2px; z-index: 2; width: 44px; height: 44px; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; }
 .dn-paper i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--text); box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: background-color .25s, transform .15s; }
 .dn-paper:active i { transform: scale(.85); }
