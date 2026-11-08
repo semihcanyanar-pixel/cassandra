@@ -3,7 +3,8 @@ import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
 import { Card, actColor } from '../components/ui.jsx';
 import { ortakStart } from './Ortak.jsx';
-import { IconPlus, IconLock, IconCalendar, IconCake, IconHospital, IconPlane, IconHotel } from '../icons.jsx';
+import { IconPlus, IconLock } from '../icons.jsx';
+import { EventIcon } from '../components/EventIcon.jsx';
 import { medPeople, personById, dosesForDay, hhmm, mealText } from '../lib/meds.js';
 import { fmtDur, habitList, habitStreak, activeDays, tasksForDay, taskDone } from '../lib/stats.js';
 import { occurrences, tagScopes } from '../lib/events.js';
@@ -29,7 +30,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
   const doses = dosesForDay(house.medications, house.medLogs, t, now);
   const todays = tasksForDay(data.tasks, t);
   const events = occurrences(tagScopes(house.events, data.events), t, t);
-  const upcoming = occurrences(tagScopes(house.events, data.events), t, addDays(t, 180)).slice(0, 3);
+  const upcoming = occurrences(tagScopes(house.events, data.events), addDays(t, 1), addDays(t, 180)).slice(0, 3); // today's entries are already in "Gün boyu" / the flow
   const openMed = () => { ortakStart.sub = 'ilac'; goTab('ortak'); };
 
   const items = [
@@ -62,7 +63,7 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
       tick: () => { if (confirm(`“${x.name}” bitti, listeden kaldırılsın mı?`)) deleteFridge(session.hid, x.id); },
       open: () => { ortakStart.sub = 'fridge'; goTab('ortak'); },
     })),
-    ...events.map((e) => ({ id: `e${e.scope}${e.id}`, icon: e.kind === 'dogum' ? 'cake' : e.kind === 'hastane' ? 'hospital' : e.kind === 'ucus' ? 'plane' : e.kind === 'otel' ? 'hotel' : 'cal', time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
+    ...events.map((e) => ({ id: `e${e.scope}${e.id}`, evt: true, kind: e.kind, time: e.time || null, title: e.title, sub: e.scope === 'kisisel' ? 'Kişisel' : null, done: false, open: () => goTab('takvim') })),
   ].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   const pendingMeds = items.filter((i) => i.med && !i.done).length;
   const shownItems = showMeds ? items : items.filter((i) => !i.med);
@@ -174,9 +175,10 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         <Card label="YAKLAŞAN TAKVİM KAYITLARI" class="list-card-pad">
           {upcoming.map((e) => (
             <button key={e.scope + e.id + e.date} class="up-row" onClick={() => goTab('takvim')}>
-              <span class="up-date">{e.date === t ? 'Bugün' : dayMonth(e.date)}</span>
+              <span class="up-ico" aria-hidden="true"><EventIcon kind={e.kind} /></span>
               <span class="grow">{e.title}</span>
-              {e.scope === 'kisisel' ? <span class="badge small"><IconLock small />Kişisel</span> : e.time && <span class="sub">{e.time}</span>}
+              {e.scope === 'kisisel' && <span class="badge small"><IconLock small />Kişisel</span>}
+              <span class="up-end">{dayMonth(e.date)}{e.time ? ` · ${e.time}` : ''}</span>
             </button>
           ))}
         </Card>
@@ -190,7 +192,7 @@ function Row({ it }) {
     <div class={`vrow ${it.done ? 'done' : ''} ${it.missed ? 'missed' : ''}`}>
       {it.tick
         ? <button class={it.done ? 'check on' : 'check'} role="checkbox" aria-checked={it.done} aria-label={it.title} onClick={it.tick}>{it.done && <Tick />}</button>
-        : it.icon ? <span class="vico" aria-hidden="true">{it.icon === 'cake' ? <IconCake /> : it.icon === 'hospital' ? <IconHospital /> : it.icon === 'plane' ? <IconPlane /> : it.icon === 'hotel' ? <IconHotel /> : <IconCalendar />}</span> : <span class="vdot" aria-hidden="true" />}
+        : it.evt ? <span class="vico" aria-hidden="true"><EventIcon kind={it.kind} /></span> : <span class="vdot" aria-hidden="true" />}
       <button class="vmain grow" onClick={it.open}>
         <span class={it.done ? 'title-sm struck' : 'title-sm'}>{it.title}</span>
         {it.sub && <span class="sub">{it.sub}</span>}

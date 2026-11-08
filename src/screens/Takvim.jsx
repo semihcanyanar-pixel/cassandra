@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { IconBack, IconNext, IconPlus, IconLock, IconCake, IconHospital, IconPlane, IconHotel } from '../icons.jsx';
+import { EventIcon } from '../components/EventIcon.jsx';
 import { occurrences, tagScopes, monthGrid, repeatLabel, remindsOf, sortReminds, remindsLabel } from '../lib/events.js';
 import { today, addDays, addMonths, monthStart, fromISO, dayMonth, DAY_LETTER } from '../lib/dates.js';
 
@@ -66,9 +67,10 @@ export function Takvim({ me, house, data, nav, onSettings }) {
         {upcoming.length > 0 && <div class="label" style="margin:12px 0 4px;padding:0">YAKLAŞANLAR</div>}
         {upcoming.map((e) => (
           <button key={`${e.scope}-${e.id}-${e.date}`} class="up-row" onClick={() => { setSel(e.date); setMonth(monthStart(e.date)); }}>
-            <span class="up-date">{dayMonth(e.date)}</span>
+            <span class="up-ico" aria-hidden="true"><EventIcon kind={e.kind} /></span>
             <span class="grow">{e.title}</span>
             {e.scope === 'kisisel' && <span class="badge small"><IconLock small />Kişisel</span>}
+            <span class="up-end">{dayMonth(e.date)}{e.time ? ` · ${e.time}` : ''}</span>
           </button>
         ))}
       </div>

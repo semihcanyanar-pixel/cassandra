@@ -96,16 +96,21 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
             </div>
           )}
           {valid.filter((r) => dayRemind(r)).length > 0 ? (
-            <div class="chips rm-added" role="group" aria-label="Eklenen hatırlatmalar">
+            <div class="rm-list" role="list" aria-label="Eklenen hatırlatmalar">
               {valid.filter((r) => dayRemind(r)).map((r) => (
-                <button key={r} type="button" class="chip on" aria-label={`${remindLabel(r)} hatırlatmasını kaldır`} onClick={() => toggle(r)}>{remindLabel(r)} ×</button>
+                <div class="rm-item" role="listitem" key={r}>
+                  <span>{remindLabel(r)}</span>
+                  <button type="button" class="iconbtn plain" aria-label={`${remindLabel(r)} hatırlatmasını kaldır`} onClick={() => toggle(r)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                  </button>
+                </div>
               ))}
             </div>
           ) : presets.length === 0 && <div class="sub">Henüz hatırlatma yok.</div>}
 
-          <div class="rm-new">
-            <button type="button" class="rm-pick" aria-expanded={dayOpen} onClick={() => setDayOpen((o) => !o)}>
-              <span>Kaç gün önce hatırlat</span><b>{rDay === 0 ? "Aynı gün" : `${rDay} gün`}</b>
+          <div class="rm-group">
+            <button type="button" class="rm-row rm-pick" aria-expanded={dayOpen} onClick={() => setDayOpen((o) => !o)}>
+              <span>Kaç gün önce hatırlat</span><b>{rDay === 0 ? 'Aynı gün' : `${rDay} gün`}</b>
             </button>
             {dayOpen && (
               <div class="scroll-chips rm-bar" role="radiogroup" aria-label="Kaç gün önce">
@@ -116,11 +121,11 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
                 ))}
               </div>
             )}
-            <div class="rm-time">
+            <div class="rm-row">
               <label for="hatirlat-saat">Saat kaçta hatırlat</label>
               <input id="hatirlat-saat" class="date-input" type="time" value={rTime} onInput={(e) => { setRTime(e.target.value); setError(''); }} />
             </div>
-            <button type="button" class="btn wide" onClick={addRemind}>Hatırlatma ekle</button>
+            <button type="button" class="rm-row rm-add" onClick={addRemind}>Hatırlatma ekle</button>
           </div>
           <div class="sub" style="margin-top:8px;line-height:1.4">Birden fazla ekleyebilirsin (örn. 7 gün önce 18:00 ve 1 gün önce 09:00). Bildirim için Ayarlar’dan bildirimleri aç.</div>
         </Card>
