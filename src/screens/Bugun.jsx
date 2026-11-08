@@ -151,28 +151,26 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
         </div>
       )}
 
-      {untimed.length > 0 && <Card label="GÜN BOYU">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <h2 class="flow-title">Akış</h2>
-        {hasMeds && (
-          <button type="button" class="vlink flow-meds" aria-pressed={showMeds} onClick={toggleMeds}>
-            {showMeds ? 'İlaçları gizle' : `İlaçları göster${pendingMeds ? ` (${pendingMeds} bekliyor)` : ''}`}
-          </button>
-        )}
-      </div>
-      <div class="tl">
-        {timed.length === 0 && <div class="sub">Bugün için saatli iş yok.</div>}
-        {timed.map((it) => (
-          <div class={`tl-i ${it.done ? 'done' : ''} ${!it.done && it.time < now ? 'past' : ''}`} key={it.id}>
-            <span class="tl-time num">{it.time}</span>
-            <span class="tl-dot" />
-            <div class="card tl-card"><Row it={{ ...it, time: null }} /></div>
-          </div>
-        ))}
-      </div>
+      {untimed.length > 0 && <Card label="GÜN BOYU" class="vcard">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
+      <Card label="AKIŞ" class="vcard flow-card" right={hasMeds && (
+        <button type="button" class="vlink flow-meds" aria-pressed={showMeds} onClick={toggleMeds}>
+          {showMeds ? 'İlaçları gizle' : `İlaçları göster${pendingMeds ? ` (${pendingMeds} bekliyor)` : ''}`}
+        </button>
+      )}>
+        <div class="tl">
+          {timed.length === 0 && <div class="sub" style="padding:6px 0">Bugün için saatli iş yok.</div>}
+          {timed.map((it) => (
+            <div class={`tl-i ${it.done ? 'done' : ''} ${!it.done && it.time < now ? 'past' : ''}`} key={it.id}>
+              <span class="tl-time num">{it.time}</span>
+              <span class="tl-dot" />
+              <div class="tl-row"><Row it={{ ...it, time: null }} /></div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {upcoming.length > 0 && (
-        <Card label="YAKLAŞAN TAKVİM KAYITLARI" class="list-card-pad">
+        <Card label="YAKLAŞAN TAKVİM KAYITLARI" class="list-card-pad vcard">
           {upcoming.map((e) => (
             <button key={e.scope + e.id + e.date} class="up-row" onClick={() => goTab('takvim')}>
               <span class="up-ico" aria-hidden="true"><EventIcon kind={e.kind} /></span>
