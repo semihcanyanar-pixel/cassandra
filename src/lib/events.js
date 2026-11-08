@@ -15,16 +15,33 @@ export const REMINDS = [
   { value: 'custom', label: 'Özel' }, // saved as 'd:N' = N days before
 ];
 export const MAX_REMIND_DAYS = 365;
-// 'd:5' -> 5, anything else -> null
+// Day based reminders: 'd:5' (5 days before), 'd:5@18:30' (5 days before at 18:30), 'd:0@08:00' (same day at 08:00) and the older '1d'.
+// -> { n: days before, time: 'HH:MM' | null } (null time = the old behaviour: the event's own time, or 09:00 for all-day events); anything else -> null
+export const dayRemind = (v) => {
+  const m = /^d:([0-9]{1,3})(?:@([01][0-9]|2[0-3]):([0-5][0-9]))?$/.exec(v || '');
+  if (m) { const n = Number(m[1]); return n >= 0 && n <= MAX_REMIND_DAYS ? { n, time: m[2] ? `${m[2]}:${m[3]}` : null } : null; }
+  return v === '1d' ? { n: 1, time: null } : null;
+};
+// 'd:5' -> 5, anything else -> null (only the form without a clock time, n >= 1)
 export const customDays = (v) => { const m = /^d:([0-9]{1,3})$/.exec(v || ''); const n = m ? Number(m[1]) : null; return n >= 1 && n <= MAX_REMIND_DAYS ? n : null; };
 // All reminders of an event: the new `reminds` list, or the older single `remind` value.
 export const remindsOf = (e) => (Array.isArray(e?.reminds) ? e.reminds : e?.remind && e.remind !== 'none' ? [e.remind] : []);
 const ORDER = { at: 0, '30m': 1, '2h': 2 };
 // Sorted from the closest to the furthest ahead: at, 30m, 2h, then days ascending.
 export const sortReminds = (list) => list.slice().sort((a, b) => remindRank(a) - remindRank(b));
-const remindRank = (v) => (v in ORDER ? ORDER[v] : 10 + (v === '1d' ? 1 : customDays(v) || 999));
+const remindRank = (v) => {
+  if (v in ORDER) return ORDER[v];
+  const d = dayRemind(v);
+  if (!d) return 999;
+  const [h, m] = (d.time || '09:00').split(':').map(Number);
+  return 10 + d.n - (h * 60 + m) / 1440; // further ahead first, on the same day the later clock time is the closer one
+};
 export const remindsLabel = (list) => list.map((v) => remindLabel(v)).filter(Boolean).join(', ');
-export const remindLabel = (v) => (customDays(v) ? `${customDays(v)} gün önce` : v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null);
+export const remindLabel = (v) => {
+  const d = dayRemind(v);
+  if (d) return `${d.n === 0 ? 'Aynı gün' : `${d.n} gün önce`}${d.time ? ` · ${d.time}` : ''}`;
+  return v && v !== 'none' ? REMINDS.find((r) => r.value === v)?.label : null;
+};
 export const repeatLabel = (v) => (v && v !== 'none' ? REPEATS.find((r) => r.value === v)?.label : null);
 
 const daysInMonth = (y, m) => new Date(y, m + 1, 0).getDate(); // m: 0-11

@@ -327,3 +327,27 @@ button.hg-row { cursor: pointer; }
 .vico svg { width: 26px; height: 26px; }
 /* In the day list the tick boxes, the calendar icon and the cake are about the same size. */
 .vrow .check::before { width: 22px; height: 22px; }
+
+/* Event form: composing a reminder (days before: tap to open the option bar, clock time, add). */
+.rm-new { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.rm-pick { width: 100%; min-height: 52px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font: inherit; font-size: 15px; font-weight: 700; text-align: left; background: var(--chip-off-bg); color: var(--chip-off-fg); border: var(--chip-off-border); border-radius: var(--r-ctl); }
+.rm-pick b { font-weight: 800; }
+.rm-bar { margin: -2px 0 0; padding-bottom: 4px; }
+.rm-time { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rm-time label { font-size: 15px; font-weight: 700; }
+.rm-time .date-input { width: auto; min-width: 140px; }
+
+/* Pickers that open a list or an option bar get a small arrow; the type list shows each option with its icon. */
+.rm-pick::after { content: ''; flex: none; width: 8px; height: 8px; margin: -4px 2px 0 6px; border-right: 2.4px solid currentColor; border-bottom: 2.4px solid currentColor; transform: rotate(45deg); transition: transform .15s; }
+.rm-pick[aria-expanded="true"]::after { transform: rotate(-135deg); margin-top: 4px; }
+.rm-pick > span:first-child, .rm-pick b { min-width: 0; }
+.rm-pick b { margin-left: auto; }
+.kd-cur { display: inline-flex; align-items: center; gap: 12px; }
+.kd-cur svg, .kd-opt svg { width: 22px; height: 22px; flex: none; }
+.kd-list { margin-top: 8px; display: flex; flex-direction: column; border: 2px solid var(--line); border-radius: var(--r-ctl); overflow: hidden; }
+.kd-opt { min-height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 12px; font: inherit; font-size: 15px; font-weight: 700; text-align: left; background: transparent; color: var(--text); border: 0; border-top: 1px solid var(--line); }
+.kd-opt:first-child { border-top: 0; }
+.kd-opt.on { background: var(--track); font-weight: 800; }
+.rm-added .chip { flex: 0 0 auto; }
+.rm-pick { border: 2px solid var(--line); background: transparent; }
+.rm-pick span, .rm-pick b { white-space: nowrap; }

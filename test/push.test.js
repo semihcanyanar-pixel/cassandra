@@ -211,3 +211,26 @@ describe('Pazar akşamı haftaya bakış', () => {
     expect(w.body).toBe('Önümüzdeki hafta için kayıtlı bir şey yok.');
   });
 });
+
+describe('Hatırlatma: kaç gün önce, saat kaçta', () => {
+  const T = '2026-11-05';
+  it('gün + saat açıkça verilince o güne o saate kurulur (saatli kayıtta bile)', () => {
+    const ev = { id: 'h', scope: 'aile', title: 'Randevu', date: '2026-11-10', time: '14:00', repeat: 'none', reminds: ['d:3@18:30'] };
+    expect(eventItems([ev], T)[0].t).toBe(localMs('2026-11-07', '18:30'));
+    expect(eventItems([{ ...ev, time: null }], T)[0].t).toBe(localMs('2026-11-07', '18:30'));
+  });
+  it('"Aynı gün" (0 gün önce) o günün seçilen saatinde; eski biçimler değişmez', () => {
+    const ev = { id: 'h', scope: 'aile', title: 'Uçuş', date: '2026-11-10', time: null, repeat: 'none', reminds: ['d:0@08:15', 'd:2', '1d'] };
+    const t = eventItems([ev], T).map((i) => i.t).sort((a, b) => a - b);
+    expect(t).toEqual([localMs('2026-11-08', '09:00'), localMs('2026-11-09', '09:00'), localMs('2026-11-10', '08:15')]);
+  });
+  it('etiket ve sıralama', async () => {
+    const { remindLabel, sortReminds, dayRemind } = await import('../src/lib/events.js');
+    expect(remindLabel('d:0@08:00')).toBe('Aynı gün · 08:00');
+    expect(remindLabel('d:7@18:30')).toBe('7 gün önce · 18:30');
+    expect(remindLabel('1d')).toBe('1 gün önce');
+    expect(sortReminds(['d:1@09:00', 'd:7@09:00', 'd:0@08:00', '30m'])).toEqual(['30m', 'd:0@08:00', 'd:1@09:00', 'd:7@09:00']);
+    expect(dayRemind('d:31@25:00')).toBeNull();
+    expect(dayRemind('d:400')).toBeNull();
+  });
+});
