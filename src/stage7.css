@@ -298,3 +298,8 @@ button.hg-row { cursor: pointer; }
 .ed b { font-weight: 800; } .ed i { font-style: italic; } .ed s, .ed strike, .ed del { text-decoration: line-through; opacity: .6; }
 .ed[data-empty="1"] > .ed-line[data-k="p"]:first-child::after { content: var(--ph); position: absolute; left: 0; top: 0; opacity: .4; pointer-events: none; }
 .nf-ico[disabled] { opacity: .3; }
+
+/* Goal form: Kaydet with Hedefi sil right below it in the fixed footer. */
+.has-footer.tall { padding-bottom: calc(env(safe-area-inset-bottom) + 172px); }
+.ff-stack { display: flex; flex-direction: column; gap: 8px; }
+.ff-stack .chip.wide { width: 100%; min-height: 48px; }

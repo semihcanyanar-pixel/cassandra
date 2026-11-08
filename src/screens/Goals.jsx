@@ -40,6 +40,7 @@ export function GoalForm({ uid, data, id, nav }) {
   const [title, setTitle] = useState(existing?.title || '');
   const [target, setTarget] = useState(existing?.target ?? '');
   const [unit, setUnit] = useState(existing?.unit || 'gün');
+  const [note, setNote] = useState(existing?.note || '');
   const [due, setDue] = useState(existing?.dueDate || '');
   const [linked, setLinked] = useState(existing?.linkedActivityId || '');
   const [progress, setProgress] = useState(existing?.progress ?? 0);
@@ -57,7 +58,7 @@ export function GoalForm({ uid, data, id, nav }) {
     if (!title.trim()) { setError('Hedefe bir ad ver.'); return; }
     if (!(tg > 0)) { setError('Hedef değeri 0’dan büyük olmalı.'); return; }
     const payload = {
-      title: title.trim(), period: 'long', target: tg, unit, dueDate: due || null,
+      title: title.trim(), note: note.trim(), period: 'long', target: tg, unit, dueDate: due || null,
       linkedActivityId: isLinked ? linked : null, progress: Number(progress) || 0,
     };
     if (!existing) payload.startDate = today();
@@ -68,10 +69,14 @@ export function GoalForm({ uid, data, id, nav }) {
 
   return (
     <form onSubmit={submit}>
-      <Page title={existing ? 'Hedefi düzenle' : 'Yeni hedef'} onClose={nav.back} footer={<button class="btn wide" type="submit">Kaydet</button>}>
+      <Page title={existing ? 'Hedefi düzenle' : 'Yeni hedef'} onClose={nav.back} tall={Boolean(existing)}
+        footer={<div class="ff-stack"><button class="btn wide" type="submit">Kaydet</button>{existing && <button type="button" class="chip wide" onClick={remove}>Hedefi sil</button>}</div>}>
         <Card>
           <label class="label" for="hedef" style="padding:0;margin:0">HEDEF</label>
           <input id="hedef" class="big-input" value={title} maxLength={80} placeholder="Örn. Yıl sonuna kadar İngilizce" onInput={(e) => { setTitle(e.target.value); setError(''); }} />
+        </Card>
+        <Card label="AÇIKLAMA (İSTEĞE BAĞLI)">
+          <textarea class="note-area" rows={3} maxLength={500} value={note} aria-label="Açıklama" placeholder="Bu hedefle ilgili kısa bir not. Yalnızca burada görünür." onInput={(e) => setNote(e.target.value)} />
         </Card>
         <Card label="HEDEF DEĞER">
           <div class="field">
@@ -97,7 +102,6 @@ export function GoalForm({ uid, data, id, nav }) {
           <input class="date-input" type="date" value={due} min={today()} aria-label="Bitiş tarihi" onInput={(e) => setDue(e.target.value)} />
         </Card>
         {error && <div class="error" role="alert">{error}</div>}
-        {existing && <button type="button" class="chip" style="min-height:48px" onClick={remove}>Hedefi sil</button>}
       </Page>
     </form>
   );

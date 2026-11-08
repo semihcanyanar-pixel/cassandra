@@ -32,9 +32,9 @@ export function Switch({ checked, onChange, label }) {
 }
 
 // Full-screen form/page shell with a back/close button and an optional fixed footer.
-export function Page({ title, onClose, children, footer, closeIcon }) {
+export function Page({ title, onClose, children, footer, closeIcon, tall }) {
   return (
-    <main class={`screen ${footer ? 'has-footer' : ''}`}>
+    <main class={`screen ${footer ? 'has-footer' : ''} ${footer && tall ? 'tall' : ''}`}>
       <div class="row" style="margin-bottom:4px;justify-content:space-between">
         <h1 style="font-size:30px">{title}</h1>
         <button class="iconbtn" aria-label="Kapat" onClick={onClose}>{closeIcon || <IconClose />}</button>
