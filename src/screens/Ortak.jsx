@@ -5,7 +5,8 @@ import { Buzdolabi } from './Buzdolabi.jsx';
 import { notifyPartnerAdded } from '../push.js';
 import { urgentCount } from '../lib/fridge.js';
 import { today } from '../lib/dates.js';
-import { IconPlus, IconTrash, IconEdit } from '../icons.jsx';
+import { IconPlus, IconTrash, IconEdit, IconClose } from '../icons.jsx';
+import { Pop } from '../components/Pop.jsx';
 import { dueText, dueState, sortTodos } from '../lib/due.js';
 import { SHOP_CATEGORIES, categoryLabel } from '../lib/notes.js';
 import {
@@ -41,13 +42,19 @@ export function Ortak({ session, house, nav, onSettings }) {
   const hid = session.hid;
   const [sub, setSubState] = useState(ortakStart.sub);
   const setSub = (v) => { ortakStart.sub = v; setSubState(v); }; // remembered, so coming back from a form lands on the same sub-tab
-  // Market mode: big rows, only the tick (no edit / delete / avatars), and the screen stays awake while you shop. Remembered on this phone.
-  const [market, setMarket] = useState(() => { try { return localStorage.getItem('cassandra.market') === '1'; } catch { return false; } });
-  const toggleMarket = () => setMarket((v) => { try { localStorage.setItem('cassandra.market', v ? '0' : '1'); } catch { /* ignore */ } return !v; });
+  // Market mode: a big page of its own (not remembered: it opens only when asked). The screen stays awake while it is open.
+  const [market, setMarket] = useState(false);
+  const [drop, setDrop] = useState(null); // the row flying into the cart
   const [filter, setFilter] = useState('market'); // the open shopping category: new items go straight into it
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState(''); // optional due date for a new to-do
 
+  const pick = (i) => {
+    if (drop) return;
+    try { navigator.vibrate?.(15); } catch { /* not supported */ }
+    setDrop(i.id);
+    setTimeout(() => { setShoppingDone(hid, i.id, true); setDrop(null); }, 400);
+  };
   useEffect(() => {
     if (!market || sub !== 'ev' || !navigator.wakeLock) return undefined;
     let lock = null, gone = false;
@@ -84,6 +91,32 @@ export function Ortak({ session, house, nav, onSettings }) {
 
   return (
     <main class={sub === 'ilac' || sub === 'fridge' ? 'screen' : 'screen has-addbar'}>
+      {market && sub === 'ev' && (
+        <div class="mk-page" role="dialog" aria-label="Market modu">
+          <div class="mk-top">
+            <h2>Market</h2>
+            <button type="button" class="iconbtn" aria-label="Marketi kapat" onClick={() => setMarket(false)}><IconClose /></button>
+          </div>
+          <Seg items={SHOP_CATEGORIES.map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
+          <div class="mk-list">
+            {open.length === 0 && <div class="mk-empty">{done.length ? 'Hepsi sepette' : 'Listede bir şey yok'}</div>}
+            {open.map((i) => (
+              <button type="button" key={i.id} class={drop === i.id ? 'mk-row drop' : 'mk-row'} role="checkbox" aria-checked="false" aria-label={`${i.text} alındı`} onClick={() => pick(i)}>
+                <span class="mk-circle" aria-hidden="true" /><span class="mk-text">{i.text}</span>
+              </button>
+            ))}
+          </div>
+          <div class="mk-cart">
+            <div class="mk-cart-head">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.4-1.1L20.5 8H6.2" /><circle cx="9.5" cy="19.5" r="1.4" /><circle cx="17" cy="19.5" r="1.4" /></svg>
+              <span class="grow">Sepet</span>
+              <span class="mk-count num"><Pop value={done.length}>{done.length}</Pop></span>
+              {done.length > 0 && <button type="button" class="mk-clear" onClick={() => { if (confirm(`${done.length} ürün listeden silinsin mi?`)) done.forEach((i) => deleteShopping(hid, i.id)); }}>Temizle</button>}
+            </div>
+            {done.length > 0 && <div class="mk-chips">{done.map((i) => <button type="button" key={i.id} class="mk-chip" aria-label={`${i.text} sepetten çıkar`} onClick={() => setShoppingDone(hid, i.id, false)}>{i.text}</button>)}</div>}
+          </div>
+        </div>
+      )}
       <div class="topbar">
         <h1 style="font-size:40px">Takip Listesi</h1>
       </div>
@@ -93,11 +126,11 @@ export function Ortak({ session, house, nav, onSettings }) {
       {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'fridge' ? <Buzdolabi house={house} hid={hid} nav={nav} /> : sub === 'ev' ? (
         <>
           <Seg items={SHOP_CATEGORIES.map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
-          <button type="button" class={market ? 'market-toggle on' : 'market-toggle'} aria-pressed={market} onClick={toggleMarket}>
+          <button type="button" class="market-toggle" onClick={() => setMarket(true)}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.4-1.1L20.5 8H6.2" /><circle cx="9.5" cy="19.5" r="1.4" /><circle cx="17" cy="19.5" r="1.4" /></svg>
-            {market ? 'Market modu açık' : 'Market modu'}
+            Market modu
           </button>
-          <div class={market ? 'card list-card market' : 'card list-card'}>
+          <div class="card list-card">
             {shopList.length === 0 && <div class="sub" style="padding:18px 0;text-align:center">Liste boş. Aşağıdan ekle.</div>}
             {[...open, ...done].map((i) => (
               <div class="list-row tight" key={i.id}>
@@ -106,9 +139,9 @@ export function Ortak({ session, house, nav, onSettings }) {
                 <div class="grow">
                   <div class={i.done ? 'title-sm struck' : 'title-sm'}>{i.text}</div>
                 </div>
-                {!market && <Avatar person={personOf(session, i.addedBy)} small />}
-                {!market && <button class="iconbtn plain" aria-label={`${i.text} düzenle`} onClick={() => nav.go({ n: 'listitem', kind: 'shop', id: i.id })}><IconEdit /></button>}
-                {!market && <button class="iconbtn plain" aria-label={`${i.text} sil`} onClick={() => deleteShopping(hid, i.id)}><IconTrash /></button>}
+                <Avatar person={personOf(session, i.addedBy)} small />
+                <button class="iconbtn plain" aria-label={`${i.text} düzenle`} onClick={() => nav.go({ n: 'listitem', kind: 'shop', id: i.id })}><IconEdit /></button>
+                <button class="iconbtn plain" aria-label={`${i.text} sil`} onClick={() => deleteShopping(hid, i.id)}><IconTrash /></button>
               </div>
             ))}
           </div>

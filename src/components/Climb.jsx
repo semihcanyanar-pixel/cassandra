@@ -108,6 +108,8 @@ export function Climb({ rows }) {
     was.current = all;
     return undefined;
   }, [all]);
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 900); return () => clearTimeout(t); }, []);
   const hour = new Date().getHours();
   return (
     <svg class="climb" viewBox="0 -76 340 194" width="100%" role="img" aria-label={`${n} aktiviteden ${done} tanesi yapıldı`}>
@@ -127,8 +129,8 @@ export function Climb({ rows }) {
           <path d={`M${SUMMIT[0]} ${SUMMIT[1] - 42}l16 6-16 7z`} fill={FLAG} stroke={INK} stroke-width="1.6" />
         </>
       )}
-      <g class="cl-fig" style={{ transform: `translate(${at.x}px, ${at.y}px)` }}>
-        <g key={Math.round(at.x)} class="cl-hop"><Figure pose={at.pose} /></g>
+      <g class={ready ? 'cl-fig ready' : 'cl-fig'} style={{ transform: `translate(${at.x}px, ${at.y}px)` }}>
+        <g key={Math.round(at.x)} class={ready ? 'cl-hop' : ''}><Figure pose={at.pose} /></g>
       </g>
       {burst > 0 && <Confetti key={burst} at={SUMMIT} />}
       {all && (
