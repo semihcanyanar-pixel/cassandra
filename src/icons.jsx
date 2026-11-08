@@ -3,6 +3,12 @@ export const IconToday = () => <svg {...P}><circle cx="12" cy="12" r="8.5" /><pa
 export const IconCalendar = () => <svg {...P}><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>;
 // Birthday cake (line drawing, like the other icons)
 export const IconCake = () => <svg {...P}><path d="M3 21h18" /><path d="M4.5 21v-7.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2V21" /><path d="M4.5 16.6c1.6 1.3 2.8 1.3 4.1 0s2.8-1.3 4.1 0 2.8 1.3 4.1 0 2.2-.9 2.7 0" /><path d="M12 11.5V8" /><path d="M12 6.2c.8-.9.9-2 0-3.2-.9 1.2-.8 2.3 0 3.2z" /></svg>;
+// Hospital (line drawing): a building with a cross
+export const IconHospital = () => <svg {...P}><path d="M4.5 21V6.5a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5V21" /><path d="M2.5 21h19" /><path d="M12 8.5v5M9.5 11h5" /><path d="M10 21v-3.5h4V21" /></svg>;
+// Aeroplane seen from above (line drawing)
+export const IconPlane = () => <svg {...P}><path d="M12 2.5c.9 0 1.4 1 1.4 2.2v5.3l7.1 4.4v2.1l-7.1-2.2v3.4l2 1.7v1.8L12 20.2l-3.4.9v-1.8l2-1.7v-3.4l-7.1 2.2v-2.1l7.1-4.4V4.7c0-1.2.5-2.2 1.4-2.2z" /></svg>;
+// Hotel (line drawing): a bed
+export const IconHotel = () => <svg {...P}><path d="M3.5 5.5v14" /><path d="M3.5 15h17v4.5" /><circle cx="7.8" cy="11.2" r="1.9" /><path d="M11.5 15v-3.8h6.2a2.8 2.8 0 0 1 2.8 2.8V15" /></svg>;
 export const IconNotes = () => <svg {...P}><path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z" /><path d="M14.5 3.5V8H19M8.5 12.5h7M8.5 16h5" /></svg>;
 export const IconShared = () => <svg {...P}><circle cx="9" cy="9" r="3.2" /><circle cx="17" cy="10" r="2.5" /><path d="M3 19c.5-3 3-4.5 6-4.5s5.5 1.5 6 4.5M15.5 14.8c2.4-.3 4.7.8 5.5 3.7" /></svg>;
 export const IconLock = ({ small }) => <svg {...P} {...(small ? { width: 12, height: 12, "stroke-width": 3 } : {})}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;

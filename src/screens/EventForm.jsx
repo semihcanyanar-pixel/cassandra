@@ -13,7 +13,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
   const [hasTime, setHasTime] = useState(Boolean(existing?.time));
   const [time, setTime] = useState(existing?.time || '09:00');
   const [scope, setScope] = useState(initialScope || 'aile');
-  const [kind, setKind] = useState(existing?.kind || ''); // '' = normal, 'dogum' = birthday (shown with a cake icon)
+  const [kind, setKind] = useState(existing?.kind || ''); // '' = normal, 'dogum' = birthday (cake icon), 'hastane' = hospital appointment (hospital icon), 'ucus' = flight (aeroplane icon), 'otel' = hotel booking (bed icon)
   const [repeat, setRepeat] = useState(existing?.repeat || 'none');
   const [reminds, setReminds] = useState(() => remindsOf(existing)); // several reminders are allowed: e.g. 1 week and 1 day before
   const [days, setDays] = useState(''); // the "N days before" box
@@ -59,7 +59,7 @@ export function EventForm({ ctx, data, house, id, scope: initialScope, date: ini
           </div>
           {hasTime && <input class="date-input" type="time" value={time} aria-label="Saat" style="margin-top:10px" onInput={(e) => setTime(e.target.value)} />}
         </Card>
-        <Card label="TÜR"><Chips options={[{ value: '', label: 'Normal' }, { value: 'dogum', label: 'Doğum günü' }]} value={kind} onChange={setKind} label="Kayıt türü" /></Card>
+        <Card label="TÜR"><Chips options={[{ value: '', label: 'Normal' }, { value: 'dogum', label: 'Doğum günü' }, { value: 'hastane', label: 'Hastane' }, { value: 'ucus', label: 'Uçuş' }, { value: 'otel', label: 'Otel' }]} value={kind} onChange={setKind} label="Kayıt türü" /></Card>
         <Card label="TEKRAR"><Chips options={REPEATS} value={repeat} onChange={setRepeat} label="Tekrar" /></Card>
         <Card label="HATIRLATMA">
           <div class="chips" role="group" aria-label="Hatırlatmalar">
