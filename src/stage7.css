@@ -582,10 +582,10 @@ li.w { display: list-item; }
 .frame-not { margin: 24px 6px 14px; padding: 22px 18px 14px; background: var(--paper, #FFE066); color: var(--text); transition: background-color .35s; transform: rotate(-1.4deg); box-shadow: 0 8px 14px rgba(0,0,0,.18), inset 0 -28px 30px -28px rgba(0,0,0,.12); border-radius: 2px 2px 6px 2px;
   --text: #121212; --muted: rgba(18,18,18,.65); --track: rgba(18,18,18,.2); --line: rgba(18,18,18,.25); }
 .frame-not.dark { --text: #fff; --muted: rgba(255,255,255,.72); --track: rgba(255,255,255,.28); --line: rgba(255,255,255,.3); }
-.frame-not::before { content: ''; position: absolute; top: -12px; left: 50%; width: 84px; height: 24px; margin-left: -42px; background: rgba(255,255,255,.55); transform: rotate(2deg); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.frame-not::before { content: ''; position: absolute; top: -12px; left: 0; right: 0; width: 84px; height: 24px; margin: 0 auto; background: rgba(255,255,255,.55); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 :root[data-theme='teknik'] .frame-not { border-radius: 0; }
 
-/* Not kağıdı: the colour dot in the middle of the footer shows the colour the next tap gives. */
+/* Not kağıdı: the small dot in the middle of the footer shows the paper colour; a tap switches to the next colour. */
 .dn-paper { width: 44px; height: 44px; margin: -12px 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; }
-.dn-paper i { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--text); box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: background-color .25s, transform .15s; }
+.dn-paper i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--text); box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: background-color .25s, transform .15s; }
 .dn-paper:active i { transform: scale(.85); }

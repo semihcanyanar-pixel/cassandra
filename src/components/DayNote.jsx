@@ -74,7 +74,7 @@ export function DayNote({ dayPool, weekly, date, frame = 'kitap', paper = 'sari'
       {count > 1 && (
         <div class="dn-foot">
           <div class="dn-dots" aria-hidden="true">{pages.map((p, i) => <i key={p.key} class={i === cur ? 'on' : ''} />)}</div>
-          {frame === 'not' && <button type="button" class="dn-paper" aria-label={`Kâğıt rengi: ${cur0.name}. ${next.name} yap`} onClick={nextPaper}><i style={`background:${next.bg}`} /></button>}
+          {frame === 'not' && <button type="button" class="dn-paper" aria-label={`Kâğıt rengi: ${cur0.name}. ${next.name} yap`} onClick={nextPaper}><i style={`background:${cur0.bg}`} /></button>}
           <span class="dn-num num" aria-hidden="true">{cur + 1} / {count}</span>
         </div>
       )}
