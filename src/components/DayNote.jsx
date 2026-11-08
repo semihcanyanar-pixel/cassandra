@@ -2,19 +2,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { dailyNote } from '../lib/dayNote.js';
 
 // "Günün notu": swipeable pages that also turn by themselves every 10 seconds.
-//   1. motivation sentence + a quote   2. a parenting / child development tip   3. the weekly evaluation (Sunday evening and Monday, personal)
+//   1. motivation   2. quote   3. a parenting / child development tip   4. the weekly evaluation (Sunday evening and Monday, personal)
 // Everything except the weekly page is the same for both of us and changes at midnight.
 export function DayNote({ dayPool, weekly, date }) {
   const n = dailyNote(date, dayPool);
   const pages = [
+    { key: 'm', label: 'GÜNÜN MOTİVASYONU', body: <div class="dn-text">{n.motivation.t}</div> },
     {
-      key: 'm', label: 'GÜNÜN NOTU',
-      body: (
-        <>
-          <div class="dn-text">{n.motivation.t}</div>
-          <div class="dn-quote"><span>“{n.quote.t}”</span><span class="dn-by">— {n.quote.by}</span></div>
-        </>
-      ),
+      key: 'q', label: 'GÜNÜN SÖZÜ',
+      body: <div class="dn-quote"><span>“{n.quote.t}”</span><span class="dn-by">— {n.quote.by}</span></div>,
     },
     { key: 't', label: 'EBEVEYNLİK', body: <div class="dn-text">{n.tip.t}</div> },
     ...(weekly ? [{
@@ -50,25 +46,12 @@ export function DayNote({ dayPool, weekly, date }) {
     return () => clearInterval(id);
   }, [count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Page turning: while scrolling, each page tilts around its spine edge like a leaf being turned (set straight on the DOM, no re-render).
-  const leaves = useRef([]);
-  const flip = () => {
-    const w = width(), x = track.current?.scrollLeft || 0;
-    leaves.current.forEach((el, i) => {
-      if (!el) return;
-      const d = Math.max(-1, Math.min(1, x / w - i)); // 0 = flat, >0 leaving to the left, <0 arriving from the right
-      el.style.transformOrigin = d > 0 ? 'right center' : 'left center';
-      el.style.transform = d === 0 ? '' : `perspective(700px) rotateY(${(d * 55).toFixed(1)}deg)`;
-      el.style.opacity = String(1 - Math.abs(d) * 0.55);
-    });
-  };
-
   return (
     <section class="dnote book" aria-roledescription="carousel" aria-label="Günün notu">
-      <div class="dn-track" ref={track} onScroll={() => { flip(); const i = current(); if (i !== page) setPage(i); }} onTouchStart={mark} onPointerDown={mark} onWheel={mark}>
+      <div class="dn-track" ref={track} onScroll={() => { const i = current(); if (i !== page) setPage(i); }} onTouchStart={mark} onPointerDown={mark} onWheel={mark}>
         {pages.map((p, i) => (
           <div class="dn-page" key={p.key} role="group" aria-label={`${i + 1} / ${count}`}>
-            <div class="dn-leaf" ref={(el) => { leaves.current[i] = el; }}>
+            <div class="dn-leaf">
               <div class="dn-label">{p.label}</div>
               {p.body}
             </div>

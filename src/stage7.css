@@ -390,15 +390,15 @@ button.hg-row { cursor: pointer; }
 .flow-card .tl-row .vrow .iconbtn { width: 40px; }
 
 /* Günün notu: a boxless open book. Pages are swipeable (snap) and tilt like turning leaves; a thin spine line on the left, a rule and page number below. */
-.dnote.book { margin: 18px 0 6px; padding: 0; }
-.dn-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; perspective: 900px; }
+.dnote.book { margin: 18px 0 6px; padding: 0 0 0 16px; border-left: 3px solid var(--text); }
+.dn-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; }
 .dn-track::-webkit-scrollbar { display: none; }
 .dn-page { flex: 0 0 100%; min-width: 0; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; }
-.dn-leaf { padding: 2px 4px 2px 16px; border-left: 3px solid var(--text); min-height: 96px; will-change: transform; }
+.dn-leaf { padding: 2px 4px 2px 0; min-height: 96px; }
 .dn-label { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: var(--muted); }
 .dn-text { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.1px; }
-.dn-quote { position: relative; margin-top: 12px; font-size: 14px; line-height: 1.45; font-style: italic; color: var(--muted); }
-.dn-by { display: block; margin-top: 4px; font-style: normal; font-weight: 800; font-size: 12px; color: var(--text); }
+.dn-quote { font-size: 17px; font-weight: 600; line-height: 1.45; font-style: italic; }
+.dn-by { display: block; margin-top: 8px; font-style: normal; font-weight: 800; font-size: 13px; color: var(--muted); }
 .dn-tips { margin: 10px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); }
 .dn-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
 .dn-dots { display: flex; gap: 6px; }
@@ -420,7 +420,7 @@ button.hg-row { cursor: pointer; }
 .hero-sub { font-size: 13px; font-weight: 700; color: var(--muted); margin-top: 3px; }
 .hero .streak-badge { white-space: nowrap; flex: none; }
 .hero-time { margin-top: 4px; padding: 0 2px; }
-.climb { display: block; margin-top: 8px; overflow: visible; }
+.climb { display: block; margin-top: 4px; overflow: visible; }
 .cl-fig { transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
 .cl-foot ellipse { transition: fill .4s; }
 .cl-cloth { transform-box: fill-box; transform-origin: left center; animation: cl-wave 1.4s ease-in-out infinite alternate; }

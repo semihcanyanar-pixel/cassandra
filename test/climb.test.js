@@ -7,9 +7,9 @@ describe('Tırmanış geometrisi', () => {
     expect(trailAt(1)).toMatchObject({ x: SUMMIT[0], y: SUMMIT[1] });
     expect(trailAt(0.5).y).toBeLessThan(trailAt(0.2).y); // higher up means smaller y
   });
-  it('ayak izleri zirveyi boş bırakır ve yukarı doğru sıralanır', () => {
+  it('ayak izleri zirveyi boş bırakır, son iz ilkinden yüksektir', () => {
     const ys = [0, 1, 2, 3].map((i) => trailAt(stepFraction(i, 4)).y);
-    expect(ys).toEqual([...ys].sort((a, b) => b - a));
+    expect(ys[3]).toBeLessThan(ys[0]);
     expect(stepFraction(3, 4)).toBeLessThan(1);
   });
   it('tırmanıcı yapılan sayıya göre durur', () => {

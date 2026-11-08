@@ -1,8 +1,8 @@
 // Geometry of the "Tırmanış" picture on Bugün: a mountain, a trail up its face, one footprint per activity.
-// All numbers are in the SVG's own units (viewBox 0 -50 340 168).
-export const MOUNTAIN = 'M6 114L96 60L132 82L214 12L300 92L334 114Z';
-export const GROUND_Y = 114;
-export const TRAIL = [[26, 110], [70, 96], [100, 88], [128, 80], [160, 56], [190, 36], [214, 14]];
+// All numbers are in the SVG's own units (viewBox 0 -66 340 184).
+export const RIDGE = 'M6 114L96 60L132 82L214 12L300 92L334 114';
+// The trail runs along the left face of the ridge line itself.
+export const TRAIL = [[14, 109.2], [96, 60], [132, 82], [214, 12]];
 export const SUMMIT = TRAIL[TRAIL.length - 1];
 
 const segs = TRAIL.slice(1).map((p, i) => {
@@ -26,8 +26,8 @@ export function trailAt(f) {
   return { x: SUMMIT[0], y: SUMMIT[1], angle: (Math.atan2(last.dx, -last.dy) * 180) / Math.PI };
 }
 
-// Footprint i of n sits at (i + 1) / (n + 1) of the way up, so the summit itself stays free for the flag.
-export const stepFraction = (i, n) => (i + 1) / (n + 1);
+// Footprints are spread evenly up the trail, a little short of the summit (it stays free for the flag) and away from the ridge corners.
+export const stepFraction = (i, n) => ((i + 0.5) / (n + 0.5)) * 0.95;
 
 // Where the climber stands: at the foot with nothing done, on the last finished footprint, on the summit when all are done.
 export function climberAt(done, n) {
