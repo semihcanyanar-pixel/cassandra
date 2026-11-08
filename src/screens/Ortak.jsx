@@ -49,6 +49,8 @@ export function Ortak({ session, house, nav, onSettings }) {
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState(''); // optional due date for a new to-do
 
+  const mOpen = house.shopping.filter((i) => i.category === 'market' && !i.done);
+  const mDone = house.shopping.filter((i) => i.category === 'market' && i.done);
   const pick = (i) => {
     if (drop) return;
     try { navigator.vibrate?.(15); } catch { /* not supported */ }
@@ -92,28 +94,33 @@ export function Ortak({ session, house, nav, onSettings }) {
   return (
     <main class={sub === 'ilac' || sub === 'fridge' ? 'screen' : 'screen has-addbar'}>
       {market && sub === 'ev' && (
-        <div class="mk-page" role="dialog" aria-label="Market modu">
-          <div class="mk-top">
-            <h2>Market</h2>
-            <button type="button" class="iconbtn" aria-label="Marketi kapat" onClick={() => setMarket(false)}><IconClose /></button>
-          </div>
-          <Seg items={SHOP_CATEGORIES.map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
-          <div class="mk-list">
-            {open.length === 0 && <div class="mk-empty">{done.length ? 'Hepsi sepette' : 'Listede bir şey yok'}</div>}
-            {open.map((i) => (
-              <button type="button" key={i.id} class={drop === i.id ? 'mk-row drop' : 'mk-row'} role="checkbox" aria-checked="false" aria-label={`${i.text} alındı`} onClick={() => pick(i)}>
-                <span class="mk-circle" aria-hidden="true" /><span class="mk-text">{i.text}</span>
-              </button>
-            ))}
-          </div>
-          <div class="mk-cart">
-            <div class="mk-cart-head">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.4-1.1L20.5 8H6.2" /><circle cx="9.5" cy="19.5" r="1.4" /><circle cx="17" cy="19.5" r="1.4" /></svg>
-              <span class="grow">Sepet</span>
-              <span class="mk-count num"><Pop value={done.length}>{done.length}</Pop></span>
-              {done.length > 0 && <button type="button" class="mk-clear" onClick={() => { if (confirm(`${done.length} ürün listeden silinsin mi?`)) done.forEach((i) => deleteShopping(hid, i.id)); }}>Temizle</button>}
+        <div class="mk-bg" onClick={(e) => { if (e.target === e.currentTarget) setMarket(false); }}>
+          <div class="mk-sheet" role="dialog" aria-label="Market modu">
+            <div class="mk-top">
+              <h2>Market</h2>
+              <button type="button" class="iconbtn" aria-label="Marketi kapat" onClick={() => setMarket(false)}><IconClose /></button>
             </div>
-            {done.length > 0 && <div class="mk-chips">{done.map((i) => <button type="button" key={i.id} class="mk-chip" aria-label={`${i.text} sepetten çıkar`} onClick={() => setShoppingDone(hid, i.id, false)}>{i.text}</button>)}</div>}
+            <div class="mk-list">
+              {mOpen.length === 0 && <div class="mk-empty">{mDone.length ? 'Hepsi sepette' : 'Listede bir şey yok'}</div>}
+              {mOpen.map((i) => (
+                <button type="button" key={i.id} class={drop === i.id ? 'mk-row drop' : 'mk-row'} role="checkbox" aria-checked="false" aria-label={`${i.text} alındı`} onClick={() => pick(i)}>
+                  <span class="mk-circle" aria-hidden="true" /><span class="mk-text">{i.text}</span>
+                </button>
+              ))}
+            </div>
+            <div class="mk-cartbox">
+              <svg class="mk-cartsvg" viewBox="0 0 300 200" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 14H38L68 138H246" />
+                <path d="M46 38H284L258 126H66Z" />
+                <path d="M118 38L126 126M172 38V126M226 38L220 126M56 82H271" stroke-width="2.4" opacity=".4" />
+                <circle cx="96" cy="170" r="14" fill="var(--bg)" /><circle cx="226" cy="170" r="14" fill="var(--bg)" />
+              </svg>
+              <div class="mk-in">
+                {mDone.map((i) => <button type="button" key={i.id} class="mk-chip" aria-label={`${i.text} sepetten çıkar`} onClick={() => setShoppingDone(hid, i.id, false)}>{i.text}</button>)}
+              </div>
+              <span class="mk-count num"><Pop value={mDone.length}>{mDone.length}</Pop></span>
+            </div>
+            {mDone.length > 0 && <button type="button" class="mk-clear" onClick={() => { if (confirm(`${mDone.length} ürün listeden silinsin mi?`)) mDone.forEach((i) => deleteShopping(hid, i.id)); }}>Sepeti boşalt</button>}
           </div>
         </div>
       )}
@@ -126,10 +133,11 @@ export function Ortak({ session, house, nav, onSettings }) {
       {sub === 'ilac' ? <Ilaclar session={session} house={house} nav={nav} /> : sub === 'fridge' ? <Buzdolabi house={house} hid={hid} nav={nav} /> : sub === 'ev' ? (
         <>
           <Seg items={SHOP_CATEGORIES.map((c) => ({ ...c, badge: countOpen(c.value) || null }))} value={filter} onChange={setFilter} label="Kategori" />
-          <button type="button" class="market-toggle" onClick={() => setMarket(true)}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.4-1.1L20.5 8H6.2" /><circle cx="9.5" cy="19.5" r="1.4" /><circle cx="17" cy="19.5" r="1.4" /></svg>
-            Market modu
-          </button>
+          {filter === 'market' && (
+            <button type="button" class="market-toggle" onClick={() => setMarket(true)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.5l2.2 10.5a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.4-1.1L20.5 8H6.2" /><circle cx="9.5" cy="19.5" r="1.4" /><circle cx="17" cy="19.5" r="1.4" /></svg>
+              Market modu
+            </button>)}
           <div class="card list-card">
             {shopList.length === 0 && <div class="sub" style="padding:18px 0;text-align:center">Liste boş. Aşağıdan ekle.</div>}
             {[...open, ...done].map((i) => (
