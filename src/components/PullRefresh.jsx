@@ -19,12 +19,13 @@ export function PullRefresh() {
       const s = st.current;
       if (!s) return;
       const dy = e.touches[0].clientY - s.y, dx = e.touches[0].clientX - s.x;
-      if (!s.on) { if (dy > 10 && dy > Math.abs(dx) * 1.5 && top()) s.on = true; else if (dy < -6 || Math.abs(dx) > 16) { st.current = null; return; } }
+      if (!s.on) { if (dy > 10 && dy > Math.abs(dx) * 1.5 && top()) s.on = true; else if (dy < -6 || Math.abs(dx) > 16) { st.current = null; setPull(0); return; } }
       if (s.on) setPull(Math.min(LIMIT * 1.4, dy * 0.55));
     };
     const end = () => {
       const s = st.current; st.current = null;
-      if (s?.on) { setPull((p) => { if (p >= LIMIT * 0.8) { setBusy(true); try { navigator.vibrate?.(20); } catch { /* ignore */ } setTimeout(refreshApp, 700); return LIMIT * 0.8; } return 0; }); }
+      if (!s?.on) { setPull(0); return; }
+      { setPull((p) => { if (p >= LIMIT * 0.8) { setBusy(true); try { navigator.vibrate?.(20); } catch { /* ignore */ } setTimeout(refreshApp, 700); return LIMIT * 0.8; } return 0; }); }
     };
     window.addEventListener('touchstart', start, { passive: true });
     window.addEventListener('touchmove', move, { passive: true });
@@ -32,7 +33,7 @@ export function PullRefresh() {
     window.addEventListener('touchcancel', end, { passive: true });
     return () => { window.removeEventListener('touchstart', start); window.removeEventListener('touchmove', move); window.removeEventListener('touchend', end); window.removeEventListener('touchcancel', end); };
   }, [busy]);
-  if (pull <= 0 && !busy) return null;
+  if (pull < 6 && !busy) return null;
   return (
     <div class={busy ? 'ptr busy' : 'ptr'} style={`transform: translateY(${Math.round(pull - 56)}px); opacity: ${Math.min(1, pull / 40)}`} aria-hidden="true">
       <svg width="46" height="52" viewBox="-14 -48 40 52"><g class={busy ? 'ptr-hop' : ''}><Hiker pose="walk" /></g></svg>
