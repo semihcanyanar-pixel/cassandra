@@ -128,6 +128,7 @@ export const saveGoal = (uid, id, data) => fire(() => id
 export const deleteGoal = (uid, id) => fire(() => deleteDoc(ref(uid, 'goals', id)));
 
 // Weekly AI summary cache: users/{uid}/insights/{weekId} (weekId = Monday ISO date).
+export const saveDayPool = (hid, id, data) => fire(() => setDoc(href(hid, 'dayPool', id), { ...data, createdAt: serverTimestamp() }));
 export const saveInsight = (uid, weekId, data) => fire(() => setDoc(ref(uid, 'insights', weekId), { ...data, createdAt: serverTimestamp() }));
 
 export { setDoc };
@@ -149,6 +150,7 @@ function useHouseCollection(hid, name) {
 function demoHouse() {
   return {
     ready: true,
+    dayPool: [],
     shopping: [
       { id: 's1', text: 'Süt', category: 'market', done: false, addedBy: 'me', createdAt: null },
       { id: 's2', text: 'Ekmek', category: 'market', done: true, addedBy: 'other', createdAt: null },
@@ -195,8 +197,10 @@ export function useHouseData(hid) {
   const medications = useHouseCollection(hid, 'medications');
   const medLogs = useHouseCollection(hid, 'medLogs');
   const fridge = useHouseCollection(hid, 'fridgeItems');
+  const dayPool = useHouseCollection(hid, 'dayPool'); // generated batches of "Günün notu" content, shared by both phones
   return {
-    ready: Boolean(shopping && todos && notes && events && medications && medLogs && fridge),
+    ready: Boolean(shopping && todos && notes && events && medications && medLogs && fridge && dayPool),
+    dayPool: dayPool || [],
     fridge: fridge || [],
     medications: (medications || []).slice().sort((a, b) => created(a) - created(b)),
     medLogs: medLogs || [],

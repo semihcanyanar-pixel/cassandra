@@ -388,3 +388,43 @@ button.hg-row { cursor: pointer; }
 .flow-card .tl-row .vrow { gap: 4px; }
 .flow-card .tl-row .vrow .check { width: 40px; }
 .flow-card .tl-row .vrow .iconbtn { width: 40px; }
+
+/* Günün notu: a boxless open book. Pages are swipeable (snap) and tilt like turning leaves; a thin spine line on the left, a rule and page number below. */
+.dnote.book { margin: 18px 0 6px; padding: 0; }
+.dn-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; perspective: 900px; }
+.dn-track::-webkit-scrollbar { display: none; }
+.dn-page { flex: 0 0 100%; min-width: 0; box-sizing: border-box; scroll-snap-align: start; scroll-snap-stop: always; }
+.dn-leaf { padding: 2px 4px 2px 16px; border-left: 3px solid var(--text); min-height: 96px; will-change: transform; }
+.dn-label { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: var(--muted); }
+.dn-text { font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.1px; }
+.dn-quote { position: relative; margin-top: 12px; font-size: 14px; line-height: 1.45; font-style: italic; color: var(--muted); }
+.dn-by { display: block; margin-top: 4px; font-style: normal; font-weight: 800; font-size: 12px; color: var(--text); }
+.dn-tips { margin: 10px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); }
+.dn-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+.dn-dots { display: flex; gap: 6px; }
+.dn-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--track); transition: background .2s, width .2s; }
+.dn-dots i.on { width: 16px; border-radius: 3px; background: var(--text); }
+.dn-num { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+/* Bugün header: poster date, a rule in the text colour, outlined (not filled) buttons. */
+.topbar.poster { align-items: center; margin-bottom: 0; padding: 2px 2px 12px; border-bottom: 3px solid var(--text); }
+.pdate { margin: 0 !important; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pdate b { font-size: 58px; line-height: .9; letter-spacing: -3px; font-weight: 800; }
+.pdate span { font-size: 15px; font-weight: 800; line-height: 1.15; letter-spacing: .6px; color: var(--muted); }
+.topbar.poster .iconbtn { background: transparent; border: 2px solid var(--text); color: var(--text); box-sizing: border-box; box-shadow: none; }
+
+/* Bugün "Tırmanış": no box. Big count and streak on top, the mountain below. */
+.hero { margin: 14px 0 8px; }
+.hero-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 2px; }
+.hero-big { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+.hero-sub { font-size: 13px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.hero .streak-badge { white-space: nowrap; flex: none; }
+.hero-time { margin-top: 4px; padding: 0 2px; }
+.climb { display: block; margin-top: 8px; overflow: visible; }
+.cl-fig { transition: transform .7s cubic-bezier(.4, 0, .2, 1); }
+.cl-foot ellipse { transition: fill .4s; }
+.cl-cloth { transform-box: fill-box; transform-origin: left center; animation: cl-wave 1.4s ease-in-out infinite alternate; }
+.cl-spark { animation: cl-twinkle 1.6s ease-in-out infinite; }
+@keyframes cl-wave { from { transform: scaleX(1); } to { transform: scaleX(.8); } }
+@keyframes cl-twinkle { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .cl-fig { transition: none; } .cl-cloth, .cl-spark { animation: none; } }

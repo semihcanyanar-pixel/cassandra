@@ -1,7 +1,11 @@
 import { TopActions } from '../components/TopActions.jsx';
 import { useState } from 'preact/hooks';
 import { useAutoNote } from '../autoNote.js';
+import { useDayPoolRefill } from '../dayPool.js';
+import { DayNote } from '../components/DayNote.jsx';
 import { Card, actColor } from '../components/ui.jsx';
+import { Climb } from '../components/Climb.jsx';
+import { climbText } from '../lib/climb.js';
 import { ortakStart } from './Ortak.jsx';
 import { IconPlus, IconLock } from '../icons.jsx';
 import { EventIcon } from '../components/EventIcon.jsx';
@@ -13,7 +17,12 @@ import { toggleTask, markDose, unmarkDose, markActivityDone, deleteLog, setFamil
 import { dueLeft, dueText } from '../lib/due.js';
 import { leftDays, leftText } from '../lib/fridge.js';
 
-const dateLabel = () => new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+// Poster date: big day number, month and weekday stacked beside it ("8" / "KASIM" "PAZAR")
+const dateParts = () => {
+  const d = new Date();
+  const f = (o) => new Intl.DateTimeFormat('tr-TR', o).format(d).toLocaleUpperCase('tr-TR');
+  return { day: d.getDate(), month: f({ month: 'long' }), weekday: f({ weekday: 'long' }) };
+};
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
 const Cross = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
@@ -22,10 +31,12 @@ const taskWhen = (task) => (task.repeat === 'daily' ? 'Her gün' : task.repeat =
 // Bugün: summary, activity tiles (swipe sideways), then the day as a timeline of tasks, doses and events.
 export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings }) {
   const t = today(), now = hhmm();
+  const dp = dateParts();
   // Medication doses can be hidden from the timeline, so many doses do not bury the other items. The choice is remembered on this phone.
   const [showMeds, setShowMeds] = useState(() => { try { return localStorage.getItem('cassandra.showMeds') === '1'; } catch { return false; } });
   const toggleMeds = () => setShowMeds((v) => { try { localStorage.setItem('cassandra.showMeds', v ? '0' : '1'); } catch { /* ignore */ } return !v; });
-  const { note, weekly } = useAutoNote(uid, data);
+  const { weekly } = useAutoNote(uid, data);
+  useDayPoolRefill(session.hid, house.dayPool || []);
   const people = medPeople(session.household, me.uid);
   const doses = dosesForDay(house.medications, house.medLogs, t, now);
   const todays = tasksForDay(data.tasks, t);
@@ -87,37 +98,24 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
 
   return (
     <main class="screen">
-      <div class="topbar">
-        <h1 class="topdate">{dateLabel()}</h1>
+      <div class="topbar poster">
+        <h1 class="pdate"><b>{dp.day}</b><span>{dp.month}<br />{dp.weekday}</span></h1>
         <TopActions me={me} onSettings={onSettings} />
       </div>
 
-      {weekly && (
-        <Card label="HAFTALIK DEĞERLENDİRME">
-          <div class="title-sm" style="font-weight:600;line-height:1.5">{weekly.text}</div>
-          {(weekly.tips || []).length > 0 && (
-            <ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px">
-              {weekly.tips.map((tp, i) => <li key={i} class="sub" style="font-size:14px">{tp}</li>)}
-            </ul>
-          )}
-        </Card>
+      {rows.length > 0 && (
+        <section class="hero" aria-label="Bugünkü ilerleme">
+          <div class="hero-head">
+            <div>
+              <div class="hero-big num">{doneCount}/{rows.length}</div>
+              <div class="hero-sub">aktivite · {climbText(doneCount, rows.length)}</div>
+            </div>
+            <span class="streak-badge">{run} gün seri</span>
+          </div>
+          <Climb rows={rows} />
+          {total > 0 && <div class="sub hero-time">Kayıtlı süre: {fmtDur(total)}</div>}
+        </section>
       )}
-      {note && (
-        <Card label="GÜNÜN NOTU" class="dnote">
-          <div class="dnote-text">{note.text}</div>
-          {note.quote && <div class="dnote-quote">{note.quote}</div>}
-        </Card>
-      )}
-
-      <div class="card vsum">
-        <div class="row" style="justify-content:space-between"><span class="title-sm muted">Bugün yapılan</span><span class="streak-badge">{run} gün seri</span></div>
-        <div class="num" style="font-size:28px;margin:4px 0 8px">{doneCount}/{rows.length}<small style="font-size:15px;font-weight:700"> aktivite</small></div>
-        <div class="seg-bar" role="img" aria-label={`${rows.length} aktiviteden ${doneCount} tanesi yapıldı`}>
-          {rows.map((r) => <i key={r.a.id} style={`flex:1 1 0;background:${r.done ? actColor(r.a.color) : 'var(--track)'}`} />)}
-          {rows.length === 0 && <i class="seg-rest" style="flex:1 1 0;background:var(--track)" />}
-        </div>
-        {total > 0 && <div class="sub" style="margin-top:8px">Kayıtlı süre: {fmtDur(total)}</div>}
-      </div>
 
       {rows.length === 0 ? (
         <div class="card empty">
@@ -150,6 +148,8 @@ export function Bugun({ session, me, uid, data, house, nav, goTab, onSettings })
           })}
         </div>
       )}
+
+      <DayNote dayPool={house.dayPool || []} weekly={weekly} date={t} />
 
       {untimed.length > 0 && <Card label="GÜN BOYU" class="vcard">{untimed.map((it) => <Row key={it.id} it={it} />)}</Card>}
       <Card label="AKIŞ" class="vcard flow-card" right={hasMeds && (

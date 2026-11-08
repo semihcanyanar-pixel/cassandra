@@ -3,7 +3,7 @@ import { uploadFile, readFile, removeFile, isFileId } from './files.js';
 import { getVapid, subscribe, unsubscribe, setSchedule, sendTest, runDue, notifyOthers, setPrefs } from './push.js';
 
 // Gemini proxy + web push. Bindings: KV (rate limit), GEMINI_API_KEY (secret), FIREBASE_PROJECT_ID, ALLOWED_ORIGINS (comma list), GEMINI_MODEL (optional).
-const LIMITS = { ai: 10, slot: 6, notify: 40 }; // per user per day
+const LIMITS = { ai: 10, slot: 6, notify: 40, pool: 6 }; // per user per day
 
 const cors = (env, req) => {
   const origin = req.headers.get('Origin') || '';
@@ -186,6 +186,32 @@ async function handleSlot(env, req, uid) {
   return reply(env, req, { text: str(g.json.mesaj, 420), quote: str(g.json.motivasyon, 300) });
 }
 
+// New batch of content for "Günün notu" (motivation sentences, quotes, parenting tips) when the built-in lists are nearly used up.
+const POOL_PROMPTS = {
+  motivation: 'Türkçe, kısa (en çok iki cümle), genel ve herkese uyan motivasyon cümleleri yaz. Belirli bir iş, görev, aktivite, spor ya da ev işinden söz etme; "bugün şunu yap" deme. Sıcak, yargılamayan, sade bir dil kullan; klişe tekrarlarından kaçın. Emoji kullanma.',
+  quote: 'Dünya edebiyatından, şiirden, romanlardan, filmlerden, şarkılardan ve farklı ülkelerin atasözlerinden hayata dair kısa (en çok 25 kelime) alıntılar ver. YALNIZCA doğruluğundan ve kime ait olduğundan çok emin olduğun, iyi bilinen alıntıları ver; emin olmadığın, uydurma ya da yanlış atfedilmiş olabilecek hiçbir şey verme. Yabancı dildeki alıntıları Türkçeye çevirerek yaz. "by" alanına yazar ve eser (örn. "Albert Camus", "Küçük Prens, Saint-Exupéry") ya da atasözlerinde "Japon atasözü" gibi kültürü yaz. Şarkı sözlerinden en çok bir kısa dize al. Telif hakkı olan uzun parçalar verme.',
+  tip: 'Çocuk gelişimi, eğitimi ve ebeveynlikte dikkat edilecek konularda Türkçe, kısa (en çok iki cümle), genel ve uygulanabilir ipuçları yaz. Yenidoğana özgü olmasın, genel olsun. Tıbbi tavsiye, ilaç, teşhis ya da kesin sağlık iddiası verme; yargılayıcı olma. Her ipucu farklı bir konuyu işlesin. Emoji kullanma.',
+};
+
+async function handlePool(env, req, uid) {
+  const body = await req.json().catch(() => null);
+  const pool = POOL_PROMPTS[body?.pool] ? body.pool : null;
+  if (!pool) return reply(env, req, { error: 'bad pool' }, 400);
+  if (!(await rateLimit(env, uid, 'pool'))) return reply(env, req, { error: 'rate' }, 429);
+  const quote = pool === 'quote';
+  const prompt = `${POOL_PROMPTS[pool]}
+Tam olarak 60 öğe üret; hiçbiri birbirine benzemesin.
+Yalnızca şu JSON biçiminde yanıt ver: ${quote ? '{"items": [{"t": string, "by": string}]}' : '{"items": [{"t": string}]}'}`;
+  const g = await gemini(env, prompt);
+  if (g.fail) return reply(env, req, { error: 'ai failed', status: g.fail }, 502);
+  const items = (Array.isArray(g.json?.items) ? g.json.items : []).slice(0, 80).map((i) => (quote
+    ? { t: str(i?.t, 300), by: str(i?.by, 120) }
+    : { t: str(i?.t, 300) })).filter((i) => i.t.length > 8 && (!quote || i.by));
+  if (items.length < 20) return reply(env, req, { error: 'too few' }, 502);
+  await recordUse(env, uid, 'pool');
+  return reply(env, req, { items });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runDue(env).then((n) => { if (n) console.log('push delivered', n); }).catch((e) => console.log('push cron failed', String(e))));
@@ -218,13 +244,14 @@ export default {
       }
       return reply(env, req, { error: 'method' }, 405);
     }
-    const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test', '/push/notify', '/push/prefs'];
+    const authed = ['/ai/weekly', '/ai/daily', '/ai/slot', '/push/subscribe', '/push/unsubscribe', '/push/schedule', '/push/test', '/push/notify', '/push/prefs', '/ai/pool'];
     if (req.method === 'POST' && authed.includes(url.pathname)) {
       const uid = await auth(env, req);
       if (!uid) return reply(env, req, { error: 'unauthorized' }, 401);
       if (url.pathname === '/ai/daily') return handleDaily(env, req, uid);
       if (url.pathname === '/ai/slot') return handleSlot(env, req, uid);
       if (url.pathname === '/ai/weekly') return handleWeekly(env, req, uid);
+      if (url.pathname === '/ai/pool') return handlePool(env, req, uid);
       const body = await req.json().catch(() => ({}));
       if (url.pathname === '/push/subscribe') return (await subscribe(env, uid, body.subscription)) ? reply(env, req, { ok: true }) : reply(env, req, { error: 'bad subscription' }, 400);
       if (url.pathname === '/push/unsubscribe') { await unsubscribe(env, uid, String(body.endpoint || '')); return reply(env, req, { ok: true }); }
