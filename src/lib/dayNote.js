@@ -2,7 +2,7 @@ import { diffDays } from './dates.js';
 
 // "Günün notu": one note per day, the same for everybody, changing at midnight. Three kinds of pages:
 //   - motivation: two or three sentences on building habits and the effect of small habits
-//   - quote: a well-known quote (poem, novel, film, song, proverb), translated into Turkish
+//   - quote: a well-known quote in six categories (psychologists and novels come most often), translated into Turkish; foreign proverbs only
 //   - tip: a general piece of advice about child development, education and parenting
 // The lists below last a while; when they are nearly used up the app asks the Worker for a new batch of BATCH items (see autoNote / Bugün)
 // and keeps it in the household's `dayPool` collection, so both phones show the same text. Until a batch exists, older items are reused in a mixed order.
@@ -63,54 +63,99 @@ export const MOTIVATION = [
   { t: "Seni sen yapan şey, nadiren yaptığın büyük işler değil, her gün tekrar ettiğin küçük şeylerdir. Bugünün tekrarı, yarınki karakterindir." },
 ];
 
-export const QUOTES = [
-  { t: 'Yaşamak şakaya gelmez, büyük bir ciddiyetle yaşayacaksın.', by: 'Nâzım Hikmet, Yaşamaya Dair' },
-  { t: 'Yaşamak bir ağaç gibi tek ve hür ve bir orman gibi kardeşçesine, bu hasret bizim.', by: 'Nâzım Hikmet, Davet' },
-  { t: 'Bedava yaşıyoruz, bedava; hava bedava, bulut bedava.', by: 'Orhan Veli, Bedava Yaşıyoruz' },
-  { t: 'Yaratılanı severiz, Yaratan’dan ötürü.', by: 'Yunus Emre' },
-  { t: 'Gelin tanış olalım, işi kolay kılalım; sevelim sevilelim, dünya kimseye kalmaz.', by: 'Yunus Emre' },
-  { t: 'Dün dündür, bugün bugün; bugün yeni şeyler söylemek lazım.', by: 'Mevlânâ' },
-  { t: 'Hayatta en hakiki mürşit ilimdir, fendir.', by: 'Mustafa Kemal Atatürk' },
-  { t: 'Bir insanı sevmekle başlar her şey.', by: 'Sait Faik Abasıyanık' },
-  { t: 'Çözülmemiş her şeye karşı sabırlı ol ve soruların kendilerini sevmeye çalış.', by: 'Rainer Maria Rilke, Genç Bir Şaire Mektuplar' },
-  { t: 'Asıl önemli olan gözle görülmez, ancak yürekle görülür.', by: 'Antoine de Saint-Exupéry, Küçük Prens' },
-  { t: 'Gülünü bu kadar önemli kılan, ona harcadığın zamandır.', by: 'Antoine de Saint-Exupéry, Küçük Prens' },
-  { t: 'Herkes dünyayı değiştirmeyi düşünür, ama kimse kendini değiştirmeyi düşünmez.', by: 'Lev Tolstoy' },
-  { t: 'Güzellik dünyayı kurtaracak.', by: 'Fyodor Dostoyevski, Budala' },
-  { t: 'Kışın ortasında, içimde yenilmez bir yaz olduğunu öğrendim.', by: 'Albert Camus' },
-  { t: 'Her başlangıçta bir büyü vardır; bizi korur ve yaşamamıza yardım eder.', by: 'Hermann Hesse, Basamaklar' },
-  { t: 'Bilmek yetmez, uygulamak gerekir; istemek yetmez, yapmak gerekir.', by: 'Johann Wolfgang von Goethe' },
-  { t: 'Ama yine de, toz gibi, yükselirim.', by: 'Maya Angelou, Hâlâ Yükseliyorum' },
-  { t: 'Yapılana kadar her şey imkânsız görünür.', by: 'Nelson Mandela' },
-  { t: 'Zihnin, sık sık düşündüğün şeylerin rengini alır.', by: 'Marcus Aurelius, Kendime Düşünceler' },
-  { t: 'Bin millik yolculuk tek bir adımla başlar.', by: 'Lao Tzu, Tao Te Ching' },
-  { t: 'Yavaş gitmekten korkma; yalnızca durmaktan kork.', by: 'Çin atasözü' },
-  { t: 'Tek başımıza çok az şey yapabiliriz; birlikte çok şey yapabiliriz.', by: 'Helen Keller' },
-  { t: 'Hayal gücü bilgiden daha önemlidir.', by: 'Albert Einstein' },
-  { t: 'Dünyayı daha iyi yapmaya başlamak için kimsenin tek bir an bile beklemesine gerek yok.', by: 'Anne Frank, Günlük' },
-  { t: 'Hayat bir çikolata kutusu gibidir; içinden ne çıkacağını asla bilemezsin.', by: 'Forrest Gump (film)' },
-  { t: 'Geçmiş acıtabilir; ama ondan ya kaçarsın ya da ondan öğrenirsin.', by: 'Aslan Kral (film)' },
-  { t: 'Carpe diem. Günü yakalayın, hayatınızı olağanüstü kılın.', by: 'Ölü Ozanlar Derneği (film)' },
-  { t: 'Umut güzel bir şeydir, belki de en güzelidir; güzel şeyler de asla ölmez.', by: 'Esaretin Bedeli (film)' },
-  { t: 'Dün geçmişte kaldı, yarın bir gizem; ama bugün bir armağandır.', by: 'Kung Fu Panda (film)' },
-  { t: 'Yap ya da yapma. Denemek diye bir şey yoktur.', by: 'Yoda, Yıldız Savaşları (film)' },
-  { t: 'Her şey yoluna girecek.', by: 'Bob Marley, Three Little Birds (şarkı)' },
-  { t: 'Hayat, sen başka planlar yaparken başına gelenlerdir.', by: 'John Lennon, Beautiful Boy (şarkı)' },
-  { t: 'Yedi kere düş, sekiz kere kalk.', by: 'Japon atasözü' },
-  { t: 'Bir ağaç dikmek için en iyi zaman yirmi yıl önceydi; ikinci en iyi zaman bugündür.', by: 'Çin atasözü' },
-  { t: 'Hızlı gitmek istiyorsan yalnız git; uzağa gitmek istiyorsan birlikte git.', by: 'Afrika atasözü' },
-  { t: 'Yolcu, yol yoktur; yol, yürüdükçe yapılır.', by: 'Antonio Machado' },
-  { t: 'Yavaş giden sağlam gider ve uzağa varır.', by: 'İtalyan atasözü' },
-  { t: 'Yedi kere ölç, bir kere biç.', by: 'Rus atasözü' },
-  { t: 'Dünyadaki en önemli şey nedir? İnsan, insan, insan.', by: 'Maori atasözü' },
-  { t: 'Dünyayı atalarımızdan miras almadık; çocuklarımızdan ödünç aldık.', by: 'Yerli Amerikan atasözü' },
-  { t: 'Damlaya damlaya göl olur.', by: 'Türk atasözü' },
-  { t: 'Bu da geçer.', by: 'Fars atasözü' },
-  { t: 'Sabır, ferahlığın anahtarıdır.', by: 'Arap atasözü' },
-  { t: 'Acele işe bereket gelmez.', by: 'Svahili atasözü' },
-  { t: 'Zorluklar aşılarak yıldızlara.', by: 'Latin deyişi' },
-  { t: 'Gülmeden geçen gün, kaybedilmiş bir gündür.', by: 'Nicolas Chamfort' },
-];
+export const QUOTES = {
+  psikolog: [
+    { t: "Elinden her şey alınabilir, yalnızca bir şey hariç: verilen koşullarda kendi tutumunu seçme özgürlüğü.", by: "Viktor Frankl, İnsanın Anlam Arayışı" },
+    { t: "Tuhaf bir paradoks var: kendimi olduğum gibi kabul ettiğimde değişebilirim.", by: "Carl Rogers, Bir İnsan Olmak Üzerine" },
+    { t: "Eli çekiç olan herkes her şeyi çivi sanır.", by: "Abraham Maslow" },
+    { t: "Alışkanlık, toplumun dev çarkıdır.", by: "William James" },
+    { t: "Hayatın yaşamaya değer olduğuna inan; bu inanç, gerçeği yaratmana yardım edecek.", by: "William James" },
+    { t: "Hayatın anlamı, topluma katkıda bulunmaktır.", by: "Alfred Adler" },
+    { t: "Sevmek bir eylemdir, edilgen bir duygu değil.", by: "Erich Fromm, Sevme Sanatı" },
+    { t: "Yaratıcılık, kesinlikleri bırakma cesaretini gerektirir.", by: "Erich Fromm" },
+    { t: "Gelişmekte olmak, hazır olmaktan iyidir.", by: "Carol Dweck, Zihniyet" },
+    { t: "Kırılganlık; sevginin, aidiyetin, neşenin ve cesaretin doğduğu yerdir.", by: "Brené Brown" },
+    { t: "Hayatta hiçbir şey, üzerinde düşündüğün kadar önemli değildir.", by: "Daniel Kahneman" },
+    { t: "Bilinçdışını fark etmedikçe o hayatını yönetir ve sen buna kader dersin.", by: "Carl Jung (aktarım)" },
+    { t: "Cesaret, umutsuzluğun yokluğu değil; umutsuzluğa rağmen ilerleyebilme gücüdür.", by: "Rollo May" },
+    { t: "En güzel anlar, insanın zorlu ve değerli bir işi başarmak için sınırlarını zorladığı anlardır.", by: "Mihaly Csikszentmihalyi, Akış" },
+    { t: "Sevgi ve çalışma, insan olmanın köşe taşlarıdır.", by: "Sigmund Freud (aktarım)" },
+    { t: "Çocuğun ihtiyacı mükemmel bir ebeveyn değil, yeterince iyi bir ebeveyndir.", by: "Donald Winnicott (aktarım)" },
+  ],
+  roman: [
+    { t: "İnsan ancak yüreğiyle doğru görür; asıl önemli olan gözle görülmez.", by: "Küçük Prens, Antoine de Saint-Exupéry" },
+    { t: "Gülünü bu kadar önemli kılan, ona harcadığın zamandır.", by: "Küçük Prens, Antoine de Saint-Exupéry" },
+    { t: "Bir şeyi gerçekten istediğinde, bütün evren onu gerçekleştirmen için işbirliği yapar.", by: "Simyacı, Paulo Coelho" },
+    { t: "Her parıldayan altın değildir; dolaşan herkes de kaybolmuş sayılmaz.", by: "Yüzüklerin Efendisi, J. R. R. Tolkien" },
+    { t: "İnsan yenilmek için yaratılmamıştır. Yok edilebilir, ama yenilmez.", by: "Yaşlı Adam ve Deniz, Ernest Hemingway" },
+    { t: "Dün’e dönemem; çünkü o zaman başka biriydim.", by: "Alice Harikalar Diyarında, Lewis Carroll" },
+    { t: "Korku akıl katilidir.", by: "Dune, Frank Herbert" },
+    { t: "Güzellik dünyayı kurtaracak.", by: "Budala, Fyodor Dostoyevski" },
+    { t: "Hayatı, hayatın anlamından daha çok sevmek gerek.", by: "Karamazov Kardeşler, Fyodor Dostoyevski" },
+    { t: "Yarının henüz içinde hiç hata yapılmamış yepyeni bir gün olduğunu düşünmek ne güzel.", by: "Yeşil Tepeli Anne, L. M. Montgomery" },
+    { t: "Fırtınalardan korkmuyorum; çünkü gemimi nasıl yöneteceğimi öğreniyorum.", by: "Küçük Kadınlar, Louisa May Alcott" },
+    { t: "Bilgi aktarılabilir, ama bilgelik aktarılamaz.", by: "Siddhartha, Hermann Hesse" },
+    { t: "Ben bir kuş değilim; hiçbir ağ beni tuzağa düşüremez.", by: "Jane Eyre, Charlotte Brontë" },
+    { t: "Özgürlük, gökyüzünün insanlara verdiği en değerli armağandır.", by: "Don Kişot, Miguel de Cervantes" },
+    { t: "Herkes dünyayı değiştirmeyi düşünür, ama kimse kendini değiştirmeyi düşünmez.", by: "Lev Tolstoy" },
+  ],
+  film: [
+    { t: "Hayat bir çikolata kutusu gibidir; içinden ne çıkacağını asla bilemezsin.", by: "Forrest Gump (film)" },
+    { t: "Ya yaşamakla meşgul olursun ya da ölmekle.", by: "Esaretin Bedeli (film)" },
+    { t: "Umut güzel bir şeydir, belki de en güzelidir; güzel şeyler de asla ölmez.", by: "Esaretin Bedeli (film)" },
+    { t: "Carpe diem. Günü yakalayın, hayatınızı olağanüstü kılın.", by: "Ölü Ozanlar Derneği (film)" },
+    { t: "Yap ya da yapma. Denemek diye bir şey yoktur.", by: "Yoda, Yıldız Savaşları (film)" },
+    { t: "Yolu bilmekle yolda yürümek arasında fark vardır.", by: "Morpheus, Matrix (film)" },
+    { t: "Bize verilen zamanla ne yapacağımıza karar vermek bizim elimizde.", by: "Gandalf, Yüzüklerin Efendisi (film)" },
+    { t: "Mutluluk, en karanlık zamanlarda bile bulunabilir; yeter ki ışığı yakmayı hatırla.", by: "Dumbledore, Harry Potter ve Azkaban Tutsağı (film)" },
+    { t: "Hayatta yaptıklarımız sonsuza dek yankılanır.", by: "Maximus, Gladyatör (film)" },
+    { t: "Önemli olan ne kadar sert vurduğun değil; ne kadar sert darbe alıp yoluna devam edebildiğindir.", by: "Rocky Balboa (film)" },
+  ],
+  isim: [
+    { t: "Aç kalın, aptal kalın.", by: "Steve Jobs" },
+    { t: "Yapılana kadar her şey imkânsız görünür.", by: "Nelson Mandela" },
+    { t: "Hayatta korkulacak bir şey yoktur, yalnızca anlaşılacak şeyler vardır.", by: "Marie Curie" },
+    { t: "Hayatım boyunca defalarca başarısız oldum; başarılı olmamın nedeni de bu.", by: "Michael Jordan" },
+    { t: "Senin rızan olmadan kimse seni aşağılık hissettiremez.", by: "Eleanor Roosevelt" },
+    { t: "Hepimiz büyük şeyler yapamayız; ama küçük şeyleri büyük bir sevgiyle yapabiliriz.", by: "Rahibe Teresa" },
+    { t: "Başarı bitmiş değildir, başarısızlık ölümcül değildir; önemli olan devam etme cesaretidir.", by: "Winston Churchill (atfedilir)" },
+    { t: "Tek başımıza çok az şey yapabiliriz; birlikte çok şey yapabiliriz.", by: "Helen Keller" },
+    { t: "Ayaklarınıza değil, yıldızlara bakın.", by: "Stephen Hawking" },
+    { t: "Hayal gücü bilgiden daha önemlidir.", by: "Albert Einstein" },
+    { t: "Dünyayı daha iyi yapmaya başlamak için kimsenin tek bir an bile beklemesine gerek yok.", by: "Anne Frank, Günlük" },
+    { t: "Ama yine de, toz gibi, yükselirim.", by: "Maya Angelou, Hâlâ Yükseliyorum" },
+    { t: "Kışın ortasında, içimde yenilmez bir yaz olduğunu öğrendim.", by: "Albert Camus" },
+  ],
+  klasik: [
+    { t: "Sorgulanmamış hayat yaşamaya değmez.", by: "Sokrates" },
+    { t: "Ne kadar yavaş gittiğin önemli değil, yeter ki durma.", by: "Konfüçyüs (atfedilir)" },
+    { t: "Aynı nehirde iki kez yıkanılmaz.", by: "Herakleitos" },
+    { t: "Biz neyi sık sık yapıyorsak oyuz; mükemmellik bir eylem değil, bir alışkanlıktır.", by: "Will Durant, Aristoteles’in düşüncesinden" },
+    { t: "Zamanın kısa olmasından değil, onu boşa harcamamızdan yakınmalıyız.", by: "Seneca" },
+    { t: "Bizi rahatsız eden olaylar değil, olaylar hakkındaki düşüncelerimizdir.", by: "Epiktetos" },
+    { t: "Bin millik yolculuk tek bir adımla başlar.", by: "Lao Tzu, Tao Te Ching" },
+    { t: "Bilmek yetmez, uygulamak gerekir; istemek yetmez, yapmak gerekir.", by: "Johann Wolfgang von Goethe" },
+    { t: "Yirmi yıl sonra, yaptıklarına değil yapmadıklarına pişman olacaksın.", by: "Mark Twain (atfedilir)" },
+    { t: "Zihnin, sık sık düşündüğün şeylerin rengini alır.", by: "Marcus Aurelius, Kendime Düşünceler" },
+    { t: "Çözülmemiş her şeye karşı sabırlı ol ve soruların kendilerini sevmeye çalış.", by: "Rainer Maria Rilke, Genç Bir Şaire Mektuplar" },
+    { t: "Yolcu, yol yoktur; yol, yürüdükçe yapılır.", by: "Antonio Machado" },
+    { t: "Gülmeden geçen gün, kaybedilmiş bir gündür.", by: "Nicolas Chamfort" },
+  ],
+  atasozu: [
+    { t: "Yedi kere düş, sekiz kere kalk.", by: "Japon atasözü" },
+    { t: "Bir ağaç dikmek için en iyi zaman yirmi yıl önceydi; ikinci en iyi zaman bugündür.", by: "Çin atasözü" },
+    { t: "Yavaş gitmekten korkma; yalnızca durmaktan kork.", by: "Çin atasözü" },
+    { t: "Hızlı gitmek istiyorsan yalnız git; uzağa gitmek istiyorsan birlikte git.", by: "Afrika atasözü" },
+    { t: "Yavaş giden sağlam gider ve uzağa varır.", by: "İtalyan atasözü" },
+    { t: "Yedi kere ölç, bir kere biç.", by: "Rus atasözü" },
+    { t: "Dünyadaki en önemli şey nedir? İnsan, insan, insan.", by: "Maori atasözü" },
+    { t: "Dünyayı atalarımızdan miras almadık; çocuklarımızdan ödünç aldık.", by: "Yerli Amerikan atasözü" },
+    { t: "Bu da geçer.", by: "Fars atasözü" },
+    { t: "Sabır, ferahlığın anahtarıdır.", by: "Arap atasözü" },
+    { t: "Acele işe bereket gelmez.", by: "Svahili atasözü" },
+    { t: "Zorluklar aşılarak yıldızlara.", by: "Latin deyişi" },
+  ],
+};
 
 export const TIPS = [
   { t: 'Çocuklarla her gün birlikte kitap okumak dil gelişimini ve hayal gücünü güçlendirir; on dakika bile fark yaratır.' },
@@ -154,10 +199,30 @@ export const TIPS = [
   { t: 'Mükemmel ebeveyn yoktur; yeterince iyi, sevgi dolu ve tutarlı olmak çoğu zaman yeterlidir.' },
 ];
 
-export const BUILTIN = { motivation: MOTIVATION, quote: QUOTES, tip: TIPS };
-export const POOLS = ['motivation', 'quote', 'tip'];
+// Quote categories. The cycle says which category a day takes: psychologists three times and novels twice in nine days, the rest once.
+// Every category walks through its own list in order, one item per appearance.
+export const CYCLE = ['psikolog', 'roman', 'film', 'psikolog', 'isim', 'roman', 'psikolog', 'klasik', 'atasozu'];
+export const QCATS = Object.keys(QUOTES);
+export const qpool = (cat) => `q-${cat}`;
+export const BUILTIN = { motivation: MOTIVATION, tip: TIPS, ...Object.fromEntries(QCATS.map((c) => [qpool(c), QUOTES[c]])) };
+export const POOLS = Object.keys(BUILTIN);
+export const REFILL_QUOTE = 4; // a quote category asks for a new batch when this many of its items (or fewer) are left
 
 export const dayIndex = (iso) => Math.max(0, diffDays(iso, START_DATE));
+
+// The category of day d and its place in that category's list.
+export function quoteSlot(d) {
+  const cat = CYCLE[d % CYCLE.length];
+  return { cat, idx: poolIndex(qpool(cat), d) };
+}
+// How far into its own list a pool is on day d (motivation and tips: one per day; a quote category: one per appearance).
+export function poolIndex(pool, d) {
+  if (!pool.startsWith('q-')) return d;
+  const cat = pool.slice(2);
+  const per = CYCLE.filter((c) => c === cat).length;
+  const pos = d % CYCLE.length;
+  return Math.floor(d / CYCLE.length) * per + CYCLE.slice(0, pos).filter((c) => c === cat).length;
+}
 
 // Built-in items followed by the generated batches (dayPool docs "{pool}-0", "{pool}-1", ... as long as they are contiguous).
 export function poolItems(pool, docs = []) {
@@ -171,7 +236,7 @@ export function poolItems(pool, docs = []) {
 }
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
 
-// The item for day `idx`. When the day is beyond everything we have (a new batch is not ready), older items come back in a mixed order, so the repeat is hard to notice.
+// The item at place idx. Beyond everything we have (a new batch is not ready), older items come back in a mixed order, so the repeat is hard to notice.
 export function pickFor(pool, idx, docs = []) {
   const all = poolItems(pool, docs);
   if (idx < all.length) return all[idx];
@@ -180,16 +245,18 @@ export function pickFor(pool, idx, docs = []) {
   return all[(idx * step + Math.floor(idx / all.length) * 3) % all.length];
 }
 
-// The number of the next batch to ask for, or null when enough content is left.
-export function refillNeeded(pool, idx, docs = []) {
+// The number of the next batch to ask for in this pool on day d, or null when enough content is left.
+export function refillNeeded(pool, d, docs = []) {
   const known = poolItems(pool, docs).length;
-  if (known - idx > REFILL_AHEAD) return null;
+  const ahead = pool.startsWith('q-') ? REFILL_QUOTE : REFILL_AHEAD;
+  if (known - poolIndex(pool, d) > ahead) return null;
   let n = 0;
   while (docs.some((x) => x.id === `${pool}-${n}`)) n += 1;
   return n;
 }
 
 export const dailyNote = (iso, docs = []) => {
-  const i = dayIndex(iso);
-  return { motivation: pickFor('motivation', i, docs), quote: pickFor('quote', i, docs), tip: pickFor('tip', i, docs) };
+  const d = dayIndex(iso);
+  const { cat, idx } = quoteSlot(d);
+  return { motivation: pickFor('motivation', d, docs), quote: { ...pickFor(qpool(cat), idx, docs), cat }, tip: pickFor('tip', d, docs) };
 };

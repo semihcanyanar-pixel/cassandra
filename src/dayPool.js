@@ -24,7 +24,7 @@ export function useDayPoolRefill(hid, dayPool) {
       const n = refillNeeded(pool, idx, dayPool);
       if (n === null || !cooled(`cassandra.pool.${pool}-${n}`)) continue;
       callWorker('/ai/pool', { pool }, 60000)
-        .then((r) => { if (Array.isArray(r.items) && r.items.length >= 20) saveDayPool(hid, `${pool}-${n}`, { pool, n, items: r.items }); })
+        .then((r) => { if (Array.isArray(r.items) && r.items.length >= 10) saveDayPool(hid, `${pool}-${n}`, { pool, n, items: r.items }); })
         .catch((e) => console.warn('day pool', pool, e.message));
     }
   }, [sig]); // eslint-disable-line react-hooks/exhaustive-deps
